@@ -1,0 +1,28 @@
+__default__: 
+  h_vmem: 4G
+  mem_free: 3G
+  m_mem_free: 2G
+decompose: 
+  h_vmem: 10G
+  mem_free: 8G
+  m_mem_free: 7G
+decomposeBlock: 
+  h_vmem: 10G
+  mem_free: 8G
+  m_mem_free: 7G
+normalize: 
+  h_vmem: 10G
+  mem_free: 8G
+  m_mem_free: 7G
+apply_depth_limit:
+  h_vmem: 10G
+  mem_free: 8G
+  m_mem_free: 7G
+snpeff: 
+  h_vmem: 54G
+  mem_free: 40G
+  m_mem_free: 38G
+annotateDbnsfp: 
+  h_vmem: 54G
+  mem_free: 40G
+  m_mem_free: 38G
