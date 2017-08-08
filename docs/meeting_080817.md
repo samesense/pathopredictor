@@ -27,7 +27,7 @@
 * 127 pfam domains with one variant (cannot be evaluated with neighbor variants)
 
 ### dist of var position counts in pfam domains
-* ex: one domain with 22 variants
+* ex: one domain with 22 variants positions
 * 1 22
 * 1 30
 * 1 53
