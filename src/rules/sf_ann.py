@@ -52,3 +52,33 @@ rule fixHeader:
     input:  DATA + 'interim/EPIv6.eff.dbnsfp.anno.vcf'
     output: DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.vcf'
     shell:  'python {HEADER_HCKR} {input} {output} {HEADER_FIX}'
+
+rule zip:
+    input:  DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.vcf'
+    output: DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.vcf.gz'
+    shell:  '{BGZ} -c {input} > {output}'
+
+# rule gemini:
+#     input:  df=DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.vcf.gz'
+#             jp=PWD + 'files/CAP.JUNK_PED.ped'
+#     output: DATA + 'interim/EPIv6.db'
+#     shell:  """{GPY} {VCFTODB} --legacy-compression {input.df} {input.jp} {output}"""
+
+rule parse_vcf:
+   input:  i = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.vcf'
+   output: o = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat'
+   run:
+       with open(input.i) as f, open(output.o, 'w') as fout:
+           print('chrom\tpos\tref\talt\tclin_class\tpfam\teff', file=fout)
+           for line in f:
+               if not line[0] == '#':
+                   chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
+                   clin = info.split('CLIN_CLASS=')[1].split(';')[0]
+                   if 'pfam_domain' in info:
+                       pfam = info.split('pfam_domain=')[1].split(';')[0]
+                   else:
+                       pfam = 'none'
+                   eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
+                   ls = (chrom, pos, ref, alt, clin, pfam, eff)
+                   print('\t'.join(ls), file=fout)
+                   
