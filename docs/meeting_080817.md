@@ -77,6 +77,7 @@
 * 1363 missense_variant
 
 ### plan
+* get read genome coords?
 * fix mutalyzer indels
 * limit to rare vars? and find domains with significant burden when compared to exac
 * use burden domain feature + other features to predict benign/likely benign vs pathogenic
