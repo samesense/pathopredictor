@@ -49,6 +49,7 @@
 * 125 1
 
 ### dist of pahogenic var position counts in pfam domains
+* ex: one domain with 22 pathogenic variant positions
 * 1 12 (Ion_trans:482, SCN2A)
 * 1 22 (Ion_trans:491, SCN1A)
 * 2 10 (KCNQ_channel:11, KCNQ2)
