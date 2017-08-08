@@ -1,0 +1,54 @@
+"""Annotate vcf"""
+from const import *
+
+rule mk_dat:
+    input:  DATA + 'raw/EPIv6.xlsx'
+    output: DATA + 'interim/EPIv6.txt'
+    shell:  'python {SCRIPTS}mk_dat.py {input} {output}'
+
+rule mk_vcf:
+    input:  DATA + 'raw/EPIv6.xlsx',
+            DATA + 'raw/mut.fix',
+            '/home/evansj/me/data/ucsc/hg19.2bit'
+    output: DATA + 'interim/EPIv6.vcf'
+    shell:  'python {SCRIPTS}mk_vcf.py {input} {output}'
+
+rule bgzipVcf:
+    input:  DATA + 'interim/EPIv6.vcf'
+    output: DATA + 'interim/EPIv6.vcf.gz'
+    shell:  '{BGZ} -c {input} > {output}'
+
+rule snpeff:
+    input:  DATA + 'interim/EPIv6.vcf.gz'
+    output: DATA + 'interim/EPIv6.eff.vcf'
+    shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff \
+               -strict -noStats hg19 -c {EFF_CONFIG} \
+               {input} > {output}"""
+
+DBNSFP_FIELDS = 'Interpro_domain,SIFT_score,Polyphen2_HVAR_pred,RadialSVM_pred,LR_pred,Reliability_index,FATHMM_pred,MutationAssessor_pred,MutationTaster_pred,phyloP100way_vertebrate,phastCons100way_vertebrate'
+
+rule annotateDbnsfp:
+    input:  DATA + 'interim/EPIv6.eff.vcf'
+    output: DATA + 'interim/EPIv6.eff.dbnsfp.vcf'
+    shell:  """{JAVA} -Xmx32g -Xms16g -jar {SIFT} dbnsfp -v \
+               -db {SIFT_DBNSFP} -f {DBNSFP_FIELDS} {input} > {output}"""
+
+# fix pfam
+# /mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/hg19.pfam.ucscgenes.enum.bed.gz
+# ann fixed pfam
+# parse genes
+rule vcfanno:
+    input:   vcf = DATA + 'interim/EPIv6.eff.dbnsfp.vcf',
+             conf = CONFIG + 'vcfanno.conf',
+             lua = VCFANNO_LUA_FILE
+    output:  DATA + 'interim/EPIv6.eff.dbnsfp.anno.vcf'
+    threads: 10
+    shell:   """{VCFANNO} -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
+                {input.conf} {input.vcf} > {output}"""
+
+HEADER_FIX = 'eff_indel_splice,1,Flag AC,1,Integer AF,1,Float dbNSFP_FATHMM_pred,.,String dbNSFP_Interpro_domain,.,String dbNSFP_LR_pred,.,String dbNSFP_phyloP100way_vertebrate,.,String dbNSFP_phastCons100way_vertebrate,.,String dbNSFP_SIFT_score,.,String dbNSFP_Reliability_index,.,String dbNSFP_RadialSVM_pred,.,String dbNSFP_RadialSVM_pred,.,String dbNSFP_Polyphen2_HVAR_pred,.,String dbNSFP_MutationTaster_pred,.,String dbNSFP_MutationAssessor_pred,.,String'
+
+rule fixHeader:
+    input:  DATA + 'interim/EPIv6.eff.dbnsfp.anno.vcf'
+    output: DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.vcf'
+    shell:  'python {HEADER_HCKR} {input} {output} {HEADER_FIX}'
