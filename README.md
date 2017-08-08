@@ -3,6 +3,11 @@ mahdi_epi
 
 Variant effect prediction using domains
 
+### Methods
+* use mutalyzer to convert c. to genome coords
+* mk vcf file
+* annotate with snpeff, dbnsfp, pfam, hgmd, clinvar, cadd, etc
+
 ### variants with pfam domain
 * 13 BENIGN
 * 180 LIKLEY_PATHOGENIC
