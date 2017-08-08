@@ -80,5 +80,6 @@
 ### plan
 * get read genome coords?
 * fix mutalyzer indels
+* compare synon vars to exac to find correction factor
 * limit to rare vars? and find domains with significant burden when compared to exac
 * use burden domain feature + other features to predict benign/likely benign vs pathogenic
