@@ -1,7 +1,7 @@
 ## 080817
 
 ### Methods
-* use mutalyzer to convert c. to genome coords (had trouble w/ indels)
+* use mutalyzer to convert c. to genome coords (had trouble w/ indels, the hg19 coords in xlsx are wrong)
 * mk vcf file
 * annotate with snpeff, dbnsfp
 * annotate 1kg, exac_coverage, evs, kaviar, exac, pfam, hgmd, clinvar, cadd, etc with vxfanno
