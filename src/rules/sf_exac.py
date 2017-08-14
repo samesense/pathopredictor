@@ -42,8 +42,8 @@ rule zip:
     shell:  '{BGZ} -c {input} > {output}'
 
 rule gemini:
-    input:  df=DATA + 'interim/r1_no_tcga/exac.tidy.eff.dbnsfp.gt.anno.hHack.vcf.gz'
-            jp=PWD + 'files/CAP.JUNK_PED.ped'
+    input:  df=DATA + 'interim/r1_no_tcga/exac.tidy.eff.dbnsfp.gt.anno.hHack.vcf.gz',
+            jp=EXAC_PED
     output: DATA + 'interim/r1_no_tcga/exac.db'
     shell:  """{GPY} {VCFTODB} --legacy-compression {input.df} {input.jp} {output}"""
 
