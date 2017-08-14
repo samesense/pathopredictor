@@ -1,4 +1,5 @@
-### annotate exac
+## next
+* format indels
 
 ### pull exac counts
 
