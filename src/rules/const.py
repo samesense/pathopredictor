@@ -22,6 +22,8 @@ DATA = PWD + 'data/'
 LOG = PWD + 'log/'
 CONFIG = PWD + 'configs/'
 
+EXAC_DIR = '/home/evansj/me/projects/diskin/target_exac_setup/data/'
+
 VCFANNO_LUA_FILE = '/home/evansj/me/projects/me/vcfanno_lua/scripts/target.lua'
 
 ISILON = '/mnt/isilon/cbmi/variome/perry/'
