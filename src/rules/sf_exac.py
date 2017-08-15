@@ -52,7 +52,7 @@ rule parse_vcf:
    output: o = DATA + 'interim/r1_no_tcga/exac.tidy.eff.dbnsfp.gt.anno.hHack.dat'
    run:
        with open(input.i) as f, open(output.o, 'w') as fout:
-           print('chrom\tpos\tref\talt\tpfam\teff\tac\tan', file=fout)
+           print('chrom\tpos\tref\talt\tpfam\teff\tac\tan\taf_1kg_all', file=fout)
            for line in f:
                if line[0] != '#':
                    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')[:-2]
@@ -60,10 +60,16 @@ rule parse_vcf:
                        pfam = info.split('pfam_domain=')[1].split(';')[0]
                    else:
                        pfam = 'none'
+                       
+                   if 'af_1kg_all=' in info:
+                       onekg = info.split('af_1kg_all=')[1].split(';')[0]
+                   else:
+                       onekg = '0'
+
                    eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
                    an = info.split('AC=')[1].split(';')[0]
                    ac = info.split('AN=')[1].split(';')[0]
-                   ls = (chrom, pos, ref, alt, pfam, eff, ac, an)
+                   ls = (chrom, pos, ref, alt, pfam, eff, ac, an, onekg)
                    print('\t'.join(ls), file=fout)
 
 rule all_exac:

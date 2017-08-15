@@ -69,16 +69,23 @@ rule parse_vcf:
    output: o = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat'
    run:
        with open(input.i) as f, open(output.o, 'w') as fout:
-           print('chrom\tpos\tref\talt\tclin_class\tpfam\teff', file=fout)
+           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff', file=fout)
            for line in f:
                if not line[0] == '#':
                    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
                    clin = info.split('CLIN_CLASS=')[1].split(';')[0]
+
                    if 'pfam_domain' in info:
                        pfam = info.split('pfam_domain=')[1].split(';')[0]
                    else:
                        pfam = 'none'
+
+                   if 'af_1kg_all=' in info:
+                       onekg = info.split('af_1kg_all=')[1].split(';')[0]
+                   else:
+                       onekg = '0'
+
                    eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
-                   ls = (chrom, pos, ref, alt, clin, pfam, eff)
+                   ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff)
                    print('\t'.join(ls), file=fout)
                    
