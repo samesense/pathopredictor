@@ -12,5 +12,10 @@ Variant effect prediction using domains
 * mk vcf file
 * annotate with snpeff, dbnsfp
 * annotate 1kg, exac_coverage, evs, kaviar, exac, pfam, hgmd, clinvar, cadd, etc with vcfanno
-* ready for gemini db
-* have exac in gemini db
+* limit to rare vars: less than 1% in 1kg total populations
+* test for domain enrichment for missense and nonsense
+    * gather all rare positions of interest for disease and exac
+    * count the number of variant alleles for these positions
+    * when a position is not present, assume it is wt for the max number of alleles observed at a position
+    * use fisher's exact test for each domain (include no-domain for now)
+    * use bh to correct p-values
