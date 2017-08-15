@@ -4,8 +4,8 @@ mahdi_epi
 Variant effect prediction using domains
 
 ### Meeting notes
-[080817](docs/meeting_080817.md)
-[081517](docs/meeting_081517.md)
+* [080817](docs/meeting_080817.md)
+* [081517](docs/meeting_081517.md)
 
 ### Methods
 * use mutalyzer to convert c. to genome coords (had trouble w/ indels)
