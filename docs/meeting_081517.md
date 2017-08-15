@@ -28,7 +28,7 @@
 * KCNQ2	Ion_trans_2, Ion_trans, KCNQ_channel 
 * CHRNB2	Neur_chan_memb
 * STXBP1	Sec1
-* SCN1A	Ion_trans, Suguar_tf, MFS_1
+* SCN1A	Ion_trans, Sugar_tf, MFS_1
 * GABRG2	Neur_chan_memb
 * MECP2	MBD
 * SCN8A	Ion_trans
