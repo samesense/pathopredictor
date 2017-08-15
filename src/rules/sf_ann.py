@@ -66,10 +66,12 @@ rule zip:
 
 rule parse_vcf:
    input:  i = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.vcf'
-   output: o = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat'
+   output: o = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat',
+           o2 = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat'
    run:
-       with open(input.i) as f, open(output.o, 'w') as fout:
+       with open(input.i) as f, open(output.o, 'w') as fout, open(output.o2, 'w') as fout_split_pfam:
            print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff', file=fout)
+           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff', file=fout_split_pfam)
            for line in f:
                if not line[0] == '#':
                    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
@@ -88,4 +90,8 @@ rule parse_vcf:
                    eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
                    ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff)
                    print('\t'.join(ls), file=fout)
+
+                   for p in pfam.split(','):
+                       ls = (chrom, pos, ref, alt, clin, p, onekg, eff)
+                       print('\t'.join(ls), file=fout_split_pfam)
                    

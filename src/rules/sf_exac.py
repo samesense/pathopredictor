@@ -49,10 +49,12 @@ rule gemini:
 
 rule parse_vcf:
    input:  i = DATA + 'interim/r1_no_tcga/exac.tidy.eff.dbnsfp.gt.anno.hHack.vcf'
-   output: o = DATA + 'interim/r1_no_tcga/exac.tidy.eff.dbnsfp.gt.anno.hHack.dat'
+   output: o = DATA + 'interim/r1_no_tcga/exac.tidy.eff.dbnsfp.gt.anno.hHack.dat',
+           o2 = DATA + 'interim/r1_no_tcga/exac.tidy.eff.dbnsfp.gt.anno.hHack.splitPfam.dat'
    run:
-       with open(input.i) as f, open(output.o, 'w') as fout:
+       with open(input.i) as f, open(output.o, 'w') as fout, open(output.o2, 'w') as fout_split_pfam:
            print('chrom\tpos\tref\talt\tpfam\teff\tac\tan\taf_1kg_all', file=fout)
+           print('chrom\tpos\tref\talt\tpfam\teff\tac\tan\taf_1kg_all', file=fout_split_pfam)
            for line in f:
                if line[0] != '#':
                    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')[:-2]
@@ -72,6 +74,11 @@ rule parse_vcf:
                    ls = (chrom, pos, ref, alt, pfam, eff, ac, an, onekg)
                    print('\t'.join(ls), file=fout)
 
+                   for p in pfam.split(','):
+                       ls = (chrom, pos, ref, alt, p, eff, ac, an, onekg)
+                       print('\t'.join(ls), file=fout_split_pfam)
+
 rule all_exac:
     input: DATA + 'interim/r1_no_tcga/exac.tidy.eff.dbnsfp.gt.anno.hHack.dat',
+           DATA + 'interim/r1_no_tcga/exac.tidy.eff.dbnsfp.gt.anno.hHack.splitPfam.dat',
            DATA + 'interim/r1_no_tcga/exac.db'
