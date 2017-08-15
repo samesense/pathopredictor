@@ -11,6 +11,6 @@ Variant effect prediction using domains
 * use mutalyzer to convert c. to genome coords (had trouble w/ indels)
 * mk vcf file
 * annotate with snpeff, dbnsfp
-* annotate 1kg, exac_coverage, evs, kaviar, exac, pfam, hgmd, clinvar, cadd, etc with vxfanno
+* annotate 1kg, exac_coverage, evs, kaviar, exac, pfam, hgmd, clinvar, cadd, etc with vcfanno
 * ready for gemini db
 * have exac in gemini db
