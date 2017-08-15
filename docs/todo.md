@@ -1,10 +1,12 @@
 ## next
 * format indels
 
-### pull exac counts
-
-### summarize exac
-
 ### fix fg indels
 
-### cmp exac/fg
+### include frameshift burden
+* lof
+* missese + inframe
+
+### are enriched doamains more likely to have pathogenic vars?    
+
+### use burden domain feature + other features to predict benign/likely benign vs pathogenic
