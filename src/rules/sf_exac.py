@@ -69,8 +69,8 @@ rule parse_vcf:
                        onekg = '0'
 
                    eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
-                   an = info.split('AC=')[1].split(';')[0]
-                   ac = info.split('AN=')[1].split(';')[0]
+                   ac = info.split('AC=')[1].split(';')[0]
+                   an = info.split('AN=')[1].split(';')[0]
                    ls = (chrom, pos, ref, alt, pfam, eff, ac, an, onekg)
                    print('\t'.join(ls), file=fout)
 

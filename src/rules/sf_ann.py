@@ -65,6 +65,8 @@ rule zip:
 #     shell:  """{GPY} {VCFTODB} --legacy-compression {input.df} {input.jp} {output}"""
 
 # neg fam counts ppl
+# pos fam counts ppl
+# need to convert hom to a count of two
 rule parse_vcf:
    input:  i = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.vcf'
    output: o = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat',
@@ -80,6 +82,7 @@ rule parse_vcf:
 
                    pos_fam = info.split('POS_FAM_COUNT=')[1].split(';')[0]
                    neg_fam = info.split('NEG_FAM_COUNT=')[1].split(';')[0]
+                   
 
                    if 'pfam_domain' in info:
                        pfam = info.split('pfam_domain=')[1].split(';')[0]
