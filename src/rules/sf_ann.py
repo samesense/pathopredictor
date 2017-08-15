@@ -64,6 +64,7 @@ rule zip:
 #     output: DATA + 'interim/EPIv6.db'
 #     shell:  """{GPY} {VCFTODB} --legacy-compression {input.df} {input.jp} {output}"""
 
+# neg fam counts ppl
 rule parse_vcf:
    input:  i = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.vcf'
    output: o = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat',
@@ -71,11 +72,14 @@ rule parse_vcf:
    run:
        with open(input.i) as f, open(output.o, 'w') as fout, open(output.o2, 'w') as fout_split_pfam:
            print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff', file=fout)
-           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff', file=fout_split_pfam)
+           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tpos_fam\tneg_fam', file=fout_split_pfam)
            for line in f:
                if not line[0] == '#':
                    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
                    clin = info.split('CLIN_CLASS=')[1].split(';')[0]
+
+                   pos_fam = info.split('POS_FAM_COUNT=')[1].split(';')[0]
+                   neg_fam = info.split('NEG_FAM_COUNT=')[1].split(';')[0]
 
                    if 'pfam_domain' in info:
                        pfam = info.split('pfam_domain=')[1].split(';')[0]
@@ -88,10 +92,10 @@ rule parse_vcf:
                        onekg = '0'
 
                    eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
-                   ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff)
+                   ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff, pos_fam, neg_fam)
                    print('\t'.join(ls), file=fout)
 
                    for p in pfam.split(','):
-                       ls = (chrom, pos, ref, alt, clin, p, onekg, eff)
+                       ls = (chrom, pos, ref, alt, clin, p, onekg, eff, pos_fam, neg_fam)
                        print('\t'.join(ls), file=fout_split_pfam)
                    
