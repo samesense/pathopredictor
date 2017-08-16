@@ -46,4 +46,7 @@
 ### plan
 * fix mutalyzer indels
 * include frameshift burden
+    * lof
+    * missese + inframe
+* are enriched doamains more likely to have pathogenic vars?    
 * use burden domain feature + other features to predict benign/likely benign vs pathogenic
