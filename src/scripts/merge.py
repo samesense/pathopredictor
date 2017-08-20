@@ -44,11 +44,16 @@ def lof_func(row):
         return True
     return False
 
+def all_func(row):
+    return lof_func(row) or mis_func(row)
+
 # don't forget to add non-var counts
 if var_type == 'mis':
     var_func = mis_func
 elif var_type == 'lof':
     var_func = lof_func
+elif var_type == 'all':
+    var_func = all_func
 else:
     i = 1/0
 

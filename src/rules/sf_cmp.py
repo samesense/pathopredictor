@@ -28,16 +28,17 @@ rule fdr:
 
 rule flag_sig_domains:
     input:  d = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat',
-            q = DATA + 'interim/enrich_q/mis.xls'
-    output: o = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.mis.dat'
+            q = DATA + 'interim/enrich_q/{var}.xls'
+    output: o = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.{var}.dat'
     run:
         use_cols = ['pfam', 'fg_gtr', 'qval']
-        r = {'fg_gtr':'missense_fg_gtr',
-             'qval':'missense_qval'}
+        r = {'fg_gtr':wildcards.var + '_fg_gtr',
+             'qval':wildcards.var + '_qval'}
         q_df = pandas.read_csv(input.q, sep='\t', usecols=use_cols).rename(columns=r)
         df = pandas.read_csv(input.d, sep='\t')
         m = pandas.merge(df, q_df, on='pfam', how='left')
         m.to_csv(output.o, index=False, sep='\t')
 
 rule m:
-    input: expand(DATA + 'interim/enrich_q/{var}.xls', var=('mis', 'lof'))
+    input: expand(DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.{var}.dat', \
+           var=('mis', 'lof', 'all'))
