@@ -13,3 +13,5 @@
 
 ### incorporate mtr
 * http://mtr-viewer.mdhs.unimelb.edu.au
+
+### find lof fields that give best results. current fields no diff from exac
