@@ -15,15 +15,53 @@ max_fg = max([p+2*n for p,n in df_fg_pre[['pos_fam', 'neg_fam']].values])
 df_exac = df_exac_pre[df_exac_pre['af_1kg_all'] < .01]
 df_fg = df_fg_pre[df_fg_pre['af_1kg_all'] < .01]
 
+mis_ls = ('inframe_deletion', 'inframe_insertion', 'missense_variant',
+          '5_prime_UTR_premature_start_codon_gain_variant')
+def mis_func(row):
+    if row['eff'] in mis_ls:
+        return True
+    return False
+
+lof_ls = ('disruptive_inframe_insertion',
+          'splice_acceptor_variant',
+          'splice_donor_variant',
+          'disruptive_inframe_deletion',
+          'frameshift_variant',
+          'splice_region_variant',
+          'stop_gained',
+          'frameshift_variant+start_lost',
+          'initiator_codon_variant',
+          'stop_lost+inframe_deletion',
+          'frameshift_variant+stop_lost',
+          'stop_gained+disruptive_inframe_deletion',
+          'stop_lost',
+          'frameshift_variant+stop_gained',
+          'stop_retained_variant',
+          'start_lost')
+
+def lof_func(row):
+    if row['eff'] in lof_ls:
+        return True
+    return False
+
 # don't forget to add non-var counts
-var = var_type #'missense_variant'
+if var_type == 'mis':
+    var_func = mis_func
+elif var_type == 'lof':
+    var_func = lof_func
+else:
+    i = 1/0
+
+#var = var_type #'missense_variant'
 cols = ['gene', 'pfam', 'chrom', 'pos']
 pfam_to_exac_pos = defaultdict(dict)
-for gene, pfam, chrom, pos in list(df_exac[df_exac.eff==var][cols].values):
+exac_crit = df_exac.apply(var_func, axis=1)
+for gene, pfam, chrom, pos in list(df_exac[exac_crit][cols].values):
     k = gene + 'xx' + pfam
     pfam_to_exac_pos[k][str(chrom) + ':' + str(pos)] = True
 pfam_to_fg_pos = defaultdict(dict)
-for gene, pfam, chrom, pos in list(df_fg[df_fg.eff==var][cols].values):
+fg_crit = df_fg.apply(var_func, axis=1)
+for gene, pfam, chrom, pos in list(df_fg[fg_crit][cols].values):
     k = gene + 'xx' + pfam
     pfam_to_fg_pos[k][str(chrom) + ':' + str(pos)] = True
 
@@ -58,15 +96,12 @@ missing_fg_df = pandas.DataFrame({'pfam':[x[1] for x in missing_fg_count],
 
 missing_df = pandas.merge(missing_fg_df, missing_exac_df, on=('gene', 'pfam'), how='outer').fillna(0)
 
-#fg_pos = set([chrom + ':' + pos for chrom, pos in df_fg[df_fg.eff==var][cols].values])
-#missing_exac_count = len(fg_pos) - len(exac_pos)
-
 cols = ['ac', 'an']
-g_exac = df_exac[df_exac.eff==var].groupby(['gene', 'pfam'])[cols].sum().reset_index()
+g_exac = df_exac[exac_crit].groupby(['gene', 'pfam'])[cols].sum().reset_index()
 #g_exac.head()
 
 fg_cols = ['pos_fam', 'neg_fam']
-g_fg = df_fg[df_fg.eff==var].groupby(['gene', 'pfam'])[fg_cols].sum().reset_index()
+g_fg = df_fg[fg_crit].groupby(['gene', 'pfam'])[fg_cols].sum().reset_index()
 #g_fg.head()
 
 m_pre = pandas.merge(g_fg, g_exac, on=('gene', 'pfam'), how='outer').fillna(0)

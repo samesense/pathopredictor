@@ -28,8 +28,8 @@ rule fdr:
 
 rule flag_sig_domains:
     input:  d = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat',
-            q = DATA + 'interim/enrich_q/missense_variant.xls'
-    output: o = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.missense.dat'
+            q = DATA + 'interim/enrich_q/mis.xls'
+    output: o = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.mis.dat'
     run:
         use_cols = ['pfam', 'fg_gtr', 'qval']
         r = {'fg_gtr':'missense_fg_gtr',
@@ -40,4 +40,4 @@ rule flag_sig_domains:
         m.to_csv(output.o, index=False, sep='\t')
 
 rule m:
-    input: expand(DATA + 'interim/enrich_q/{var}.xls', var=('missense_variant', 'stop_gained'))
+    input: expand(DATA + 'interim/enrich_q/{var}.xls', var=('mis', 'lof'))
