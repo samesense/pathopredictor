@@ -1,5 +1,7 @@
 ## next
-* format indels
+* format indels (frameshifts)
+* tally pfam eff types
+* add mtr
 
 ### fix fg indels
 
