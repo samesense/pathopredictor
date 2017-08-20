@@ -10,8 +10,13 @@ rule mk_vcf:
     input:  DATA + 'raw/EPIv6.xlsx',
             DATA + 'raw/mut.fix',
             '/home/evansj/me/data/ucsc/hg19.2bit'
-    output: DATA + 'interim/EPIv6.vcf'
+    output: DATA + 'interim/EPIv6.pre.vcf'
     shell:  'python {SCRIPTS}mk_vcf.py {input} {output}'
+
+rule sort_vcf:
+    input:  DATA + 'interim/EPIv6.pre.vcf'
+    output: DATA + 'interim/EPIv6.vcf'
+    shell:  'cat {input} | vcf-sort > {output}'
 
 rule bgzipVcf:
     input:  DATA + 'interim/EPIv6.vcf'
