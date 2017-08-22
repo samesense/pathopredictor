@@ -14,3 +14,4 @@
 * annotate w/ missense-badness
 * try to predict using domain status and missese badness vs mis-sense badness alone
 * why does lof not work? why so many vars in these few lof domains? B/c it is none? Yes, perhaps.
+* annotate exac freqs for init data
