@@ -1,7 +1,7 @@
 ### 082217
 
 ### Updates
-* Fixed mutalyzer indels except for fs
+* Fixed mutalyzer indels except for complex indels (ins+del)
 * burden w/ pathogenic burden evaluation:
     * lof
     * missense + inframe
