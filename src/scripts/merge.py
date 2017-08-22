@@ -22,12 +22,12 @@ def mis_func(row):
         return True
     return False
 
+#           'splice_region_variant',
 lof_ls = ('disruptive_inframe_insertion',
           'splice_acceptor_variant',
           'splice_donor_variant',
           'disruptive_inframe_deletion',
           'frameshift_variant',
-          'splice_region_variant',
           'stop_gained',
           'frameshift_variant+start_lost',
           'initiator_codon_variant',
@@ -47,6 +47,11 @@ def lof_func(row):
 def all_func(row):
     return lof_func(row) or mis_func(row)
 
+def mk_single_eff_func(var_type):
+    def var_func(row):
+        return row['eff'] == var_type
+    return var_func
+
 # don't forget to add non-var counts
 if var_type == 'mis':
     var_func = mis_func
@@ -55,7 +60,7 @@ elif var_type == 'lof':
 elif var_type == 'all':
     var_func = all_func
 else:
-    i = 1/0
+    var_func = mk_single_eff_func(var_type)
 
 #var = var_type #'missense_variant'
 cols = ['gene', 'pfam', 'chrom', 'pos']

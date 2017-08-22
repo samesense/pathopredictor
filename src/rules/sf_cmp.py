@@ -39,6 +39,37 @@ rule flag_sig_domains:
         m = pandas.merge(df, q_df, on='pfam', how='left')
         m.to_csv(output.o, index=False, sep='\t')
 
-rule m:
-    input: expand(DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.{var}.dat', \
-           var=('mis', 'lof', 'all'))
+rule test_pathogenic_enrichment:
+    input:  DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.{var}.dat'
+    output: DATA + 'interim/path_enrich/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.{var}.dat'
+    shell:  'python {SCRIPTS}eval_pathogenic_enrichment.py {input} {wildcards.var} {output}'
+
+vars = ('disruptive_inframe_insertion',
+        'splice_acceptor_variant',
+        'splice_donor_variant',
+        'disruptive_inframe_deletion',
+        'frameshift_variant',
+        'stop_gained',
+        'frameshift_variant+start_lost',
+        'initiator_codon_variant',
+        'stop_lost+inframe_deletion',
+        'frameshift_variant+stop_lost',
+        'stop_gained+disruptive_inframe_deletion',
+        'stop_lost',
+        'frameshift_variant+stop_gained',
+        'stop_retained_variant',
+        'start_lost',
+        'splice_region_variant',
+        'mis', 'all', 'lof')
+
+rule combine_path_burden:
+    input: expand(DATA + 'interim/path_enrich/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.{var}.dat', \
+                  var=vars)
+    output: DATA + 'interim/path_enrich_eval'
+    run:
+        f = list(input)[0]
+        shell('head -1 {f} > {output}')
+        for l in list(input):
+            shell('grep -v benign {l} >> {output}')
+# rule m:
+#     input: 
