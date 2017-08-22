@@ -6,4 +6,4 @@
     * lof
     * missense + inframe
     * total
-* can't dl mtr scores
+* can't dl mtr scores, will use missense-badness instead
