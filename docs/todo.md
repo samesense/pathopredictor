@@ -1,5 +1,7 @@
 ## next
-* format indels
+* format indels (frameshifts)
+* tally pfam eff types
+* add mtr
 
 ### fix fg indels
 
@@ -13,3 +15,5 @@
 
 ### incorporate mtr
 * http://mtr-viewer.mdhs.unimelb.edu.au
+
+### find lof fields that give best results. current fields no diff from exac
