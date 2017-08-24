@@ -17,3 +17,6 @@
 * annotate exac freqs for init data
 * email for mtr scores
 * use vus as denominator as well
+* make [paper plot](https://mail.google.com/mail/u/0/#inbox/15e0ad768f930135) too
+* counts of sig domains for each type
+* count of vars in those domains
