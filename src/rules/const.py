@@ -21,6 +21,7 @@ SCRIPTS = PWD + 'src/scripts/'
 DATA = PWD + 'data/'
 LOG = PWD + 'log/'
 CONFIG = PWD + 'configs/'
+PLOTS = PWD + 'docs/plots/'
 
 EXAC_DIR = '/home/evansj/me/projects/diskin/target_exac_setup/data/'
 EXAC_PED = '/home/evansj/me/projects/diskin/target_exac_setup/files/JUNK_PED.ped'

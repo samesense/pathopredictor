@@ -71,5 +71,16 @@ rule combine_path_burden:
         shell('head -1 {f} > {output}')
         for l in list(input):
             shell('grep -v benign {l} >> {output}')
+
+rule plot:
+    input:  DATA + 'interim/path_enrich_eval'
+    output: PLOTS + 'path_frac_wo_vus.png',
+            PLOTS + 'path_frac_w_vus.png',
+            PLOTS + 'benign_frac_w_vus.png',
+            PLOTS + 'var_counts_by_enrichment.png'
+    run:  
+        shell('Rscript {SCRIPTS}plot_fracs.R {input} {output}')
+        shell('rm Rplots.pdf')
+
 # rule m:
 #     input: 
