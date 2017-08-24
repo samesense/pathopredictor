@@ -53,11 +53,16 @@ rule parse_exac_vcf:
            o2 = DATA + 'interim/r1_no_tcga/exac.tidy.eff.dbnsfp.gt.anno.hHack.splitPfam.dat'
    run:
        with open(input.i) as f, open(output.o, 'w') as fout, open(output.o2, 'w') as fout_split_pfam:
-           print('chrom\tpos\tref\talt\tpfam\teff\tac\tan\taf_1kg_all\tgene', file=fout)
-           print('chrom\tpos\tref\talt\tpfam\teff\tac\tan\taf_1kg_all\tgene', file=fout_split_pfam)
+           print('chrom\tpos\tref\talt\tpfam\teff\tac\tan\taf_1kg_all\tgene\tmpc', file=fout)
+           print('chrom\tpos\tref\talt\tpfam\teff\tac\tan\taf_1kg_all\tgene\tmpc', file=fout_split_pfam)
            for line in f:
                if line[0] != '#':
                    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')[:-2]
+
+                   mpc = 'NA'
+                   if 'mpc=' in info:
+                       mpc = info.split('mpc=')[1].split(';')[0]
+
                    if 'pfam_domain' in info:
                        pfam = info.split('pfam_domain=')[1].split(';')[0]
                    else:
@@ -72,11 +77,11 @@ rule parse_exac_vcf:
                    gene = info.split('EFF=')[1].split(';')[0].split(',')[0].split('|')[-6]
                    ac = info.split('AC=')[1].split(';')[0]
                    an = info.split('AN=')[1].split(';')[0]
-                   ls = (chrom, pos, ref, alt, pfam, eff, ac, an, onekg, gene)
+                   ls = (chrom, pos, ref, alt, pfam, eff, ac, an, onekg, gene, mpc)
                    print('\t'.join(ls), file=fout)
 
                    for p in pfam.split(','):
-                       ls = (chrom, pos, ref, alt, p, eff, ac, an, onekg, gene)
+                       ls = (chrom, pos, ref, alt, p, eff, ac, an, onekg, gene, mpc)
                        print('\t'.join(ls), file=fout_split_pfam)
 
 rule all_exac:

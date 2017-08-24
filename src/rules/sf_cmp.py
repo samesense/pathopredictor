@@ -29,18 +29,18 @@ rule fdr:
 rule flag_sig_domains:
     input:  d = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat',
             q = DATA + 'interim/enrich_q/{var}.xls'
-    output: o = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.{var}.dat'
+    output: o = DATA + 'interim/sig_flagged/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.{var}.dat'
     run:
         use_cols = ['pfam', 'fg_gtr', 'qval']
         r = {'fg_gtr':wildcards.var + '_fg_gtr',
              'qval':wildcards.var + '_qval'}
         q_df = pandas.read_csv(input.q, sep='\t', usecols=use_cols).rename(columns=r)
         df = pandas.read_csv(input.d, sep='\t')
-        m = pandas.merge(df, q_df, on='pfam', how='left')
+        m = pandas.merge(df, q_df, on='pfam', how='left').fillna(0)
         m.to_csv(output.o, index=False, sep='\t')
 
 rule test_pathogenic_enrichment:
-    input:  DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.{var}.dat'
+    input:  DATA + 'interim/sig_flagged/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.{var}.dat'
     output: DATA + 'interim/path_enrich/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.{var}.dat'
     shell:  'python {SCRIPTS}eval_pathogenic_enrichment.py {input} {wildcards.var} {output}'
 
@@ -82,5 +82,5 @@ rule plot:
         shell('Rscript {SCRIPTS}plot_fracs.R {input} {output}')
         shell('rm Rplots.pdf')
 
-# rule m:
-#     input: 
+rule all_cmp:
+    input: DATA + 'interim/sig_flagged/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.all.dat', PLOTS + 'var_counts_by_enrichment.png'
