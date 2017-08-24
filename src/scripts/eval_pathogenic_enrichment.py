@@ -2,7 +2,7 @@
 import pandas, argparse
 
 def write_dat(df, label, var_type, fout):
-    path = sum(df[ (df.clin_class=='LIKELY_PATHOGENIC') | (df.clin_class=='PATHOGENIC') ]['size'])
+    path = sum(df[ (df.clin_class=='LIKLEY_PATHOGENIC') | (df.clin_class=='PATHOGENIC') ]['size'])
     ben = sum(df[ (df.clin_class=='LIKELY_BENIGN') | (df.clin_class=='BENIGN') ]['size'])
     vus = sum(df[df.clin_class=='VUS']['size'])
     path_frac, path_frac_w_vus, ben_frac_w_vus = 'NA', 'NA', 'NA'

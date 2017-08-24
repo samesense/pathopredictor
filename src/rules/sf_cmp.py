@@ -62,6 +62,10 @@ vars = ('disruptive_inframe_insertion',
         'splice_region_variant',
         'mis', 'all', 'lof')
 
+vars = ('stop_gained',
+        'splice_region_variant',
+        'mis', 'all', 'lof')
+
 rule combine_path_burden:
     input: expand(DATA + 'interim/path_enrich/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.{var}.dat', \
                   var=vars)
