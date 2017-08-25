@@ -55,29 +55,32 @@ rule flag_sig_domains:
         q_pfamMerge_df = pandas.read_csv(input.q_pfamMerge, sep='\t', usecols=use_cols_pfamMerge).rename(columns=r_pfamMerge)
         df = pandas.read_csv(input.d, sep='\t')
 
-        v = ('fg_gtr', 'pos_fam', 'fg_tot', 'ac', 'bg_tot')
+        v = ('pos_fam', 'fg_tot', 'ac', 'bg_tot')
         use_cols_pfam = ['gene', 'pfam', 'pfamMerge'] + ['rare_' + wildcards.var + '_' + x + '_pfam' for x in v] + ['rarem_' + wildcards.var + '_' + x + '_pfam' for x in v]
-#        print(q_pfam_df.columns.values)
         zero_cols = q_pfam_df[use_cols_pfam]
         m = pandas.merge(df, zero_cols, on=('gene', 'pfam'), how='left').fillna(0)
         one_cols = q_pfam_df[['gene', 'pfam', 'rare_' + wildcards.var + '_qval_pfam', 'rarem_' + wildcards.var + '_qval_pfam']]
         m2 = pandas.merge(m, one_cols, on=('gene', 'pfam'), how='left').fillna(1)
+        false_cols = q_pfam_df[['gene', 'pfam', 'rare_' + wildcards.var + '_fg_gtr_pfam', 'rarem_' + wildcards.var + '_fg_gtr_pfam']]
+        m3 = pandas.merge(m2, false_cols, on=('gene', 'pfam'), how='left').fillna(False)
 
-        v = ('fg_gtr', 'pos_fam', 'fg_tot', 'ac', 'bg_tot')
+        v = ('pos_fam', 'fg_tot', 'ac', 'bg_tot')
         use_cols_pfam = ['gene', 'pfamMerge'] + ['rare_' + wildcards.var + '_' + x + '_pfamMerge' for x in v] + ['rarem_' + wildcards.var + '_' + x + '_pfamMerge' for x in v]
         zero_cols = q_pfamMerge_df[use_cols_pfam]
-        m3 = pandas.merge(m2, zero_cols, on=('gene', 'pfamMerge'), how='left').fillna(0)
-
-        # print(m3.columns.values)
-        # print(one_cols
+        m4 = pandas.merge(m3, zero_cols, on=('gene', 'pfamMerge'), how='left').fillna(0)
         one_cols = q_pfamMerge_df[['gene', 'pfamMerge', 'rare_' + wildcards.var + '_qval_pfamMerge', 'rarem_' + wildcards.var + '_qval_pfamMerge']]
-        m4 = pandas.merge(m3, one_cols, on=('gene', 'pfamMerge'), how='left').fillna(1)
-        m4.to_csv(output.o, index=False, sep='\t')
+        m5 = pandas.merge(m4, one_cols, on=('gene', 'pfamMerge'), how='left').fillna(1)
+        false_cols = q_pfamMerge_df[['gene', 'pfamMerge', 'rare_' + wildcards.var + '_fg_gtr_pfamMerge', 'rarem_' + wildcards.var + '_fg_gtr_pfamMerge']]
+        m6 = pandas.merge(m5, false_cols, on=('gene', 'pfamMerge'), how='left').fillna(False)
+        m6.to_csv(output.o, index=False, sep='\t')
 
 rule test_pathogenic_enrichment:
     input:  DATA + 'interim/sig_flagged/{eff}/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat'
     output: DATA + 'interim/path_enrich_{pfamMerge}/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_{limit}.eff_{eff}.dat'
     shell:  'python {SCRIPTS}eval_pathogenic_enrichment.py {input} {wildcards.pfamMerge} {wildcards.eff} {wildcards.limit} {output}'
+
+rule shit:
+    input: DATA + 'interim/path_enrich_pfamMerge/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_rare.eff_all.dat'
 
 rule assign_sig:
     input:  DATA + 'interim/sig_flagged/{eff}/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat'

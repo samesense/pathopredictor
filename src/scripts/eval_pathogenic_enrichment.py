@@ -26,6 +26,10 @@ def eval_enrichment(f, pfam_merge, var_type, var_limit, fout):
     write_dat(g_sig, 'fg', var_type, fout)
     
     g_sig_exac = df[sig_exac].groupby('clin_class').size().reset_index().rename(columns={0:'size'})
+    # print(g_sig_exac.head())
+    # print( len(df[df[var_limit + '_' + var_type + '_qval_' + pfam_merge] < .01]) )
+    # print( len(df[~df[var_limit + '_' + var_type + '_fg_gtr_' + pfam_merge]]) )
+    # print( len(df[df['pfam'] != 'none']) )
     write_dat(g_sig_exac, 'exac_enriched', var_type, fout)
     
     g_ns = df[not_sig].groupby('clin_class').size().reset_index().rename(columns={0:'size'})
