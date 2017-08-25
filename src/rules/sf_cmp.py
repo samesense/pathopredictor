@@ -54,9 +54,25 @@ rule flag_sig_domains:
         q_pfam_df.loc[:, 'pfamMerge'] = q_pfam_df.apply(lambda row: row['pfam'].split(':')[0], axis=1)
         q_pfamMerge_df = pandas.read_csv(input.q_pfamMerge, sep='\t', usecols=use_cols_pfamMerge).rename(columns=r_pfamMerge)
         df = pandas.read_csv(input.d, sep='\t')
-        m = pandas.merge(df, q_pfam_df, on=('gene', 'pfam'), how='left').fillna(0)
-        m2 = pandas.merge(m, q_pfamMerge_df, on=('gene', 'pfamMerge'), how='left')
-        m2.to_csv(output.o, index=False, sep='\t')
+
+        v = ('fg_gtr', 'pos_fam', 'fg_tot', 'ac', 'bg_tot')
+        use_cols_pfam = ['gene', 'pfam', 'pfamMerge'] + ['rare_' + wildcards.var + '_' + x + '_pfam' for x in v] + ['rarem_' + wildcards.var + '_' + x + '_pfam' for x in v]
+#        print(q_pfam_df.columns.values)
+        zero_cols = q_pfam_df[use_cols_pfam]
+        m = pandas.merge(df, zero_cols, on=('gene', 'pfam'), how='left').fillna(0)
+        one_cols = q_pfam_df[['gene', 'pfam', 'rare_' + wildcards.var + '_qval_pfam', 'rarem_' + wildcards.var + '_qval_pfam']]
+        m2 = pandas.merge(m, one_cols, on=('gene', 'pfam'), how='left').fillna(1)
+
+        v = ('fg_gtr', 'pos_fam', 'fg_tot', 'ac', 'bg_tot')
+        use_cols_pfam = ['gene', 'pfamMerge'] + ['rare_' + wildcards.var + '_' + x + '_pfamMerge' for x in v] + ['rarem_' + wildcards.var + '_' + x + '_pfamMerge' for x in v]
+        zero_cols = q_pfamMerge_df[use_cols_pfam]
+        m3 = pandas.merge(m2, zero_cols, on=('gene', 'pfamMerge'), how='left').fillna(0)
+
+        # print(m3.columns.values)
+        # print(one_cols
+        one_cols = q_pfamMerge_df[['gene', 'pfamMerge', 'rare_' + wildcards.var + '_qval_pfamMerge', 'rarem_' + wildcards.var + '_qval_pfamMerge']]
+        m4 = pandas.merge(m3, one_cols, on=('gene', 'pfamMerge'), how='left').fillna(1)
+        m4.to_csv(output.o, index=False, sep='\t')
 
 rule test_pathogenic_enrichment:
     input:  DATA + 'interim/sig_flagged/{eff}/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat'
@@ -106,7 +122,7 @@ rule plot:
             PLOTS + '{limit}.var_counts_by_enrichment.{pfamMerge}.png'
     run:  
         shell('Rscript {SCRIPTS}plot_fracs.R {input} {output}')
-        if os.path.exists('Rplos.pdf'):
+        if os.path.exists('Rplots.pdf'):
             shell('rm Rplots.pdf')
 
 # DATA + 'interim/sig_flagged/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.all.dat',
