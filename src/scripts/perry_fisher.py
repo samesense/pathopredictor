@@ -1,16 +1,20 @@
 """Two sided fisher test."""
 import sys, myfisher, fisher, pandas, numpy, math, itertools
 
+def eval_pval(df, var_focus):
+    df[var_focus + '_pval'] = myfisher.fisherTestVec(numpy.array(df[var_focus + '_pos_fam']),
+                                        numpy.array(df[var_focus + '_fg_other']),
+                                        numpy.array(df[var_focus + '_ac']),
+                                        numpy.array(df[var_focus + '_bg_other']))
+    df[var_focus + '_fg_gtr'] = (numpy.array(df[var_focus + '_pos_fam']) /
+                                 numpy.array(df[var_focus + '_fg_tot'])) > (numpy.array(df[var_focus + '_ac']) /
+                                                                            numpy.array(df[var_focus + '_bg_tot']))
+    return df
+
 def main(in_file, out_file):
     df = pandas.read_csv(in_file, sep='\t')
-    df['pval'] = myfisher.fisherTestVec(numpy.array(df['pos_fam']),
-                                        numpy.array(df['fg_other']),
-                                        numpy.array(df['ac']),
-                                        numpy.array(df['bg_other']))
-    df['fg_gtr'] = (numpy.array(df['pos_fam']) /
-                    numpy.array(df['fg_tot'])) > (numpy.array(df['ac']) /
-                                                  numpy.array(df['bg_tot']))
-
+    df = eval_pval(df, 'rare')
+    df = eval_pval(df, 'rarem')
     df.to_csv(out_file, index=False, sep='\t')
 
 if __name__ == "__main__":

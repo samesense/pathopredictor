@@ -14,11 +14,13 @@ def write_dat(df, label, var_type, fout):
     ls = [str(x) for x in (var_type, label, path, ben, vus, path_frac, path_frac_w_vus, ben_frac_w_vus)]
     print('\t'.join(ls), file=fout)
 
-def eval_enrichment(f, var_type, fout):
-    df = pandas.read_csv(f, delimiter='\t')
-    sig = df.apply(lambda row: row[var_type + '_qval'] < .01 and row[var_type + '_fg_gtr'] and row['pfam'] != 'none', axis=1)
-    not_sig = df.apply(lambda row: row[var_type + '_qval'] > .2 and row['pfam'] != 'none', axis=1)
-    sig_exac = df.apply(lambda row: row[var_type + '_qval'] < .01 and not row[var_type + '_fg_gtr'] and row['pfam'] != 'none', axis=1)
+def eval_enrichment(f, var_type, var_limit, fout):
+    df = pandas.read_csv(f, delimiter='\t')    
+    sig = df.apply(lambda row: row[var_limit + '_' + var_type + '_qval'] < .01
+                   and row[var_limit + '_' + var_type + '_fg_gtr'] and row['pfam'] != 'none', axis=1)
+    not_sig = df.apply(lambda row: row[var_limit + '_' + var_type + '_qval'] > .2 and row['pfam'] != 'none', axis=1)
+    sig_exac = df.apply(lambda row: row[var_limit + '_' + var_type + '_qval'] < .01
+                        and not row[var_limit + '_' + var_type + '_fg_gtr'] and row['pfam'] != 'none', axis=1)
     
     g_sig = df[sig].groupby('clin_class').size().reset_index().rename(columns={0:'size'})
     write_dat(g_sig, 'fg', var_type, fout)
@@ -34,12 +36,12 @@ def main(args):
         fields = ('eff', 'pfam_set', 'path_count', 'benign_count', 'vus_count',
                   'path_frac_wo_vus', 'path_frac_w_vus', 'benign_frac_w_vus')
         print('\t'.join(fields), file=fout)
-        eval_enrichment(args.dat_file, args.var_type, fout)
+        eval_enrichment(args.dat_file, args.var_type, args.var_limit, fout)
 
 if __name__ == "__main__":
     desc = 'Pull data for report.'
     parser = argparse.ArgumentParser(description=desc)
-    argLs = ('dat_file', 'var_type', 'out_file',)
+    argLs = ('dat_file', 'var_type', 'var_limit', 'out_file',)
     for param in argLs:
         parser.add_argument(param)
     args = parser.parse_args()
