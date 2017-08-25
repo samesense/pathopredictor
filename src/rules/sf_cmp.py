@@ -44,6 +44,11 @@ rule test_pathogenic_enrichment:
     output: DATA + 'interim/path_enrich/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.{var}.dat'
     shell:  'python {SCRIPTS}eval_pathogenic_enrichment.py {input} {wildcards.var} {output}'
 
+rule assign_sig:
+    input:  DATA + 'interim/sig_flagged/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.{var}.dat'
+    output: DATA + 'interim/sig_flagged_assigned/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.{var}.dat'
+    shell:  'python {SCRIPTS}eval_mpc_enrichment.py {input} {wildcards.var} {output}'
+
 vars = ('disruptive_inframe_insertion',
         'splice_acceptor_variant',
         'splice_donor_variant',
@@ -87,4 +92,6 @@ rule plot:
         shell('rm Rplots.pdf')
 
 rule all_cmp:
-    input: DATA + 'interim/sig_flagged/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.all.dat', PLOTS + 'var_counts_by_enrichment.png'
+    input: DATA + 'interim/sig_flagged/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.all.dat', PLOTS + 'var_counts_by_enrichment.png',
+           expand(DATA + 'interim/sig_flagged_assigned/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.{var}.dat', \
+                  var=vars)
