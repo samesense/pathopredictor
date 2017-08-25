@@ -1,4 +1,6 @@
-"""Merge exac and fg"""
+"""Merge exac and fg.
+   Merge pfams across genes
+"""
 import pandas, math, argparse, sys
 from collections import defaultdict
 
@@ -56,7 +58,7 @@ def count_rare_runner(df_fg, df_exac, max_fg, max_exac_an, var_type):
     else:
         var_func = mk_single_eff_func(var_type)
 
-    cols = ['gene', 'pfam', 'chrom', 'pos']
+    cols = ['gene', 'pfamMerge', 'chrom', 'pos']
     pfam_to_exac_pos = defaultdict(dict)
     exac_crit = df_exac.apply(var_func, axis=1)
     for gene, pfam, chrom, pos in list(df_exac[exac_crit][cols].values):
@@ -80,7 +82,7 @@ def count_rare_runner(df_fg, df_exac, max_fg, max_exac_an, var_type):
             ls = [g, p, miss_len]
             missing_exac_count.append(ls)
     missing_exac_df = pandas.DataFrame({'gene':[x[0] for x in missing_exac_count],
-                                        'pfam':[x[1] for x in missing_exac_count],
+                                        'pfamMerge':[x[1] for x in missing_exac_count],
                                         'miss_exac':[x[2] for x in missing_exac_count]})        
     missing_fg_count = []
     for pfam in pfam_to_exac_pos:
@@ -93,24 +95,24 @@ def count_rare_runner(df_fg, df_exac, max_fg, max_exac_an, var_type):
             g,p = pfam.split('xx')
             ls = [g, p, miss_len]
             missing_fg_count.append(ls)
-    missing_fg_df = pandas.DataFrame({'pfam':[x[1] for x in missing_fg_count],
+    missing_fg_df = pandas.DataFrame({'pfamMerge':[x[1] for x in missing_fg_count],
                                       'gene':[x[0] for x in missing_fg_count],
                                       'miss_fg':[x[2] for x in missing_fg_count]})
 
-    missing_df = pandas.merge(missing_fg_df, missing_exac_df, on=('gene', 'pfam'), how='outer').fillna(0)
+    missing_df = pandas.merge(missing_fg_df, missing_exac_df, on=('gene', 'pfamMerge'), how='outer').fillna(0)
 
     cols = ['ac', 'an']
-    g_exac = df_exac[exac_crit].groupby(['gene', 'pfam'])[cols].sum().reset_index()
+    g_exac = df_exac[exac_crit].groupby(['gene', 'pfamMerge'])[cols].sum().reset_index()
     #g_exac.head()
 
     fg_cols = ['pos_fam', 'neg_fam']
-    g_fg = df_fg[fg_crit].groupby(['gene', 'pfam'])[fg_cols].sum().reset_index()
+    g_fg = df_fg[fg_crit].groupby(['gene', 'pfamMerge'])[fg_cols].sum().reset_index()
     #g_fg.head()
 
-    m_pre = pandas.merge(g_fg, g_exac, on=('gene', 'pfam'), how='outer').fillna(0)
-    m = pandas.merge(m_pre, missing_df, on=('gene', 'pfam'), how='left')
-    print(m_pre.head())
-    print(m.head())
+    m_pre = pandas.merge(g_fg, g_exac, on=('gene', 'pfamMerge'), how='outer').fillna(0)
+    m = pandas.merge(m_pre, missing_df, on=('gene', 'pfamMerge'), how='left')
+    # print(m_pre.head())
+    # print(m.head())
     m.loc[:, 'fg_tot'] = m.apply(lambda row: calc_fg_neg(row, max_fg), axis=1)
     m.loc[:, 'bg_tot'] = m.apply(lambda row: calc_bg_neg(row, max_exac_an), axis=1)
     #m['fg_frac'] = (1+m['pos_fam']) / m['fg_tot']
@@ -138,9 +140,11 @@ def main(args):
     output = args.out_file
 
     df_exac_pre = pandas.read_csv(bg_file, sep='\t')
+    df_exac_pre.loc[:, 'pfamMerge'] = df_exac_pre.apply(lambda row: row['pfam'].split(':')[0], axis=1)
     max_exac_an = max(df_exac_pre['an'].values)
 
     df_fg_pre = pandas.read_csv(fg_file, sep='\t')
+    df_fg_pre.loc[:, 'pfamMerge'] = df_fg_pre.apply(lambda row: row['pfam'].split(':')[0], axis=1)
     max_fg = max([p+2*n for p,n in df_fg_pre[['pos_fam', 'neg_fam']].values])
 
     rare_cols = {'pos_fam':'rare_pos_fam',
@@ -176,7 +180,7 @@ def main(args):
     rare_df = count_rare_vars(df_fg_pre, df_exac_pre, max_fg, max_exac_an, var_type).rename(columns=rare_cols)
     mpc_cut = 1.5
     rare_mpc_df = count_rare_mpc_vars(mpc_cut, df_fg_pre, df_exac_pre, max_fg, max_exac_an, var_type).rename(columns=mpc_cols)
-    m = pandas.merge(rare_df, rare_mpc_df, how='outer', on=('gene', 'pfam')).fillna(0)
+    m = pandas.merge(rare_df, rare_mpc_df, how='outer', on=('gene', 'pfamMerge')).fillna(0)
     m.to_csv(output, index=False, sep='\t')
 
 if __name__ == "__main__":

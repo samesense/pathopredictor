@@ -9,17 +9,24 @@ include: "sf_ann.py"
 rule merge:
     input:  DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat',
             DATA + 'interim/r1_no_tcga/exac.tidy.eff.dbnsfp.gt.anno.hHack.splitPfam.dat'
-    output: DATA + 'interim/merge/{var}'
+    output: DATA + 'interim/merge_pfam/{var}'
     shell:  'python {SCRIPTS}merge.py {wildcards.var} {input} {output}'
 
+# merge pfam acros all genes
+rule merge_pfam:
+    input:  DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat',
+            DATA + 'interim/r1_no_tcga/exac.tidy.eff.dbnsfp.gt.anno.hHack.splitPfam.dat'
+    output: DATA + 'interim/merge_pfamMerge/{var}'
+    shell:  'python {SCRIPTS}merge_pfam.py {wildcards.var} {input} {output}'
+
 rule test:
-    input:  DATA + 'interim/merge/{var}'
-    output: DATA + 'interim/enrich/{var}'
+    input:  DATA + 'interim/merge_{merge_type}/{var}'
+    output: DATA + 'interim/enrich_{merge_type}/{var}'
     shell:  '{PY27_T} {SCRIPTS}perry_fisher.py {input} {output}'
 
 rule fdr:
-    input:  d = DATA + 'interim/enrich/{var}'
-    output: o = DATA + 'interim/enrich_q/{var}.xls'
+    input:  d = DATA + 'interim/enrich_{merge_type}/{var}'
+    output: o = DATA + 'interim/enrich_q_{merge_type}/{var}.xls'
     run:
         df = pandas.read_csv(input.d, sep='\t')
         (reject_ls, qs, alpha_sidak, alpha_bond) = fdr.multipletests(df['rare_pval'].values, method='fdr_bh')
@@ -30,30 +37,31 @@ rule fdr:
 
 rule flag_sig_domains:
     input:  d = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat',
-            q = DATA + 'interim/enrich_q/{var}.xls'
+            q_pfam = DATA + 'interim/enrich_q_pfam/{var}.xls',
+            q_pfamMerge = DATA + 'interim/enrich_q_pfamMerge/{var}.xls'            
     output: o = DATA + 'interim/sig_flagged/{var}/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat'
     run:
         v = ('fg_gtr', 'qval', 'pos_fam', 'fg_tot', 'ac', 'bg_tot')
-        use_cols = ['pfam'] + ['rare_' + x for x in v] + ['rarem_' + x for x in v]
-        r = {}
+        use_cols_pfam = ['gene', 'pfam'] + ['rare_' + x for x in v] + ['rarem_' + x for x in v]
+        use_cols_pfamMerge = ['gene', 'pfamMerge'] + ['rare_' + x for x in v] + ['rarem_' + x for x in v]
+        r_pfam, r_pfamMerge = {}, {}
         for l in ('rare_', 'rarem_'):
             for vv in v:
-                r[l + vv] = l + wildcards.var + '_' + vv
-        # r = {'fg_gtr':wildcards.var + '_fg_gtr',
-        #      'qval':wildcards.var + '_qval',
-        #      'pos_fam':wildcards.var + '_fg',
-        #      'fg_tot':wildcards.var + '_fgtot',
-        #      'ac':wildcards.var + '_bg', 
-        #      'bg_tot':wildcards.var + '_bgtot'}
-        q_df = pandas.read_csv(input.q, sep='\t', usecols=use_cols).rename(columns=r)
+                r_pfam[l + vv] = l + wildcards.var + '_' + vv + '_pfam'
+                r_pfamMerge[l + vv] = l + wildcards.var + '_' + vv + '_pfamMerge'
+
+        q_pfam_df = pandas.read_csv(input.q_pfam, sep='\t', usecols=use_cols_pfam).rename(columns=r_pfam)
+        q_pfam_df.loc[:, 'pfamMerge'] = q_pfam_df.apply(lambda row: row['pfam'].split(':')[0], axis=1)
+        q_pfamMerge_df = pandas.read_csv(input.q_pfamMerge, sep='\t', usecols=use_cols_pfamMerge).rename(columns=r_pfamMerge)
         df = pandas.read_csv(input.d, sep='\t')
-        m = pandas.merge(df, q_df, on='pfam', how='left').fillna(0)
-        m.to_csv(output.o, index=False, sep='\t')
+        m = pandas.merge(df, q_pfam_df, on=('gene', 'pfam'), how='left').fillna(0)
+        m2 = pandas.merge(m, q_pfamMerge_df, on=('gene', 'pfamMerge'), how='left')
+        m2.to_csv(output.o, index=False, sep='\t')
 
 rule test_pathogenic_enrichment:
     input:  DATA + 'interim/sig_flagged/{eff}/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat'
-    output: DATA + 'interim/path_enrich/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_{limit}.eff_{eff}.dat'
-    shell:  'python {SCRIPTS}eval_pathogenic_enrichment.py {input} {wildcards.eff} {wildcards.limit} {output}'
+    output: DATA + 'interim/path_enrich_{pfamMerge}/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_{limit}.eff_{eff}.dat'
+    shell:  'python {SCRIPTS}eval_pathogenic_enrichment.py {input} {wildcards.pfamMerge} {wildcards.eff} {wildcards.limit} {output}'
 
 rule assign_sig:
     input:  DATA + 'interim/sig_flagged/{eff}/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat'
@@ -81,9 +89,9 @@ vars = ('disruptive_inframe_insertion',
 vars = ('mis', 'all',)
 
 rule combine_path_burden:
-    input: expand(DATA + 'interim/path_enrich/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_{{limit}}.eff_{eff}.dat', \
+    input: expand(DATA + 'interim/path_enrich_{{pfamMerge}}/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_{{limit}}.eff_{eff}.dat', \
                   eff=vars)
-    output: DATA + 'interim/path_enrich_eval.{limit}'
+    output: DATA + 'interim/path_burden/{pfamMerge}/path_enrich_eval.{limit}'
     run:
         f = list(input)[0]
         shell('head -1 {f} > {output}')
@@ -91,18 +99,18 @@ rule combine_path_burden:
             shell('grep -v benign {l} >> {output}')
 
 rule plot:
-    input:  DATA + 'interim/path_enrich_eval.{limit}'
-    output: PLOTS + '{limit}.path_frac_wo_vus.png',
-            PLOTS + '{limit}.path_frac_w_vus.png',
-            PLOTS + '{limit}.benign_frac_w_vus.png',
-            PLOTS + '{limit}.var_counts_by_enrichment.png'
+    input:  DATA + 'interim/path_burden/{pfamMerge}/path_enrich_eval.{limit}'
+    output: PLOTS + '{limit}.path_frac_wo_vus.{pfamMerge}.png',
+            PLOTS + '{limit}.path_frac_w_vus.{pfamMerge}.png',
+            PLOTS + '{limit}.benign_frac_w_vus.{pfamMerge}.png',
+            PLOTS + '{limit}.var_counts_by_enrichment.{pfamMerge}.png'
     run:  
         shell('Rscript {SCRIPTS}plot_fracs.R {input} {output}')
-        shell('rm Rplots.pdf')
+        if os.path.exists('Rplos.pdf'):
+            shell('rm Rplots.pdf')
 
 # DATA + 'interim/sig_flagged/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.all.dat',
 rule all_cmp:
-    input: PLOTS + 'rare.var_counts_by_enrichment.png',
-           PLOTS + 'rarem.var_counts_by_enrichment.png',
-           expand(DATA + 'interim/sig_flagged_assigned/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_{limit}.eff_{var}.dat', \
-                  limit=('rarem', 'rare'), var=vars)
+    input: expand(PLOTS + '{v}.var_counts_by_enrichment.{pfamMerge}.png', v=('rarem', 'rare'), pfamMerge=('pfam', 'pfamMerge'))
+           # expand(DATA + 'interim/sig_flagged_assigned/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_{limit}.eff_{var}.dat', \
+           #        limit=('rarem', 'rare'), var=vars)
