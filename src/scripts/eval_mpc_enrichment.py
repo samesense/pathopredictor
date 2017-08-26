@@ -1,20 +1,22 @@
 """Compare mpc dists for diff enrichment classes"""
 import pandas, argparse
 
-def eval_sig(row, var_type, var_limit):
-    if row[var_limit + '_' + var_type + '_qval'] < .01 and row[var_limit + '_' + var_type + '_fg_gtr'] and row['pfam'] != 'none':
+def eval_sig(row, var_type, var_limit, pfam_type):
+    if row[var_limit + '_' + var_type + '_qval_' + pfam_type] < .01 and row[var_limit + '_' + var_type + '_fg_gtr_' + pfam_type] and row['pfam'] != 'none':
         return 'fg_sig'
-    elif row[var_limit + '_' + var_type + '_qval'] < .01 and not row[var_limit + '_' + var_type + '_fg_gtr'] and row['pfam'] != 'none':
+    elif row[var_limit + '_' + var_type + '_qval_' + pfam_type] < .01 and not row[var_limit + '_' + var_type + '_fg_gtr_' + pfam_type] and row['pfam'] != 'none':
         return 'exac_sig'
-    elif row[var_limit + '_' + var_type + '_qval'] > .2 and row['pfam'] != 'none':
+    elif row[var_limit + '_' + var_type + '_qval_' + pfam_type] > .2 and row['pfam'] != 'none':
         return 'not_sig'
     else:
         return 'ignore'
 
 def main(args):
     df = pandas.read_csv(args.dat_file, sep='\t')
-    df.loc[:, 'sig'] = df.apply(lambda row: eval_sig(row, args.var_type, args.var_limit), axis=1)
+    df.loc[:, 'sig_pfam'] = df.apply(lambda row: eval_sig(row, args.var_type, args.var_limit, 'pfam'), axis=1)
+    df.loc[:, 'sig_pfamMerge'] = df.apply(lambda row: eval_sig(row, args.var_type, args.var_limit, 'pfamMerge'), axis=1)
     df.to_csv(args.out_file, sep='\t', index=False)
+
     # with open(args.out_file, 'w') as fout:
     #     fields = ('eff', 'pfam_set', 'path_count', 'benign_count', 'vus_count',
     #               'path_frac_wo_vus', 'path_frac_w_vus', 'benign_frac_w_vus')

@@ -31,8 +31,16 @@ rule fdr:
         df = pandas.read_csv(input.d, sep='\t')
         (reject_ls, qs, alpha_sidak, alpha_bond) = fdr.multipletests(df['rare_pval'].values, method='fdr_bh')
         df['rare_qval'] = qs
-        (reject_ls, qs, alpha_sidak, alpha_bond) = fdr.multipletests(df['rarem_pval'].values, method='fdr_bh')
-        df['rarem_qval'] = qs
+        if 'rarem_pval' in df:
+            (reject_ls, qs, alpha_sidak, alpha_bond) = fdr.multipletests(df['rarem_pval'].values, method='fdr_bh')
+            df['rarem_qval'] = qs
+        else:
+            df['rarem_qval'] = 1
+            df['rarem_fg_gtr'] = False
+            df['rarem_pos_fam'] = 0
+            df['rarem_fg_tot'] = 0
+            df['rarem_ac'] = 0
+            df['rarem_bg_tot'] = 0
         df.sort_values(by='rare_qval', ascending=True).to_csv(output.o, index=False, sep='\t')
 
 rule flag_sig_domains:
@@ -105,7 +113,7 @@ vars = ('disruptive_inframe_insertion',
         'splice_region_variant',
         'mis', 'all', 'lof')
 
-vars = ('mis', 'all',)
+vars = ('mis', 'all', 'synonymous_variant')
 
 rule combine_path_burden:
     input: expand(DATA + 'interim/path_enrich_{{pfamMerge}}/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_{{limit}}.eff_{eff}.dat', \
@@ -130,6 +138,6 @@ rule plot:
 
 # DATA + 'interim/sig_flagged/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.all.dat',
 rule all_cmp:
-    input: expand(PLOTS + '{v}.var_counts_by_enrichment.{pfamMerge}.png', v=('rarem', 'rare'), pfamMerge=('pfam', 'pfamMerge'))
-           # expand(DATA + 'interim/sig_flagged_assigned/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_{limit}.eff_{var}.dat', \
-           #        limit=('rarem', 'rare'), var=vars)
+    input: expand(PLOTS + '{v}.var_counts_by_enrichment.{pfamMerge}.png', v=('rarem', 'rare'), pfamMerge=('pfam', 'pfamMerge')),
+           expand(DATA + 'interim/sig_flagged_assigned/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_{limit}.eff_{var}.dat', \
+                  limit=('rarem', 'rare'), var=vars)

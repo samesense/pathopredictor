@@ -113,14 +113,15 @@ def count_rare_runner(df_fg, df_exac, max_fg, max_exac_an, var_type):
     m = pandas.merge(m_pre, missing_df, on=('gene', 'pfamMerge'), how='left')
     # print(m_pre.head())
     # print(m.head())
-    m.loc[:, 'fg_tot'] = m.apply(lambda row: calc_fg_neg(row, max_fg), axis=1)
-    m.loc[:, 'bg_tot'] = m.apply(lambda row: calc_bg_neg(row, max_exac_an), axis=1)
-    #m['fg_frac'] = (1+m['pos_fam']) / m['fg_tot']
-    #m['fg_frac_log'] = m.apply(lambda row: math.log(row['fg_frac'], 2), axis=1)
-    #m['bg_frac'] = (1+m['ac']) / m['bg_tot']
-    #m['bg_frac_log'] = m.apply(lambda row: math.log(row['bg_frac'], 2), axis=1)
-    m['fg_other'] = m['fg_tot'] - m['pos_fam']
-    m['bg_other'] = m['bg_tot'] - m['ac']
+    if not m.empty:
+        m.loc[:, 'fg_tot'] = m.apply(lambda row: calc_fg_neg(row, max_fg), axis=1)
+        m.loc[:, 'bg_tot'] = m.apply(lambda row: calc_bg_neg(row, max_exac_an), axis=1)
+        #m['fg_frac'] = (1+m['pos_fam']) / m['fg_tot']
+        #m['fg_frac_log'] = m.apply(lambda row: math.log(row['fg_frac'], 2), axis=1)
+        #m['bg_frac'] = (1+m['ac']) / m['bg_tot']
+        #m['bg_frac_log'] = m.apply(lambda row: math.log(row['bg_frac'], 2), axis=1)
+        m['fg_other'] = m['fg_tot'] - m['pos_fam']
+        m['bg_other'] = m['bg_tot'] - m['ac']
     return m
 
 def count_rare_vars(df_fg_pre, df_exac_pre, max_fg, max_exac_an, var_type):
@@ -180,8 +181,11 @@ def main(args):
     rare_df = count_rare_vars(df_fg_pre, df_exac_pre, max_fg, max_exac_an, var_type).rename(columns=rare_cols)
     mpc_cut = 1.5
     rare_mpc_df = count_rare_mpc_vars(mpc_cut, df_fg_pre, df_exac_pre, max_fg, max_exac_an, var_type).rename(columns=mpc_cols)
-    m = pandas.merge(rare_df, rare_mpc_df, how='outer', on=('gene', 'pfamMerge')).fillna(0)
-    m.to_csv(output, index=False, sep='\t')
+    if not rare_mpc_df.empty:
+        m = pandas.merge(rare_df, rare_mpc_df, how='outer', on=('gene', 'pfamMerge')).fillna(0)
+        m.to_csv(output, index=False, sep='\t')
+    else:
+        rare_df.to_csv(output, index=False, sep='\t')
 
 if __name__ == "__main__":
     desc = 'Merge fg and exac counts.'
