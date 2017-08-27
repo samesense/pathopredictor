@@ -14,9 +14,9 @@ def write_dat(df, label, var_type, fout):
     ls = [str(x) for x in (var_type, label, path, ben, vus, path_frac, path_frac_w_vus, ben_frac_w_vus)]
     print('\t'.join(ls), file=fout)
 
-def eval_enrichment(mpc_cutoff, f, pfam_merge, var_type, var_limit, fout):
+def eval_enrichment(low_mpc_cutoff, high_mpc_cutoff, f, pfam_merge, var_type, var_limit, fout):
     dfpre = pandas.read_csv(f, delimiter='\t')
-    df = dfpre[(dfpre.mpc<mpc_cutoff) & (dfpre.mpc>0)]
+    df = dfpre[(dfpre.mpc<high_mpc_cutoff) & (dfpre.mpc>low_mpc_cutoff)]
     sig = df.apply(lambda row: row[var_limit + '_' + var_type + '_qval_' + pfam_merge] < .01
                    and row[var_limit + '_' + var_type + '_fg_gtr_' + pfam_merge] and row['pfam'] != 'none', axis=1)
     not_sig = df.apply(lambda row: row[var_limit + '_' + var_type + '_qval_' + pfam_merge] > .2 and row['pfam'] != 'none', axis=1)
@@ -41,13 +41,15 @@ def main(args):
         fields = ('eff', 'pfam_set', 'path_count', 'benign_count', 'vus_count',
                   'path_frac_wo_vus', 'path_frac_w_vus', 'benign_frac_w_vus')
         print('\t'.join(fields), file=fout)
-        eval_enrichment(float(args.mpc_cutoff), args.dat_file, args.pfam_merge,
+        eval_enrichment(float(args.low_mpc_cutoff), float(args.high_mpc_cutoff),
+                        args.dat_file, args.pfam_merge,
                         args.var_type, args.var_limit, fout)
 
 if __name__ == "__main__":
     desc = 'Pull data for report.'
     parser = argparse.ArgumentParser(description=desc)
-    argLs = ('mpc_cutoff', 'dat_file', 'pfam_merge',
+    argLs = ('low_mpc_cutoff', 'high_mpc_cutoff',
+             'dat_file', 'pfam_merge',
              'var_type', 'var_limit', 'out_file',)
     for param in argLs:
         parser.add_argument(param)
