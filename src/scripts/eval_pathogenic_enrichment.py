@@ -16,7 +16,7 @@ def write_dat(df, label, var_type, fout):
 
 def eval_enrichment(mpc_cutoff, f, pfam_merge, var_type, var_limit, fout):
     dfpre = pandas.read_csv(f, delimiter='\t')
-    df = dfpre[dfpre.mpc<mpc_cutoff]
+    df = dfpre[(dfpre.mpc<mpc_cutoff) & (dfpre.mpc>0)]
     sig = df.apply(lambda row: row[var_limit + '_' + var_type + '_qval_' + pfam_merge] < .01
                    and row[var_limit + '_' + var_type + '_fg_gtr_' + pfam_merge] and row['pfam'] != 'none', axis=1)
     not_sig = df.apply(lambda row: row[var_limit + '_' + var_type + '_qval_' + pfam_merge] > .2 and row['pfam'] != 'none', axis=1)
