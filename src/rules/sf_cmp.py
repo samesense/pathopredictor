@@ -84,11 +84,11 @@ rule flag_sig_domains:
 
 rule test_pathogenic_enrichment:
     input:  DATA + 'interim/sig_flagged/{eff}/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat'
-    output: DATA + 'interim/path_enrich_{pfamMerge}/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_{limit}.eff_{eff}.dat'
-    shell:  'python {SCRIPTS}eval_pathogenic_enrichment.py {input} {wildcards.pfamMerge} {wildcards.eff} {wildcards.limit} {output}'
+    output: DATA + 'interim/path_enrich_{pfamMerge}/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_{limit}.eff_{eff}.dat.mpc_{mpc}'
+    shell:  'python {SCRIPTS}eval_pathogenic_enrichment.py {wildcards.mpc} {input} {wildcards.pfamMerge} {wildcards.eff} {wildcards.limit} {output}'
 
-rule shit:
-    input: DATA + 'interim/path_enrich_pfamMerge/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_rare.eff_all.dat'
+# rule shit:
+#     input: DATA + 'interim/path_enrich_pfamMerge/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_rare.eff_all.dat'
 
 rule assign_sig:
     input:  DATA + 'interim/sig_flagged/{eff}/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat'
@@ -116,9 +116,9 @@ vars = ('disruptive_inframe_insertion',
 vars = ('mis', 'all', 'synonymous_variant')
 
 rule combine_path_burden:
-    input: expand(DATA + 'interim/path_enrich_{{pfamMerge}}/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_{{limit}}.eff_{eff}.dat', \
+    input: expand(DATA + 'interim/path_enrich_{{pfamMerge}}/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_{{limit}}.eff_{eff}.dat.mpc_{{mpc}}', \
                   eff=vars)
-    output: DATA + 'interim/path_burden/{pfamMerge}/path_enrich_eval.{limit}'
+    output: DATA + 'interim/path_burden/{pfamMerge}/path_enrich_eval.{limit}.mpc_{mpc}'
     run:
         f = list(input)[0]
         shell('head -1 {f} > {output}')
@@ -126,11 +126,11 @@ rule combine_path_burden:
             shell('grep -v benign {l} >> {output}')
 
 rule plot:
-    input:  DATA + 'interim/path_burden/{pfamMerge}/path_enrich_eval.{limit}'
-    output: PLOTS + '{limit}.path_frac_wo_vus.{pfamMerge}.png',
-            PLOTS + '{limit}.path_frac_w_vus.{pfamMerge}.png',
-            PLOTS + '{limit}.benign_frac_w_vus.{pfamMerge}.png',
-            PLOTS + '{limit}.var_counts_by_enrichment.{pfamMerge}.png'
+    input:  DATA + 'interim/path_burden/{pfamMerge}/path_enrich_eval.{limit}.mpc_{mpc}'
+    output: PLOTS + '{limit}.path_frac_wo_vus.{pfamMerge}.mpc_{mpc}.png',
+            PLOTS + '{limit}.path_frac_w_vus.{pfamMerge}.mpc_{mpc}.png',
+            PLOTS + '{limit}.benign_frac_w_vus.{pfamMerge}.mpc_{mpc}.png',
+            PLOTS + '{limit}.var_counts_by_enrichment.{pfamMerge}.mpc_{mpc}.png'
     run:  
         shell('Rscript {SCRIPTS}plot_fracs.R {input} {output}')
         if os.path.exists('Rplots.pdf'):
@@ -138,6 +138,6 @@ rule plot:
 
 # DATA + 'interim/sig_flagged/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.all.dat',
 rule all_cmp:
-    input: expand(PLOTS + '{v}.var_counts_by_enrichment.{pfamMerge}.png', v=('rarem', 'rare'), pfamMerge=('pfam', 'pfamMerge')),
+    input: expand(PLOTS + '{v}.var_counts_by_enrichment.{pfamMerge}.mpc_{mpc}.png', v=('rarem', 'rare'), pfamMerge=('pfam', 'pfamMerge'), mpc=(100, 1.4)),
            expand(DATA + 'interim/sig_flagged_assigned/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.limit_{limit}.eff_{var}.dat', \
                   limit=('rarem', 'rare'), var=vars)
