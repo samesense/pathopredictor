@@ -4,8 +4,19 @@ dat_file, mutalyzer_results, twobit_file, vcf_out = sys.argv[1:]
 mut_df = pandas.read_csv(mutalyzer_results, sep='\t')
 genome = twobitreader.TwoBitFile(twobit_file)
 
-df_pre = pandas.read_excel(dat_file)
-df = df_pre[ df_pre['Ref (single-base)'] != 'no alleles found']
+def fix_transcript(row):
+    return row['Transcript'].split('.')[0]
+
+df_init = pandas.read_excel(dat_file)
+crit = df_init.apply(lambda row: not pandas.isnull(row['Transcript']), axis=1)
+df_pre = df_init[crit]
+# rm duplicate rows
+df_pre.loc[:, 'simple_nm'] = df_pre.apply(fix_transcript, axis=1)
+cols = [x for x in df_pre.columns.values
+        if x != 'Transcript']
+idx_vals = df_pre[cols].drop_duplicates().index.values
+df_fix = df_pre.loc[idx_vals][df_init.columns.values]
+df = df_fix[ df_fix['Ref (single-base)'] != 'no alleles found' ]
 
 def mk_var_new(row):
     if not pandas.isnull(row['Transcript']):
@@ -106,4 +117,8 @@ new_cols = {'Pos Fam Cnt':'pos_fam_count',
             'Heterozygous Fam Cnt':'het_fam_count'
            }
 df_final = m[uc].rename(columns=new_cols).sort_values(by=['chrom', 'pos'])
-write_vcf(df_final, genome, vcf_out)
+final_cols = [x for x in df_final.columns.values
+              if x != 'Input Variant']
+idx_vals = df_final[final_cols].drop_duplicates().index.values
+df_fix = df_final.loc[idx_vals]
+write_vcf(df_fix, genome, vcf_out)
