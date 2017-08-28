@@ -1,6 +1,8 @@
 ## next
 * format indels (frameshifts)
 * tally pfam eff types
+* find most path/benign domains
+* see if domains help w/ mpc predictions
 * add mtr
 
 ### fix fg indels
