@@ -78,7 +78,7 @@ rule parse_vcf:
            o2 = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat'
    run:
        with open(input.i) as f, open(output.o, 'w') as fout, open(output.o2, 'w') as fout_split_pfam:
-           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tgene\tmpc\texac_af\texac_cov_frac\tkaviar_af\tc.', file=fout)
+           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tpos_fam\tneg_fam\tgene\tmpc\texac_af\texac_cov_frac\tkaviar_af\tc.', file=fout)
            print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tpos_fam\tneg_fam\tgene\tmpc',
                  file=fout_split_pfam)
            for line in f:
@@ -120,7 +120,8 @@ rule parse_vcf:
 
                    eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
                    gene = info.split('EFF=')[1].split(';')[0].split(',')[0].split('|')[-6]
-                   ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff, pos_fam, neg_fam, gene, mpc, exac_af, exac_cov_frac, kv_af, c_dot)
+                   ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff, pos_fam,
+                         neg_fam, gene, mpc, exac_af, exac_cov_frac, kv_af, c_dot)
                    print('\t'.join(ls), file=fout)
 
                    for p in pfam.split(','):
