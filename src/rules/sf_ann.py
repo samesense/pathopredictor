@@ -4,7 +4,7 @@ from const import *
 rule mk_dat:
     input:  DATA + 'raw/EPIv6.xlsx'
     output: DATA + 'interim/EPIv6.txt'
-    shell:  'python {SCRIPTS}mk_dat.py {input} {output}'
+    shell:  'python {SCRIPTS}mk_tab.py {input} {output}'
 
 rule mk_vcf:
     input:  DATA + 'raw/EPIv6.xlsx',

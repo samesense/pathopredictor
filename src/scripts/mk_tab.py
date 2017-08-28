@@ -1,3 +1,6 @@
+"""Mk tab file of genomic coords.
+   Will contain duplicate positions.
+"""
 dimport sys, pandas, twobitreader, numpy
 dat_file, mutalyzer_results, twobit_file, vcf_out = sys.argv[1:]
 #uc = ['Input Variant', 'Errors', 'Chromosomal Variant']
@@ -17,10 +20,6 @@ cols = [x for x in df_pre.columns.values
 idx_vals = df_pre[cols].drop_duplicates().index.values
 df_fix = df_pre.loc[idx_vals][df_init.columns.values]
 
-# choose non-VUS row for duplicates
-g_cols = [x for x in df_fix.columns.values
-          if not x in ('Transcript', 'Classification')]
-df_fix.groupby(g_cols)
 df = df_fix[ df_fix['Ref (single-base)'] != 'no alleles found' ]
 
 def mk_var_new(row):
@@ -64,38 +63,32 @@ def mk_var(row, genome):
         # ins
         pos = row['pos']
         append_nuc = genome['chr' + row['chrom']][pos-1:pos].upper()
-        ls  = [row['chrom'], str(row['pos']), '.',
+        ls  = [row['chrom'], str(row['pos']),
                append_nuc, append_nuc + row['alt'] ]
     elif '-' == row['alt']:
         # del
         pos = row['pos'] - 1
         append_nuc = genome['chr' + row['chrom']][pos-1:pos].upper()
-        return [row['chrom'], str(pos), '.',
+        return [row['chrom'], str(pos),
                 append_nuc + row['ref'], append_nuc]
     else:
         pos = row['pos']
         ref = genome['chr' + row['chrom']][pos-1:pos].upper()
         alt = get_alt(row)
-        ls  = [row['chrom'], str(row['pos']), '.',
+        ls  = [row['chrom'], str(row['pos']),
                ref, alt]
     return ls
 
 def mk_vcf_line(row, genome, fout):
-    ls = (row['Input Variant'], row['clinical_class'], row['pos_fam_count'], row['neg_fam_count'], row['hom_fam_count'])
-    info = 'INIT_VAR=%s;CLIN_CLASS=%s;POS_FAM_COUNT=%d;NEG_FAM_COUNT=%d;POS_HOM_FAM_COUNT=%d' % ls
+    ls0 = (row['Input Variant'], row['clinical_class'], row['pos_fam_count'], row['neg_fam_count'], row['hom_fam_count'])
     var = mk_var(row, genome)
-    ls  = var + ['.', '.', info]
-    print('\t'.join(ls), file=fout)
+    ls  = var + ls0
+    print('\t'.join([str(x) for x in ls]), file=fout)
 
 def write_vcf(df, genome, vcf_out):
     with open(vcf_out, 'w') as fout:
-        print('##fileformat=VCFv4.2', file=fout)
-        print('##INFO=<ID=INIT_VAR,Number=1,Type=String,Description="init_var">', file=fout)
-        print('##INFO=<ID=CLIN_CLASS,Number=1,Type=String,Description="pos_fam_count">', file=fout)
-        print('##INFO=<ID=POS_FAM_COUNT,Number=1,Type=Integer,Description="pos_fam_count">', file=fout)
-        print('##INFO=<ID=POS_HOM_FAM_COUNT,Number=1,Type=Integer,Description="hom_fam_count">', file=fout)
-        print('##INFO=<ID=NEG_FAM_COUNT,Number=1,Type=Integer,Description="pos_fam_count">', file=fout)
-        print('#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO', file=fout)
+        h = ['chrom', 'pos', 'ref'], 'alt', 'input_var', 'clin_class', 'pos_fam', 'neg_fam', 'hom_fam']
+        print('\t'.join(h), file=fout)
         df.apply(lambda row: mk_vcf_line(row, genome, fout), axis=1)
 
 df.loc[:, 'ref'] = df.apply(fix_ref, axis=1)
@@ -126,4 +119,4 @@ final_cols = [x for x in df_final.columns.values
               if x != 'Input Variant']
 idx_vals = df_final[final_cols].drop_duplicates().index.values
 df_fix = df_final.loc[idx_vals]
-write_vcf(df_fix, genome, vcf_out)
+write_tab(df_fix, genome, vcf_out)
