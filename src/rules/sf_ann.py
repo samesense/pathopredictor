@@ -74,16 +74,28 @@ rule zip:
 # need to convert hom to a count of two
 rule parse_vcf:
    input:  i = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.vcf'
-   output: o = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat',
+   output: o = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat.xls',
            o2 = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat'
    run:
        with open(input.i) as f, open(output.o, 'w') as fout, open(output.o2, 'w') as fout_split_pfam:
-           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tgene\tmpc', file=fout)
+           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tgene\tmpc\texac_af\texac_cov_frac\tkaviar_af\tc.', file=fout)
            print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tpos_fam\tneg_fam\tgene\tmpc',
                  file=fout_split_pfam)
            for line in f:
                if not line[0] == '#':
                    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
+
+                   c_dot = info.split('INIT_VAR=')[1].split(';')[0]
+
+                   af_exac_all = '0'
+                   kv_af = '0'
+                   exac_cov_frac = '0'
+                   if 'af_exac_all=' in info:
+                       exac_af = info.split('af_exac_all=')[1].split(';')[0]
+                   if 'kv_af=' in info:
+                       kv_af = info.split('kv_af=')[1].split(';')[0]
+                   if 'totExacCov_10=' in info:
+                       exac_cov_frac = info.split('totExacCov_10=')[1].split(';')[0]
 
                    mpc = 'NA'
                    if 'mpc=' in info:
@@ -108,7 +120,7 @@ rule parse_vcf:
 
                    eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
                    gene = info.split('EFF=')[1].split(';')[0].split(',')[0].split('|')[-6]
-                   ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff, pos_fam, neg_fam, gene, mpc)
+                   ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff, pos_fam, neg_fam, gene, mpc, exac_af, exac_cov_frac, kv_af, c_dot)
                    print('\t'.join(ls), file=fout)
 
                    for p in pfam.split(','):
