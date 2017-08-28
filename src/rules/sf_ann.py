@@ -2,14 +2,14 @@
 from const import *
 
 rule mk_dat:
-    input:  DATA + 'raw/EPIv6.xlsx'
-    output: DATA + 'interim/EPIv6.txt'
-    shell:  'python {SCRIPTS}mk_tab.py {input} {output}'
-
-rule mk_vcf:
     input:  DATA + 'raw/EPIv6.xlsx',
             DATA + 'raw/mut.fix',
             '/home/evansj/me/data/ucsc/hg19.2bit'
+    output: DATA + 'interim/EPIv6.tab'
+    shell:  'python {SCRIPTS}mk_tab.py {input} {output}'
+
+rule mk_vcf:
+    input:  DATA + 'interim/EPIv6.tab'
     output: DATA + 'interim/EPIv6.pre.vcf'
     shell:  'python {SCRIPTS}mk_vcf.py {input} {output}'
 

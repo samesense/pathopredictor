@@ -1,7 +1,7 @@
 """Mk tab file of genomic coords.
    Will contain duplicate positions.
 """
-dimport sys, pandas, twobitreader, numpy
+import sys, pandas, twobitreader, numpy
 dat_file, mutalyzer_results, twobit_file, vcf_out = sys.argv[1:]
 #uc = ['Input Variant', 'Errors', 'Chromosomal Variant']
 mut_df = pandas.read_csv(mutalyzer_results, sep='\t')
@@ -80,14 +80,14 @@ def mk_var(row, genome):
     return ls
 
 def mk_vcf_line(row, genome, fout):
-    ls0 = (row['Input Variant'], row['clinical_class'], row['pos_fam_count'], row['neg_fam_count'], row['hom_fam_count'])
+    ls0 = [row['Input Variant'], row['clinical_class'], row['pos_fam_count'], row['neg_fam_count'], row['hom_fam_count']]
     var = mk_var(row, genome)
     ls  = var + ls0
     print('\t'.join([str(x) for x in ls]), file=fout)
 
-def write_vcf(df, genome, vcf_out):
+def write_tab(df, genome, vcf_out):
     with open(vcf_out, 'w') as fout:
-        h = ['chrom', 'pos', 'ref'], 'alt', 'input_var', 'clin_class', 'pos_fam', 'neg_fam', 'hom_fam']
+        h = ['chrom', 'pos', 'ref', 'alt', 'input_var', 'clin_class', 'pos_fam', 'neg_fam', 'hom_fam']
         print('\t'.join(h), file=fout)
         df.apply(lambda row: mk_vcf_line(row, genome, fout), axis=1)
 
@@ -104,10 +104,10 @@ crit = m_pre.apply(lambda row: not ('ins' in row['Input Variant'] and 'del' in r
 #m[crit].to_csv('fuck', sep='\t', index=False)
 m = m_pre[crit]
 m.loc[:, 'pos'] = m.apply(get_pos, axis=1)
-uc = = ['chrom', 'pos', 'ref', 'alt',
-        'clinical_class', 'Pos Fam Cnt', 'Neg Fam Cnt', 'Homozygous Fam Cnt',
-        'Hemizygous Fam Cnt', 'Heterozygous Fam Cnt', 'Chromosomal Variant',
-        'Input Variant']
+uc = ['chrom', 'pos', 'ref', 'alt',
+      'clinical_class', 'Pos Fam Cnt', 'Neg Fam Cnt', 'Homozygous Fam Cnt',
+      'Hemizygous Fam Cnt', 'Heterozygous Fam Cnt', 'Chromosomal Variant',
+      'Input Variant']
 new_cols = {'Pos Fam Cnt':'pos_fam_count',
             'Neg Fam Cnt':'neg_fam_count',
             'Homozygous Fam Cnt':'hom_fam_count',
