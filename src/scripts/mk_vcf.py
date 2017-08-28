@@ -16,6 +16,11 @@ cols = [x for x in df_pre.columns.values
         if x != 'Transcript']
 idx_vals = df_pre[cols].drop_duplicates().index.values
 df_fix = df_pre.loc[idx_vals][df_init.columns.values]
+
+# choose non-VUS row for duplicates
+g_cols = [x for x in df_fix.columns.values
+          if not x in ('Transcript', 'Classification')]
+df_fix.groupby(g_cols)
 df = df_fix[ df_fix['Ref (single-base)'] != 'no alleles found' ]
 
 def mk_var_new(row):
