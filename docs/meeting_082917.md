@@ -1,7 +1,7 @@
 ### 082917
 
 ### Updates
-* annotated mpc scores
+* annotated mpc scores. [Disease enriched domains have higher MPC scores](plots/mpc.by_pfam_enrichment.png)
 * [scored pathogenic/benign w/ MPC](http://franklin.research.chop.edu:8102/notebooks/epi_linked/notebooks/predict-mpc.ipynb#)
 
 ### Evaluate pathogenic burden enrichment with respect to MPC scores
