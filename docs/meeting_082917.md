@@ -21,3 +21,10 @@
     * Need to train domains on pathogenic/benign
     * Or come up w/ better enriched domains
     
+### [No-enrichment / leave one out cross validation roc](plots/roc.png)
+* ~100 domains have at least 2 benign/pathogenic vars
+* Hold out one labeled var from each domain (ignore none domain)
+* 91 vars for testing
+* [Small decision tree based on missense constraint and pathogenic domain fraction](plots/mtr_tree.x.pdf)
+* Beat missense constriant scores
+    
