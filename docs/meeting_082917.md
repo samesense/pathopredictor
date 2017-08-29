@@ -32,3 +32,6 @@
 ### Plans
 * Need other dataset
 * Examine problematic domains?
+* eval clinvar and hgmd
+* show fraction performance alone
+
