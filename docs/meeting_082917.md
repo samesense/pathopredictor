@@ -33,5 +33,4 @@
 * Need other dataset
 * Examine problematic domains?
 * eval clinvar and hgmd
-* show fraction performance alone
-
+* show fraction performance alone and its distribution
