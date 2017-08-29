@@ -27,3 +27,7 @@
 * Conclusion
     * Need to train domains on pathogenic/benign
     * Or come up w/ better enriched domains
+
+### Plans
+* Need other dataset
+* Examine problematic domains?
