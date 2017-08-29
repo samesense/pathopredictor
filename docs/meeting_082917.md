@@ -9,6 +9,7 @@
 * Hold out one labeled var from each domain (ignore none domain)
 * 91 vars for testing (limited to vars w/ mpc>0 and in some domain w/ at least 2 labeled vars)
 * [Small decision tree based on missense constraint and pathogenic domain fraction](plots/mtr_tree.x.pdf)
+* [Mostly using pathogenic data](plots/eval_data.png)
 * Beat missense constriant scores    
 
 ### Evaluate pathogenic burden enrichment with respect to MPC scores
