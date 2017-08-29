@@ -7,7 +7,7 @@
 ### [No-enrichment / leave one out cross validation roc](plots/roc.png)
 * ~100 domains have at least 2 benign/pathogenic vars
 * Hold out one labeled var from each domain (ignore none domain)
-* 91 vars for testing
+* 91 vars for testing (limited to vars w/ mpc>0 and in some domain w/ at least 2 labeled vars)
 * [Small decision tree based on missense constraint and pathogenic domain fraction](plots/mtr_tree.x.pdf)
 * Beat missense constriant scores    
 
