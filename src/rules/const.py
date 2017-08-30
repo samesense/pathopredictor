@@ -32,3 +32,5 @@ TABIX = ISILON + 'bin/tabix'
 BGZ = ISILON + 'bin/bgzip'
 VT = ISILON + 'condas/miniconda3/envs/target_capture/bin/vt'
 PY27_T = '~/me/condas/miniconda3/envs/testPy27/bin/python'
+
+CLINVAR = '/mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/clinvar_20160203_noUnicode.tidy.vcf.gz'
