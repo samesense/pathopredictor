@@ -4,6 +4,14 @@
 * annotated mpc scores. [Disease enriched domains have higher MPC scores](plots/mpc.by_pfam_enrichment.png)
 * [scored pathogenic/benign w/ MPC](http://franklin.research.chop.edu:8102/notebooks/epi_linked/notebooks/predict-mpc.ipynb#)
 
+### [No-enrichment / leave one out cross validation roc](plots/roc.png)
+* ~100 domains have at least 2 benign/pathogenic vars
+* Hold out one labeled var from each domain (ignore none domain)
+* 91 vars for testing (limited to vars w/ mpc>0 and in some domain w/ at least 2 labeled vars)
+* [Small decision tree based on missense constraint and pathogenic domain fraction](plots/mtr_tree.x.pdf)
+* [Mostly using pathogenic data](plots/eval_data.png)
+* Beat missense constriant scores    
+
 ### Evaluate pathogenic burden enrichment with respect to MPC scores
 * [Pathogenic fraction (path+benign) for MPC>0](plots/rare.path_frac_wo_vus.pfam.mpcLow_0.mpcHigh_100.png)
     * 90% of variants in disease enriched regions are pathogenic (good)
@@ -20,11 +28,9 @@
 * Conclusion
     * Need to train domains on pathogenic/benign
     * Or come up w/ better enriched domains
-    
-### [No-enrichment / leave one out cross validation roc](plots/roc.png)
-* ~100 domains have at least 2 benign/pathogenic vars
-* Hold out one labeled var from each domain (ignore none domain)
-* 91 vars for testing
-* [Small decision tree based on missense constraint and pathogenic domain fraction](plots/mtr_tree.x.pdf)
-* Beat missense constriant scores
-    
+
+### Plans
+* Need other dataset
+* Examine problematic domains?
+* eval clinvar and hgmd
+* show fraction performance alone and its distribution
