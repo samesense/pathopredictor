@@ -18,7 +18,7 @@ DBNSFP_FIELDS = 'Interpro_domain,SIFT_score,Polyphen2_HVAR_pred,RadialSVM_pred,L
 
 rule annotateDbnsfp_clinvar:
     input:  DATA + 'interim/clinvar/clinvar.use.vcf'
-    output: DATA + 'interim/clivnar/clinvar.use.eff.dbnsfp.vcf'
+    output: DATA + 'interim/clinvar/clinvar.use.eff.dbnsfp.vcf'
     shell:  """{JAVA} -Xmx32g -Xms16g -jar {SIFT} dbnsfp -v \
                -db {SIFT_DBNSFP} -f {DBNSFP_FIELDS} {input} > {output}"""
 
@@ -27,7 +27,7 @@ rule annotateDbnsfp_clinvar:
 # ann fixed pfam
 # parse genes
 rule vcfanno_clinvar:
-    input:   vcf = DATA + 'interim/clivnar/clinvar.use.eff.dbnsfp.vcf',
+    input:   vcf = DATA + 'interim/clinvar/clinvar.use.eff.dbnsfp.vcf',
              conf = CONFIG + 'vcfanno.conf',
              lua = VCFANNO_LUA_FILE
     output:  DATA + 'interim/clinvar/clinvar.anno.vcf'
