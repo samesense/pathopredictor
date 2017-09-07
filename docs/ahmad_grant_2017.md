@@ -3,7 +3,7 @@ Clinvar was downloaded February 2016. It has 10806 variants in 9234 positions. P
 
 934 missense pathogenic positions have 966 variants with MPC scores. 371 benign missense positions have 374 variants with MPC scores. First, we classify these positions using MPC.
 
-[clinvar mpc missense roc](plots/clinvar_mis_mpc_roc.png)
+![clinvar mpc missense roc](plots/clinvar_mis_mpc_roc.png)
 
 627 pathogenic positions have 652 variants with MPC scores and reside in a Pfam domain. 154 benign positions have 154 variants with MPC scores and reside in a Pfam domain. Next we classify these variants using MPC, MPC+path-fraction, or path-fraction. This demonstrates that a combined MPC+path-fraction works better than either alone.
 
