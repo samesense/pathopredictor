@@ -1,5 +1,6 @@
 """Annotate vcf"""
 from const import *
+import pandas, csv
 
 rule mk_dat:
     input:  DATA + 'raw/EPIv6.xlsx',
@@ -103,7 +104,7 @@ rule parse_vcf:
                    if 'ac_exac_all' in info:
                        exac_ac = info.split('ac_exac_all=')[1].split(';')[0]
 
-                   mpc = 'NA'
+                   mpc = '0'
                    if 'mpc=' in info:
                        mpc = info.split('mpc=')[1].split(';')[0]
 
@@ -117,7 +118,7 @@ rule parse_vcf:
                    if 'pfam_domain' in info:
                        pfam = info.split('pfam_domain=')[1].split(';')[0]
                    else:
-                       pfam = 'none'
+                       pfam = 'fuck'
 
                    if 'af_1kg_all=' in info:
                        onekg = info.split('af_1kg_all=')[1].split(';')[0]
@@ -133,4 +134,4 @@ rule parse_vcf:
                    for p in pfam.split(','):
                        ls = (chrom, pos, ref, alt, clin, p, onekg, eff, pos_fam, neg_fam, gene, mpc)
                        print('\t'.join(ls), file=fout_split_pfam)
-                   
+            

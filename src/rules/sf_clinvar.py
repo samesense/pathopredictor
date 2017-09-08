@@ -52,14 +52,14 @@ rule parse_clinvar_vcf:
                if line[0] != '#':
                    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
 
-                   mpc = 'NA'
+                   mpc = '0'
                    if 'mpc=' in info:
                        mpc = info.split('mpc=')[1].split(';')[0]
 
                    if 'pfam_domain' in info:
                        pfam = info.split('pfam_domain=')[1].split(';')[0]
                    else:
-                       pfam = 'none'
+                       pfam = 'fuck'
                        
                    if 'af_1kg_all=' in info:
                        onekg = info.split('af_1kg_all=')[1].split(';')[0]
