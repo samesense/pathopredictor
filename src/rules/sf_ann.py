@@ -79,8 +79,8 @@ rule parse_vcf:
            o2 = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat'
    run:
        with open(input.i) as f, open(output.o, 'w') as fout, open(output.o2, 'w') as fout_split_pfam:
-           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tpos_fam\tneg_fam\tgene\tmpc\texac_af\texac_ac\texac_an\texac_cov_frac\tkaviar_af\tc.', file=fout)
-           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tpos_fam\tneg_fam\tgene\tmpc',
+           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tpos_fam\tneg_fam\tgene\tmpc\tmtr\texac_af\texac_ac\texac_an\texac_cov_frac\tkaviar_af\tc.', file=fout)
+           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tpos_fam\tneg_fam\tgene\tmpc\tmtr',
                  file=fout_split_pfam)
            for line in f:
                if not line[0] == '#':
@@ -108,6 +108,10 @@ rule parse_vcf:
                    if 'mpc=' in info:
                        mpc = info.split('mpc=')[1].split(';')[0]
 
+                   mtr = '0'
+                   if 'mtr=' in info:
+                       mtr = info.split('mtr=')[1].split(';')[0]
+
                    clin = info.split('CLIN_CLASS=')[1].split(';')[0]
 
                    pos_fam = int(info.split('POS_FAM_COUNT=')[1].split(';')[0])
@@ -128,10 +132,10 @@ rule parse_vcf:
                    eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
                    gene = info.split('EFF=')[1].split(';')[0].split(',')[0].split('|')[-6]
                    ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff, pos_fam,
-                         neg_fam, gene, mpc, exac_af, exac_ac, exac_an, exac_cov_frac, kv_af, c_dot)
+                         neg_fam, gene, mpc, mtr, exac_af, exac_ac, exac_an, exac_cov_frac, kv_af, c_dot)
                    print('\t'.join(ls), file=fout)
 
                    for p in pfam.split(','):
-                       ls = (chrom, pos, ref, alt, clin, p, onekg, eff, pos_fam, neg_fam, gene, mpc)
+                       ls = (chrom, pos, ref, alt, clin, p, onekg, eff, pos_fam, neg_fam, gene, mpc, mtr)
                        print('\t'.join(ls), file=fout_split_pfam)
             
