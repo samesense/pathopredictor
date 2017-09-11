@@ -113,7 +113,7 @@ def predict(df_x, out_png):
         else:
             i += 1
     plt.legend(handles, labels, loc=4)
-    plt.title('Epilepsy Variant ROC Curve')
+    plt.title('Epilepsy Missense Variant ROC Curve')
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.savefig(out_png)
