@@ -8,6 +8,8 @@ Here's the leave one out method.
 
 Here's the ROC curve.
 
+![clinvar mpc missense roc](plots/missense_fg_roc.png)
+
 ### Clinvar evaluation
 
 Clinvar was downloaded February 2016. It has 10806 variants in 9234 positions. Genes were limited to those in the XXX in the epilepsy panel, and Positions were limited to those where all variants have the same clinical classification. 2350 positions have 2517 pathogenic or likely pathogenic variants, and 1997 positions have 2050 benign or likely benign variants. We focus on missense variants because those are the most difficult to classify. There are 1023 pathogenic missense positions with 1059 variants, and 518 benign missense positions with 523 variants.
