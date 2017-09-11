@@ -1,6 +1,7 @@
 ### Epilepsy evaluation
 
 Here are the missense variants in genes.
+![missense_counts](plots/gene_missense_counts.png)
 
 Here's the MPC distribution.
 
