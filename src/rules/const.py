@@ -16,6 +16,7 @@ else:
     PWD = p + '/'
 
 WORK = PWD + 'work/'
+DOCS = PWD + 'docs/'
 FILES = PWD + 'docs/'
 SCRIPTS = PWD + 'src/scripts/'
 DATA = PWD + 'data/'
