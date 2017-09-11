@@ -112,16 +112,19 @@ def predict(df_x, out_png):
             del(handles[i])
         else:
             i += 1
-    print(labels)
     plt.legend(handles, labels, loc=4)
     plt.title('Epilepsy Cross-validation ROC')
     plt.savefig(out_png)
 
 def main(args):
     df_x = load_fg(args.fg_var_file)
+    df_x['dataset'] = 'Epilepsy'
+    df_x['Classification'] = df_x.apply(lambda row: 'Pathogenic' if row['y']==1 else 'Benign', axis=1)
+    cols = ['chrom', 'pos', 'ref', 'alt', 'Classification', 'gene', 'dataset']
+    df_x[cols].to_csv(args.vars_out, index=False, sep='\t')
+
     predict(df_x, args.roc_out)
 
-    df_x['dataset'] = 'Epilepsy'
     # clinvar_df['Classification']  = clinvar_df.apply(lambda row: 'Pathogenic' if row['y']==1 else 'Benign', axis=1)
     # cols = ['chrom', 'pos', 'ref', 'alt', 'Classification', 'gene', 'dataset']
     # clinvar_df[cols].to_csv(args.clinvars_out, index=False, sep='\t')
@@ -130,7 +133,7 @@ if __name__ == "__main__":
     desc = 'clinvar roc for missense w/ mpc'
     parser = argparse.ArgumentParser(description=desc)
     argLs = ('fg_var_file',
-             'roc_out')#, 'auc_out', 'vars_out',)
+             'roc_out', 'vars_out')#, 'auc_out', 'vars_out',)
     for param in argLs:
         parser.add_argument(param)
     args = parser.parse_args()

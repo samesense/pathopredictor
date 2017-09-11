@@ -1,4 +1,5 @@
 """Make predictions"""
+import pandas
 
 rule clinvar_eval:
     input:  DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat.xls',
@@ -10,5 +11,19 @@ rule clinvar_eval:
 
 rule fg_eval:
     input:  DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat.xls'
-    output: DOCS + 'plots/missense_fg_roc.png'
+    output: DOCS + 'plots/missense_fg_roc.png',
+            WORK + 'eval/missense_fg.dat'
     shell:  'python {SCRIPTS}eval_fg.py {input} {output}'
+
+rule cat_data:
+    input:  WORK + 'eval/missense_fg.dat',
+            WORK + 'eval/missense_clinvar_roc_feature_union.dat'
+    output: o = WORK + 'eval/dat'
+    run:
+        df = pandas.concat([pandas.read_csv(f, sep='\t') for f in list(input)])
+        df.to_csv(output.o, index=False, sep='\t')
+
+rule plot_gene_missense_counts:
+    input:  WORK + 'eval/dat'
+    output: DOCS + 'plots/gene_missense_counts.png'
+    shell:  'Rscript {SCRIPTS}plot_gene_counts.R {input} {output}'
