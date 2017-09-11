@@ -151,7 +151,7 @@ def main(args):
 
     clinvar_df['dataset'] = 'ClinVar'
     clinvar_df['Classification']  = clinvar_df.apply(lambda row: 'Pathogenic' if row['y']==1 else 'Benign', axis=1)
-    cols = ['chrom', 'pos', 'ref', 'alt', 'Classification', 'gene', 'dataset']
+    cols = ['chrom', 'pos', 'ref', 'alt', 'Classification', 'gene', 'dataset', 'mpc']
     clinvar_df[cols].to_csv(args.clinvars_out, index=False, sep='\t')
 
 if __name__ == "__main__":

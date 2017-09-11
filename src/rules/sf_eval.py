@@ -27,3 +27,8 @@ rule plot_gene_missense_counts:
     input:  WORK + 'eval/dat'
     output: DOCS + 'plots/gene_missense_counts.png'
     shell:  'Rscript {SCRIPTS}plot_gene_counts.R {input} {output}'
+
+rule plot_mpc_hist:
+    input:  WORK + 'eval/dat'
+    output: DOCS + 'plots/mpc_hist.png'
+    shell:  'Rscript {SCRIPTS}plot_mpc_dist.R {input} {output}'

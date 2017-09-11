@@ -120,7 +120,7 @@ def main(args):
     df_x = load_fg(args.fg_var_file)
     df_x['dataset'] = 'Epilepsy'
     df_x['Classification'] = df_x.apply(lambda row: 'Pathogenic' if row['y']==1 else 'Benign', axis=1)
-    cols = ['chrom', 'pos', 'ref', 'alt', 'Classification', 'gene', 'dataset']
+    cols = ['chrom', 'pos', 'ref', 'alt', 'Classification', 'gene', 'dataset', 'mpc']
     df_x[cols].to_csv(args.vars_out, index=False, sep='\t')
 
     predict(df_x, args.roc_out)
