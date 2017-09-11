@@ -11,31 +11,7 @@ from sklearn import linear_model, metrics, tree, svm
 from sklearn.neural_network import MLPClassifier
 from sklearn.externals.six import StringIO
 
-def calc_path_frac(rows):
-    pfam = list(rows['pfam'].values)[0]
-    pathogenic = len(rows[ (rows.clin_class=='PATHOGENIC') | (rows.clin_class=='LIKLEY_PATHOGENIC')])
-    benign = len(rows[ (rows.clin_class=='LIKELY_BENIGN') | (rows.clin_class=='BENIGN')])
-    frac = -1
-    if pathogenic+benign:
-        frac = pathogenic/(pathogenic+benign)
-    return pandas.Series([frac, len(rows)], index=['path_frac', 'size'])
-
-def match(row, domain_info):
-     
-    ls = []
-    for pfam in row['pfam'].split(','):
-        if pfam in domain_info:
-            if domain_info[pfam][2] == 0:
-                ls.append(domain_info[pfam])
-    if len(ls) == 0:
-        for pfam in row['pfam'].split(','):
-            if pfam in domain_info:
-                return domain_info[pfam]
-        
-    if len(ls):
-        return ls[0]
-    else:
-        return (0, 0, 1)
+import eval_funcs
 
 def load_fg(dat_file):
     #dat_file = '../data/interim/EPIv6.eff.dbnsfp.anno.hHack.dat.xls'
@@ -47,7 +23,7 @@ def load_fg(dat_file):
          .rename(columns={0:'pfam'})
          .join(df_pre.drop('pfam',1), how='left')
          )
-    dd = df.groupby('pfam').apply(calc_path_frac)
+    dd = df.groupby('pfam').apply(eval_funcs.calc_path_frac)
     ff = dd.reset_index()
 
     # mk domain features    
@@ -56,9 +32,9 @@ def load_fg(dat_file):
                    for pfam, path_frac, size, path_na
                    in ff.values}
 
-    df_pre.loc[:, 'path_frac_t'] = df_pre.apply(lambda row: match(row, domain_info)[0], axis=1)
-    df_pre.loc[:, 'size_t'] = df_pre.apply(lambda row: match(row, domain_info)[1], axis=1)
-    df_pre.loc[:, 'path_na_t'] = df_pre.apply(lambda row: match(row, domain_info)[2], axis=1)
+    df_pre.loc[:, 'path_frac_t'] = df_pre.apply(lambda row: eval_funcs.match(row, domain_info)[0], axis=1)
+    df_pre.loc[:, 'size_t'] = df_pre.apply(lambda row: eval_funcs.match(row, domain_info)[1], axis=1)
+    df_pre.loc[:, 'path_na_t'] = df_pre.apply(lambda row: eval_funcs.match(row, domain_info)[2], axis=1)
     df_pre.loc[:, 'in_none_pfam'] = df_pre.apply(lambda row: 1 if 'none' in df_pre['pfam'] else 0, axis=1)
 
     # this is for training
@@ -93,9 +69,9 @@ def load_clinvar(clin_file, domain_info):
                                 & (clinvar_df_pre.y!=-1) 
                                 & (clinvar_df_pre.mpc>0)
                                 & (clinvar_df_pre.pfam != 'fuck')].drop_duplicates()
-    clinvar_df.loc[:, 'path_frac_t'] = clinvar_df.apply(lambda row: match(row, domain_info)[0], axis=1)
-    clinvar_df.loc[:, 'size_t'] = clinvar_df.apply(lambda row: match(row, domain_info)[1], axis=1)
-    clinvar_df.loc[:, 'path_na_t'] = clinvar_df.apply(lambda row: match(row, domain_info)[2], axis=1)
+    clinvar_df.loc[:, 'path_frac_t'] = clinvar_df.apply(lambda row: eval_funcs.match(row, domain_info)[0], axis=1)
+    clinvar_df.loc[:, 'size_t'] = clinvar_df.apply(lambda row: eval_funcs.match(row, domain_info)[1], axis=1)
+    clinvar_df.loc[:, 'path_na_t'] = clinvar_df.apply(lambda row: eval_funcs.match(row, domain_info)[2], axis=1)
     clinvar_df.loc[:, 'in_none_pfam'] = clinvar_df.apply(lambda row: 1 if 'none' in row['pfam'] else 0, axis=1)
     return clinvar_df
 
@@ -174,7 +150,8 @@ def main(args):
     write(roc_dat, args.roc_out, args.auc_out)
 
     clinvar_df['dataset'] = 'ClinVar'
-    cols = ['chrom', 'pos', 'ref', 'alt', 'y', 'gene', 'dataset']
+    clinvar_df['Classification']  = clinvar_df.apply(lambda row: 'Pathogenic' if row['y']==1 else 'Benign', axis=1)
+    cols = ['chrom', 'pos', 'ref', 'alt', 'Classification', 'gene', 'dataset']
     clinvar_df[cols].to_csv(args.clinvars_out, index=False, sep='\t')
 
 if __name__ == "__main__":

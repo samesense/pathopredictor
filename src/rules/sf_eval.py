@@ -7,3 +7,8 @@ rule clinvar_eval:
             WORK + 'eval/auc/missense_clinvar_roc_feature_union',
             WORK + 'eval/missense_clinvar_roc_feature_union.dat'
     shell:  'python {SCRIPTS}clinvar_eval.py {input} {output}'
+
+rule fg_eval:
+    input:  DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat.xls'
+    output: DOCS + 'plots/missense_fg_roc.png'
+    shell:  'python {SCRIPTS}eval_fg.py {input} {output}'
