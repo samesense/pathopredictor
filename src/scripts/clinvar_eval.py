@@ -134,7 +134,10 @@ def write(roc_dat, roc_png, roc_auc_out):
             plt.plot(fpr, tpr, label=label, color=colors[label])
             print(label + '\t' + str(auc), file=fout)
     plt.legend(loc=4)
-    plt.title('ClinVar missense variant ROC curve')
+    plt.title('ClinVar Missense Variant ROC Curve')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+
     plt.savefig(roc_png)
     #plt.savefig('../docs/plots/missense_clinvar_roc_feature_union.png')
 
