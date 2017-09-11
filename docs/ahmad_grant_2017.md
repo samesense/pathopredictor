@@ -4,6 +4,7 @@ Here are the missense variants in genes.
 ![missense_counts](plots/gene_missense_counts.png)
 
 Here's the MPC distribution.
+![mpc_dist](plots/mpc_hist.png)
 
 Here's the leave one out method.
 
