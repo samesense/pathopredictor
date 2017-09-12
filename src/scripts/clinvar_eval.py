@@ -7,6 +7,7 @@
 import pandas, numpy, argparse, matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+plt.rcParams['svg.fonttype'] = 'none'
 from sklearn import linear_model, metrics, tree, svm
 from sklearn.neural_network import MLPClassifier
 from sklearn.externals.six import StringIO

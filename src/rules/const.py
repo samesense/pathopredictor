@@ -1,13 +1,13 @@
 import os, sys
-sys.path.append('/home/evansj/me/projects/me/tool_dirs/')
-from tools import *
+# sys.path.append('/home/evansj/me/projects/me/tool_dirs/')
+# from tools import *
 
-SECRETS = '/home/evansj/me/.secrets/'
-sys.path.append(SECRETS)
-from pass_wd import *
+# SECRETS = '/home/evansj/me/.secrets/'
+# sys.path.append(SECRETS)
+# from pass_wd import *
 
-DONE = TWILIO_PRE + "--data-urlencode 'Body=DONE' " + TWILIO_POST
-FAIL = TWILIO_PRE + "--data-urlencode 'Body=FAIL' " + TWILIO_POST
+# DONE = TWILIO_PRE + "--data-urlencode 'Body=DONE' " + TWILIO_POST
+# FAIL = TWILIO_PRE + "--data-urlencode 'Body=FAIL' " + TWILIO_POST
 
 p = os.getcwd()
 if 'src' in p:

@@ -7,6 +7,7 @@
 import pandas, numpy, argparse, matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+plt.rcParams['svg.fonttype'] = 'none'
 from sklearn import linear_model, metrics, tree, svm
 from sklearn.neural_network import MLPClassifier
 from sklearn.externals.six import StringIO
@@ -132,7 +133,7 @@ def main(args):
     # clinvar_df[cols].to_csv(args.clinvars_out, index=False, sep='\t')
 
 if __name__ == "__main__":
-    desc = 'clinvar roc for missense w/ mpc'
+    desc = 'fg roc for missense w/ mpc'
     parser = argparse.ArgumentParser(description=desc)
     argLs = ('fg_var_file',
              'roc_out', 'vars_out')#, 'auc_out', 'vars_out',)
