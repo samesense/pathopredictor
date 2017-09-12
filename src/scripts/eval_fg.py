@@ -11,6 +11,7 @@ plt.rcParams['svg.fonttype'] = 'none'
 from sklearn import linear_model, metrics, tree, svm
 from sklearn.neural_network import MLPClassifier
 from sklearn.externals.six import StringIO
+from sklearn import linear_model
 
 import eval_funcs
 
@@ -79,15 +80,15 @@ def loop(df_x, use_cols, tree_depth):
 
     cols = use_cols#['mpc', 'size_c', 'path_na_c', 'path_frac_c']
     X, y = df_train[cols], df_train['y']
-    tree_clf = tree.DecisionTreeClassifier(max_depth=tree_depth)
+    tree_clf = linear_model.LinearRegression(normalize=True, fit_intercept=True) # tree.DecisionTreeClassifier(max_depth=tree_depth)
     tree_clf.fit(X, y)
     # dot_data = StringIO()
     # tree.export_graphviz(tree_clf, feature_names=cols, out_file=dot_data)
     # graph = pydotplus.graph_from_dot_data( dot_data.getvalue() )
     # graph.write_pdf('mtr_tree.x.pdf')
     X_test, y_test = df_test[cols], df_test['y']
-    preds = tree_clf.predict_proba(X_test)
-    fpr_tree, tpr_tree, _ = metrics.roc_curve(list(y_test), [p[1] for p in preds], pos_label=1)
+    preds = tree_clf.predict(X_test)
+    fpr_tree, tpr_tree, _ = metrics.roc_curve(list(y_test), preds, pos_label=1)
     return fpr_tree, tpr_tree
 
 def predict(df_x, out_png):

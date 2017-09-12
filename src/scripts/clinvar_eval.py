@@ -8,7 +8,7 @@ import pandas, numpy, argparse, matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 plt.rcParams['svg.fonttype'] = 'none'
-from sklearn import linear_model, metrics, tree, svm
+from sklearn import linear_model, metrics, tree, svm, linear_model
 from sklearn.neural_network import MLPClassifier
 from sklearn.externals.six import StringIO
 
@@ -78,7 +78,7 @@ def load_clinvar(clin_file, domain_info):
 
 def mpc_frac_tree(df_x, clinvar_df):
     # train new tree and apply to clinvar
-    tree_clf = tree.DecisionTreeClassifier(max_depth=6)
+    tree_clf = linear_model.LinearRegression(normalize=True, fit_intercept=True) #tree.DecisionTreeClassifier(max_depth=6)
     all_preds = []
     all_truth = []
     cols = ['mpc', 'size_t', 'path_na_t', 'path_frac_t', 'in_none_pfam']
@@ -90,8 +90,8 @@ def mpc_frac_tree(df_x, clinvar_df):
     # graph.write_pdf('mtr_tree.full.pdf')
 
     X_clin, y_clin = clinvar_df[cols], clinvar_df['y']
-    preds = tree_clf.predict_proba(X_clin)
-    fpr_tree, tpr_tree, _ = metrics.roc_curve(y_clin, [x[1] for x in preds], pos_label=1)
+    preds = tree_clf.predict(X_clin)
+    fpr_tree, tpr_tree, _ = metrics.roc_curve(y_clin, preds, pos_label=1)
     tree_auc = metrics.auc(fpr_tree, tpr_tree)
     
     return fpr_tree, tpr_tree, tree_auc
@@ -105,7 +105,7 @@ def score_mpc(clinvar_df):
 
 def frac_tree(df_x, clinvar_df):
     # train new tree and apply to clinvar: just pathogenic frac
-    tree_clf = tree.DecisionTreeClassifier(max_depth=3)
+    tree_clf = linear_model.LinearRegression(normalize=True, fit_intercept=True) #tree.DecisionTreeClassifier(max_depth=3)
     all_preds = []
     all_truth = []
     cols = ['size_t', 'path_na_t', 'path_frac_t', 'in_none_pfam']
@@ -117,12 +117,11 @@ def frac_tree(df_x, clinvar_df):
     # graph.write_pdf('mtr_tree.full.nompc.pdf')
 
     X_clin, y_clin = clinvar_df[cols], clinvar_df['y']
-    preds = tree_clf.predict_proba(X_clin)
-    fpr_tree_nm, tpr_tree_nm, _ = metrics.roc_curve(y_clin, [x[1] for x in preds], pos_label=1)
+    preds = tree_clf.predict(X_clin)
+    fpr_tree_nm, tpr_tree_nm, _ = metrics.roc_curve(y_clin, preds, pos_label=1)
     tree_auc_nm = metrics.auc(fpr_tree_nm, tpr_tree_nm)
     
     return fpr_tree_nm, tpr_tree_nm, tree_auc_nm
-
 
 def write(roc_dat, roc_png, roc_auc_out):
     colors = {'MPC+PathFrac':'green',
