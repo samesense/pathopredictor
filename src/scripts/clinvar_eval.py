@@ -117,16 +117,20 @@ def frac_tree(df_x, clinvar_df):
     
     return fpr_tree_nm, tpr_tree_nm, tree_auc_nm
 
-def write(roc_dat, roc_png, roc_auc_out):
+def write(roc_dat, roc_png, roc_auc_out, plot_data_out):
     colors = {'MPC+PathFrac':'green',
               'MPC':'black',
               'PathFrac':'orange'}
     labs = ('MPC+PathFrac', 'PathFrac', 'MPC')
-    with open(roc_auc_out, 'w') as fout:
+    with open(roc_auc_out, 'w') as fout, open(plot_data_out, 'w') as fout_plot:
+        print('fpr\ttpr\tcurve', file=fout_plot)
         for label in labs:
             fpr, tpr, auc = roc_dat[label]
             plt.plot(fpr, tpr, label=label, color=colors[label])
             print(label + '\t' + str(auc), file=fout)
+            for ff, tt in zip(fpr, tpr):
+                print(str(ff) + '\t' + str(tt) + '\t' + label, file=fout_plot)
+
     plt.legend(loc=4)
     plt.title('ClinVar Missense Variant ROC Curve')
     plt.xlabel('False Positive Rate')
@@ -144,7 +148,7 @@ def main(args):
     roc_dat['MPC'] = score_mpc(clinvar_df)
     roc_dat['PathFrac'] = frac_tree(df_x, clinvar_df)
     
-    write(roc_dat, args.roc_out, args.auc_out)
+    write(roc_dat, args.roc_out, args.auc_out, args.plot_data_out)
 
     clinvar_df['dataset'] = 'ClinVar'
     clinvar_df['Classification']  = clinvar_df.apply(lambda row: 'Pathogenic' if row['y']==1 else 'Benign', axis=1)
@@ -155,7 +159,8 @@ if __name__ == "__main__":
     desc = 'clinvar roc for missense w/ mpc'
     parser = argparse.ArgumentParser(description=desc)
     argLs = ('fg_var_file', 'clinvar_file',
-             'roc_out', 'auc_out', 'clinvars_out',)
+             'roc_out', 'auc_out', 'clinvars_out',
+             'plot_data_out')
     for param in argLs:
         parser.add_argument(param)
     args = parser.parse_args()

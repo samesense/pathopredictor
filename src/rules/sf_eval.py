@@ -7,15 +7,17 @@ include: "sf_inkscape.py"
 rule clinvar_eval:
     input:  DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat.xls',
             DATA + 'interim/clinvar/clinvar.dat'
-    output: DOCS + 'plots/missense_clinvar_roc_feature_union.svg',
+    output: DOCS + 'plots/missense_clinvar_roc_feature_union.old.svg',
             WORK + 'eval/auc/missense_clinvar_roc_feature_union',
-            WORK + 'eval/missense_clinvar_roc_feature_union.dat'
+            WORK + 'eval/missense_clinvar_roc_feature_union.dat',
+            WORK + 'eval/plot_data/missense_clinvar_roc_feature_union.dat'
     shell:  'python {SCRIPTS}clinvar_eval.py {input} {output}'
 
 rule fg_eval:
     input:  DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat.xls'
     output: DOCS + 'plots/missense_fg_roc.svg',
-            WORK + 'eval/missense_fg.dat'
+            WORK + 'eval/missense_fg.dat',
+            WORK + 'eval/plot_data/missense_fg_roc_feature_union.dat'
     shell:  'python {SCRIPTS}eval_fg.py {input} {output}'
 
 rule cat_data:
@@ -29,7 +31,7 @@ rule cat_data:
 rule compose:
     input:  DOCS + 'plots/class_missense_counts.svg',
             DOCS + 'plots/mpc_hist.svg',
-            DOCS + 'plots/missense_fg_roc.svg',
+            DOCS + 'plots/missense_fg_roc_feature_union.svg',
             DOCS + 'plots/missense_clinvar_roc_feature_union.svg'
     output: DOCS + 'plots/grant_fig.svg'           
     shell:  'python {SCRIPTS}mk_fig.py {input} {output}'

@@ -89,19 +89,29 @@ def loop(df_x, use_cols, tree_depth):
     fpr_tree, tpr_tree, _ = metrics.roc_curve(list(y_test), preds, pos_label=1)
     return fpr_tree, tpr_tree
 
-def predict(df_x, out_png):
-    for x in range(10):
-        use_cols = ['mpc', 'size_c', 'path_na_c', 'path_frac_c']
-        fpr_tree, tpr_tree = loop(df_x, use_cols, 2)
-        plt.plot(fpr_tree, tpr_tree, label='MPC+PathFrac', color='green', alpha=0.2)
+def predict(df_x, out_png, plot_data_out):
+    with open(plot_data_out, 'w') as fout_plot:
+        print('fpr\ttpr\tcurve\tcolour', file=fout_plot)
 
-        use_cols = ['size_c', 'path_na_c', 'path_frac_c']
-        fpr_tree, tpr_tree = loop(df_x, use_cols, 2)
-        plt.plot(fpr_tree, tpr_tree, label='PathFrac', color='orange', alpha=0.2)    
+        for x in range(10):
+            use_cols = ['mpc', 'size_c', 'path_na_c', 'path_frac_c']
+            fpr_tree, tpr_tree = loop(df_x, use_cols, 2)
+            plt.plot(fpr_tree, tpr_tree, label='MPC+PathFrac', color='green', alpha=0.2)
+            for ff, tt in zip(fpr_tree, tpr_tree):
+                print(str(ff) + '\t' + str(tt) + '\tMPC+PathFrac%d\tMPC+PathFrac' % (x,), file=fout_plot)
 
-    scores = df_x['mpc'].values
-    truth = df_x['y'].values
-    fpr_mpc, tpr_mpc, _ = metrics.roc_curve(truth, scores, pos_label=1)
+            use_cols = ['size_c', 'path_na_c', 'path_frac_c']
+            fpr_tree, tpr_tree = loop(df_x, use_cols, 2)
+            plt.plot(fpr_tree, tpr_tree, label='PathFrac', color='orange', alpha=0.2)
+            for ff, tt in zip(fpr_tree, tpr_tree):
+                print(str(ff) + '\t' + str(tt) + '\tPathFrac%d\tPathFrac' % (x,), file=fout_plot)
+
+        scores = df_x['mpc'].values
+        truth = df_x['y'].values
+        fpr_mpc, tpr_mpc, _ = metrics.roc_curve(truth, scores, pos_label=1)
+        for ff, tt in zip(fpr_mpc, tpr_mpc):
+            print(str(ff) + '\t' + str(tt) + '\tMPC\tMPC', file=fout_plot)
+
     plt.plot(fpr_mpc, tpr_mpc, label='MPC', color='black')
     
     handles, labels = plt.gca().get_legend_handles_labels()
@@ -124,18 +134,14 @@ def main(args):
     df_x['Classification'] = df_x.apply(lambda row: 'Pathogenic' if row['y']==1 else 'Benign', axis=1)
     cols = ['chrom', 'pos', 'ref', 'alt', 'Classification', 'gene', 'dataset', 'mpc']
     df_x[cols].to_csv(args.vars_out, index=False, sep='\t')
-
-    predict(df_x, args.roc_out)
-
-    # clinvar_df['Classification']  = clinvar_df.apply(lambda row: 'Pathogenic' if row['y']==1 else 'Benign', axis=1)
-    # cols = ['chrom', 'pos', 'ref', 'alt', 'Classification', 'gene', 'dataset']
-    # clinvar_df[cols].to_csv(args.clinvars_out, index=False, sep='\t')
+    
+    predict(df_x, args.roc_out, args.plot_data_out)
 
 if __name__ == "__main__":
     desc = 'fg roc for missense w/ mpc'
     parser = argparse.ArgumentParser(description=desc)
     argLs = ('fg_var_file',
-             'roc_out', 'vars_out')#, 'auc_out', 'vars_out',)
+             'roc_out', 'vars_out', 'plot_data_out')
     for param in argLs:
         parser.add_argument(param)
     args = parser.parse_args()
