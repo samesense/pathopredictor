@@ -16,5 +16,10 @@ rule plot_mpc_hist:
     output: DOCS + 'plots/mpc_hist.svg'
     shell:  'Rscript {SCRIPTS}plot_mpc_dist.R {input} {output}'
 
+rule png:
+    input:  DOCS + 'plots/grant_fig.svg'
+    output: DOCS + 'plots/grant_fig.png'
+    shell: 'inkscape -z -f {input} -w 640 -e {output}'
+
 rule all_r_plots:
     input: expand(DOCS + 'plots/{afile}.svg', afile=('mpc_hist', 'class_missense_counts'))

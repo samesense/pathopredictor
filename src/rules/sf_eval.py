@@ -2,6 +2,7 @@
 import pandas
 
 include: "sf_r_figs.py"
+include: "sf_inkscape.py"
 
 rule clinvar_eval:
     input:  DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat.xls',
@@ -33,7 +34,5 @@ rule compose:
     output: DOCS + 'plots/grant_fig.svg'           
     shell:  'python {SCRIPTS}mk_fig.py {input} {output}'
 
-rule png:
-    input:  DOCS + 'plots/grant_fig.svg'
-    output: DOCS + 'plots/grant_fig.png'
-    shell:  'convert -size 1000x1000 {input} {output}'
+rule grant_fig:
+    input: DOCS + 'plots/grant_fig.png'
