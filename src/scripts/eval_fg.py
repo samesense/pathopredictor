@@ -10,8 +10,7 @@ import matplotlib.pyplot as plt
 plt.rcParams['svg.fonttype'] = 'none'
 from sklearn import linear_model, metrics, tree, svm
 from sklearn.neural_network import MLPClassifier
-from sklearn.externals.six import StringIO
-from sklearn import linear_model
+from sklearn.preprocessing import PolynomialFeatures
 
 import eval_funcs
 
@@ -79,14 +78,13 @@ def loop(df_x, use_cols, tree_depth):
     df_test.loc[:, 'path_na_c'] = df_test.apply(lambda row: eval_funcs.match(row, domain_info)[2], axis=1)
 
     cols = use_cols#['mpc', 'size_c', 'path_na_c', 'path_frac_c']
-    X, y = df_train[cols], df_train['y']
-    tree_clf = linear_model.LinearRegression(normalize=True, fit_intercept=True) # tree.DecisionTreeClassifier(max_depth=tree_depth)
+    poly = PolynomialFeatures(degree=4, interaction_only=False, include_bias=False)
+    
+    X, y = poly.fit_transform(df_train[cols]), df_train['y']
+    
+    tree_clf = linear_model.LinearRegression(normalize=True, fit_intercept=True)
     tree_clf.fit(X, y)
-    # dot_data = StringIO()
-    # tree.export_graphviz(tree_clf, feature_names=cols, out_file=dot_data)
-    # graph = pydotplus.graph_from_dot_data( dot_data.getvalue() )
-    # graph.write_pdf('mtr_tree.x.pdf')
-    X_test, y_test = df_test[cols], df_test['y']
+    X_test, y_test = poly.fit_transform(df_test[cols]), df_test['y']
     preds = tree_clf.predict(X_test)
     fpr_tree, tpr_tree, _ = metrics.roc_curve(list(y_test), preds, pos_label=1)
     return fpr_tree, tpr_tree
@@ -115,14 +113,14 @@ def predict(df_x, out_png):
         else:
             i += 1
     plt.legend(handles, labels, loc=4)
-    plt.title('Epilepsy Missense Variant ROC Curve')
+    plt.title('Clinival Lab 1 Missense Variant ROC Curve')
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.savefig(out_png)
 
 def main(args):
     df_x = load_fg(args.fg_var_file)
-    df_x['dataset'] = 'Epilepsy'
+    df_x['dataset'] = 'Clinical Lab 1'
     df_x['Classification'] = df_x.apply(lambda row: 'Pathogenic' if row['y']==1 else 'Benign', axis=1)
     cols = ['chrom', 'pos', 'ref', 'alt', 'Classification', 'gene', 'dataset', 'mpc']
     df_x[cols].to_csv(args.vars_out, index=False, sep='\t')

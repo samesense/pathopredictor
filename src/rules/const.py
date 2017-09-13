@@ -16,9 +16,11 @@ else:
     PWD = p + '/'
 
 WORK = PWD + 'work/'
+WORK2 = '/mnt/isilon/cbmi/variome/perry/projects/sarmadi/mahdi_epi/work/'
 DOCS = PWD + 'docs/'
 FILES = PWD + 'docs/'
 SCRIPTS = PWD + 'src/scripts/'
+SCRIPTS2 = '/mnt/isilon/cbmi/variome/perry/projects/sarmadi/mahdi_epi/src/scripts/'
 DATA = PWD + 'data/'
 LOG = PWD + 'log/'
 CONFIG = PWD + 'configs/'

@@ -1,6 +1,8 @@
 """Make predictions"""
 import pandas
 
+include: "sf_r_figs.py"
+
 rule clinvar_eval:
     input:  DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat.xls',
             DATA + 'interim/clinvar/clinvar.dat'
@@ -22,21 +24,6 @@ rule cat_data:
     run:
         df = pandas.concat([pandas.read_csv(f, sep='\t') for f in list(input)])
         df.to_csv(output.o, index=False, sep='\t')
-
-rule plot_gene_missense_counts:
-    input:  WORK + 'eval/dat'
-    output: DOCS + 'plots/gene_missense_counts.svg'
-    shell:  'Rscript {SCRIPTS}plot_gene_counts.R {input} {output}'
-
-rule plot_class_missense_counts:
-    input:  WORK + 'eval/dat'
-    output: DOCS + 'plots/class_missense_counts.svg'
-    shell:  'Rscript {SCRIPTS}plot_benign_path_counts.R {input} {output}'
-
-rule plot_mpc_hist:
-    input:  WORK + 'eval/dat'
-    output: DOCS + 'plots/mpc_hist.svg'
-    shell:  'Rscript {SCRIPTS}plot_mpc_dist.R {input} {output}'
 
 rule compose:
     input:  DOCS + 'plots/class_missense_counts.svg',

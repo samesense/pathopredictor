@@ -8,9 +8,9 @@ import pandas, numpy, argparse, matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 plt.rcParams['svg.fonttype'] = 'none'
-from sklearn import linear_model, metrics, tree, svm, linear_model
+from sklearn import linear_model, metrics, tree, svm
 from sklearn.neural_network import MLPClassifier
-from sklearn.externals.six import StringIO
+from sklearn.preprocessing import PolynomialFeatures
 
 import eval_funcs
 
@@ -78,18 +78,15 @@ def load_clinvar(clin_file, domain_info):
 
 def mpc_frac_tree(df_x, clinvar_df):
     # train new tree and apply to clinvar
+    poly = PolynomialFeatures(degree=4, interaction_only=False, include_bias=False)
     tree_clf = linear_model.LinearRegression(normalize=True, fit_intercept=True) #tree.DecisionTreeClassifier(max_depth=6)
     all_preds = []
     all_truth = []
     cols = ['mpc', 'size_t', 'path_na_t', 'path_frac_t', 'in_none_pfam']
-    X, y = df_x[cols], df_x['y']
+    X, y = poly.fit_transform(df_x[cols]), df_x['y']
     tree_clf.fit(X, y)
-    # dot_data = StringIO()
-    # tree.export_graphviz(tree_clf, feature_names=cols, out_file=dot_data)
-    # graph = pydotplus.graph_from_dot_data( dot_data.getvalue() )
-    # graph.write_pdf('mtr_tree.full.pdf')
 
-    X_clin, y_clin = clinvar_df[cols], clinvar_df['y']
+    X_clin, y_clin = poly.fit_transform(clinvar_df[cols]), clinvar_df['y']
     preds = tree_clf.predict(X_clin)
     fpr_tree, tpr_tree, _ = metrics.roc_curve(y_clin, preds, pos_label=1)
     tree_auc = metrics.auc(fpr_tree, tpr_tree)
@@ -105,18 +102,15 @@ def score_mpc(clinvar_df):
 
 def frac_tree(df_x, clinvar_df):
     # train new tree and apply to clinvar: just pathogenic frac
-    tree_clf = linear_model.LinearRegression(normalize=True, fit_intercept=True) #tree.DecisionTreeClassifier(max_depth=3)
+    tree_clf = linear_model.LinearRegression(normalize=True, fit_intercept=True)
+    poly = PolynomialFeatures(degree=2, interaction_only=False, include_bias=False)
     all_preds = []
     all_truth = []
     cols = ['size_t', 'path_na_t', 'path_frac_t', 'in_none_pfam']
-    X, y = df_x[cols], df_x['y']
+    X, y = poly.fit_transform(df_x[cols]), df_x['y']
     tree_clf.fit(X, y)
-    # dot_data = StringIO()
-    # tree.export_graphviz(tree_clf, feature_names=cols, out_file=dot_data)
-    # graph = pydotplus.graph_from_dot_data( dot_data.getvalue() )
-    # graph.write_pdf('mtr_tree.full.nompc.pdf')
 
-    X_clin, y_clin = clinvar_df[cols], clinvar_df['y']
+    X_clin, y_clin = poly.fit_transform(clinvar_df[cols]), clinvar_df['y']
     preds = tree_clf.predict(X_clin)
     fpr_tree_nm, tpr_tree_nm, _ = metrics.roc_curve(y_clin, preds, pos_label=1)
     tree_auc_nm = metrics.auc(fpr_tree_nm, tpr_tree_nm)
