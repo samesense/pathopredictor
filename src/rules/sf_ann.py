@@ -79,13 +79,32 @@ rule zip:
 #     shell:  """{GPY} {VCFTODB} --legacy-compression {input.df} {input.jp} {output}"""
 
 def convert_protein_change(protein_change):
-    # p.Ile199Val
-    p1 = protein_change.split('.')[1][:3]
-    p2 = protein_change.split('.')[1][-3:]
-    protein_pos = protein_change.split('.')[1][3:-3]
-    c1 = IUPACData.protein_letters_3to1[p1]
-    c2 = IUPACData.protein_letters_3to1[p2]
-    return c1 + protein_pos + c2
+    if 'p.' in protein_change:
+        # p.Ile199Val
+        # p.Arg151*
+        # p.Val276fs
+        print(protein_change)
+        p1 = protein_change.split('.')[1][:3]
+        if 'del' in protein_change:
+            c2 = ''
+            protein_pos = protein_change.split('.')[1].split('_')[0][3:]
+            c1 = IUPACData.protein_letters_3to1[p1]
+        elif 'fs' in protein_change:
+            c2 = ''
+            protein_pos = protein_change.split('.')[1][3:-2]
+            c1 = IUPACData.protein_letters_3to1[p1]
+        elif '*' in protein_change:
+            c2 = ''
+            protein_pos = protein_change.split('.')[1][3:-1]
+            c1 = IUPACData.protein_letters_3to1[p1]
+        else:    
+            p2 = protein_change.split('.')[1][-3:]
+            protein_pos = protein_change.split('.')[1][3:-3]
+            c1 = IUPACData.protein_letters_3to1[p1]
+            c2 = IUPACData.protein_letters_3to1[p2]
+        return c1 + protein_pos + c2
+    else:
+        return 'NA'
     
 # neg fam counts ppl
 # pos fam counts ppl
@@ -148,14 +167,15 @@ rule parse_vcf:
 
                    eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
                    # (MODERATE|MISSENSE|Ata/Gta|p.Ile199Val/
-                   protein_change = 'NA'
-                   if eff == 'missense_variant':
-                       protein_change_pre = info.split('EFF=')[1].split(';')[0].split('(')[1].split('|')[3].split('/')[0]
-                       protein_change = convert_protein_change(protein_change_pre)
+                   #protein_change = 'NA'
+                   #if eff == 'missense_variant':
+                   protein_change_pre = info.split('EFF=')[1].split(';')[0].split('(')[1].split('|')[3].split('/')[0]
+                   protein_change = convert_protein_change(protein_change_pre)
 
                    gene = info.split('EFF=')[1].split(';')[0].split(',')[0].split('|')[-6]
                    ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff, pos_fam,
-                         neg_fam, gene, mpc, mtr, exac_af, exac_ac, exac_an, exac_cov_frac, kv_af, c_dot, protein_change, gene)
+                         neg_fam, gene, mpc, mtr, exac_af, exac_ac, exac_an,
+                         exac_cov_frac, kv_af, c_dot, protein_change, gene)
                    print('\t'.join(ls), file=fout)
 
                    for p in pfam.split(','):
