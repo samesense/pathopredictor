@@ -2,7 +2,14 @@
 from const import *
 import pandas, csv
 
-rule mk_dat:
+rule mk_dat_panel_two:
+    input:  DATA + 'raw/EpilepsyVariantDataForAhmadClean_090517.xlsx',
+            DATA + 'raw/mut.fix',
+            '/home/evansj/me/data/ucsc/hg19.2bit'
+    output: DATA + 'interim/EPIv6.tab'
+    shell:  'python {SCRIPTS}mk_tab_clinical_panel_two.py {input} {output}'
+
+rule mk_dat_panel_one:
     input:  DATA + 'raw/EPIv6.xlsx',
             DATA + 'raw/mut.fix',
             '/home/evansj/me/data/ucsc/hg19.2bit'
