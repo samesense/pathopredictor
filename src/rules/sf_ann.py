@@ -1,20 +1,21 @@
 """Annotate vcf"""
 from const import *
 import pandas, csv
+from Bio.Data import IUPACData
 
-rule mk_dat_panel_two:
-    input:  DATA + 'raw/EpilepsyVariantDataForAhmadClean_090517.xlsx',
-            DATA + 'raw/mut.fix',
-            '/home/evansj/me/data/ucsc/hg19.2bit'
-    output: DATA + 'interim/EPIv6.tab'
-    shell:  'python {SCRIPTS}mk_tab_clinical_panel_two.py {input} {output}'
+# rule mk_dat_panel_two:
+#     input:  DATA + 'raw/EpilepsyVariantDataForAhmadClean_090517.xlsx',
+#             DATA + 'raw/mut.fix',
+#             '/home/evansj/me/data/ucsc/hg19.2bit'
+#     output: DATA + 'interim/EPIv6.tab'
+#     shell:  'python {SCRIPTS}mk_tab_clinical_panel_two.py {input} {output}'
 
-rule mk_dat_panel_one:
-    input:  DATA + 'raw/EPIv6.xlsx',
-            DATA + 'raw/mut.fix',
-            '/home/evansj/me/data/ucsc/hg19.2bit'
-    output: DATA + 'interim/EPIv6.tab'
-    shell:  'python {SCRIPTS}mk_tab.py {input} {output}'
+# rule mk_dat_panel_one:
+#     input:  DATA + 'raw/EPIv6.xlsx',
+#             DATA + 'raw/mut.fix',
+#             '/home/evansj/me/data/ucsc/hg19.2bit'
+#     output: DATA + 'interim/EPIv6.tab'
+#     shell:  'python {SCRIPTS}mk_tab.py {input} {output}'
 
 rule mk_vcf:
     input:  DATA + 'interim/EPIv6.tab'
@@ -77,6 +78,15 @@ rule zip:
 #     output: DATA + 'interim/EPIv6.db'
 #     shell:  """{GPY} {VCFTODB} --legacy-compression {input.df} {input.jp} {output}"""
 
+def convert_protein_change(protein_change):
+    # p.Ile199Val
+    p1 = protein_change.split('.')[1][:3]
+    p2 = protein_change.split('.')[1][-3:]
+    protein_pos = protein_change.split('.')[1][3:-3]
+    c1 = IUPACData.protein_letters_3to1[p1]
+    c2 = IUPACData.protein_letters_3to1[p2]
+    return c1 + protein_pos + c2
+    
 # neg fam counts ppl
 # pos fam counts ppl
 # need to convert hom to a count of two
@@ -86,7 +96,7 @@ rule parse_vcf:
            o2 = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.splitPfam.dat'
    run:
        with open(input.i) as f, open(output.o, 'w') as fout, open(output.o2, 'w') as fout_split_pfam:
-           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tpos_fam\tneg_fam\tgene\tmpc\tmtr\texac_af\texac_ac\texac_an\texac_cov_frac\tkaviar_af\tc.', file=fout)
+           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tpos_fam\tneg_fam\tgene\tmpc\tmtr\texac_af\texac_ac\texac_an\texac_cov_frac\tkaviar_af\tc.\tProtein_Change\tHugo_Symbol', file=fout)
            print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tpos_fam\tneg_fam\tgene\tmpc\tmtr',
                  file=fout_split_pfam)
            for line in f:
@@ -137,9 +147,15 @@ rule parse_vcf:
                        onekg = '0'
 
                    eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
+                   # (MODERATE|MISSENSE|Ata/Gta|p.Ile199Val/
+                   protein_change = 'NA'
+                   if eff == 'missense_variant':
+                       protein_change_pre = info.split('EFF=')[1].split(';')[0].split('(')[1].split('|')[3].split('/')[0]
+                       protein_change = convert_protein_change(protein_change_pre)
+
                    gene = info.split('EFF=')[1].split(';')[0].split(',')[0].split('|')[-6]
                    ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff, pos_fam,
-                         neg_fam, gene, mpc, mtr, exac_af, exac_ac, exac_an, exac_cov_frac, kv_af, c_dot)
+                         neg_fam, gene, mpc, mtr, exac_af, exac_ac, exac_an, exac_cov_frac, kv_af, c_dot, protein_change, gene)
                    print('\t'.join(ls), file=fout)
 
                    for p in pfam.split(','):
