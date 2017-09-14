@@ -1,5 +1,6 @@
 """Annotate clinvar"""
 from const import *
+from p_change import *
 
 rule snpeff_clinvar:
     input:  CLINVAR
@@ -47,7 +48,7 @@ rule parse_clinvar_vcf:
    output: o = DATA + 'interim/clinvar/clinvar.dat'
    run:
        with open(input.i) as f, open(output.o, 'w') as fout:
-           print('chrom\tpos\tref\talt\tpfam\teff\tclinSig\taf_1kg_all\tgene\tmpc\tmtr', file=fout)
+           print('chrom\tpos\tref\talt\tpfam\teff\tclinSig\taf_1kg_all\tgene\tmpc\tmtr\tProtein_Change', file=fout)
            for line in f:
                if line[0] != '#':
                    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
@@ -70,11 +71,13 @@ rule parse_clinvar_vcf:
                    else:
                        onekg = '0'
 
-#                   print(info)
                    clin_sig = info.split('CLNSIG=')[1].split(';')[0]
+                   
+                   protein_change_pre = info.split('EFF=')[1].split(';')[0].split('(')[1].split('|')[3].split('/')[0]
+                   protein_change = convert_protein_change(protein_change_pre)
 
                    eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
                    gene = info.split('EFF=')[1].split(';')[0].split(',')[0].split('|')[-6]
-                   ls = (chrom, pos, ref, alt, pfam, eff, clin_sig, onekg, gene, mpc, mtr)
+                   ls = (chrom, pos, ref, alt, pfam, eff, clin_sig, onekg, gene, mpc, mtr, protein_change)
                    print('\t'.join(ls), file=fout)
 

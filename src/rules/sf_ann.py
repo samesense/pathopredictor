@@ -1,7 +1,8 @@
 """Annotate vcf"""
 from const import *
 import pandas, csv
-from Bio.Data import IUPACData
+
+from p_change import *
 
 # rule mk_dat_panel_two:
 #     input:  DATA + 'raw/EpilepsyVariantDataForAhmadClean_090517.xlsx',
@@ -77,34 +78,6 @@ rule zip:
 #             jp=PWD + 'files/CAP.JUNK_PED.ped'
 #     output: DATA + 'interim/EPIv6.db'
 #     shell:  """{GPY} {VCFTODB} --legacy-compression {input.df} {input.jp} {output}"""
-
-def convert_protein_change(protein_change):
-    if 'p.' in protein_change:
-        # p.Ile199Val
-        # p.Arg151*
-        # p.Val276fs
-        print(protein_change)
-        p1 = protein_change.split('.')[1][:3]
-        if 'del' in protein_change:
-            c2 = ''
-            protein_pos = protein_change.split('.')[1].split('_')[0][3:]
-            c1 = IUPACData.protein_letters_3to1[p1]
-        elif 'fs' in protein_change:
-            c2 = ''
-            protein_pos = protein_change.split('.')[1][3:-2]
-            c1 = IUPACData.protein_letters_3to1[p1]
-        elif '*' in protein_change:
-            c2 = ''
-            protein_pos = protein_change.split('.')[1][3:-1]
-            c1 = IUPACData.protein_letters_3to1[p1]
-        else:    
-            p2 = protein_change.split('.')[1][-3:]
-            protein_pos = protein_change.split('.')[1][3:-3]
-            c1 = IUPACData.protein_letters_3to1[p1]
-            c2 = IUPACData.protein_letters_3to1[p2]
-        return c1 + protein_pos + c2
-    else:
-        return 'NA'
     
 # neg fam counts ppl
 # pos fam counts ppl
