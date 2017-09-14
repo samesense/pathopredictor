@@ -26,15 +26,22 @@ def fix_alt(row):
         return ref.split(',')[-1].split('>')[1]
     return row['Alt']
 
+def fix_cdot(row):
+    cField = 'cDNA Pos '
+    return row[cField].split()[0]
+    # if 'Iso' in row[cField]:
+    #     return row[cField].split()[0]
+    # return row[cField]
+
 def mk_var(row):
     if '-' == row['ref']:
         # ins
-        return row['Transcript'] + ':' + row['cDNA Pos '] + 'ins' + row['alt']
+        return row['Transcript'] + ':' + row['c.'] + 'ins' + row['alt']
     elif '-' == row['alt']:
         # del
-        return row['Transcript'] + ':' + row['cDNA Pos '] + 'del' + row['ref']
+        return row['Transcript'] + ':' + row['c.'] + 'del' + row['ref']
     else:
-        return row['Transcript'] + ':' + row['cDNA Pos '] + row['ref'] + '>' + row['alt']
+        return row['Transcript'] + ':' + row['c.'] + row['ref'] + '>' + row['alt']
 
 def mk_vcf_line(row, fout):
     if not pandas.isnull(row['Transcript']):
@@ -48,6 +55,7 @@ def write_vcf(df, vcf_out):
         
 df.loc[:, 'ref'] = df.apply(fix_ref, axis=1)
 df.loc[:, 'alt'] = df.apply(fix_alt, axis=1)
-uc = cols = ['ref', 'alt', 'cDNA Pos ', 'Transcript']
+df.loc[:, 'c.'] = df.apply(fix_cdot, axis=1)
+uc = cols = ['ref', 'alt', 'c.', 'Transcript']
 df_final = df[uc]
 write_vcf(df_final, vcf_out)
