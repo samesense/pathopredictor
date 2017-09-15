@@ -32,8 +32,16 @@ VCFANNO_LUA_FILE = '/home/evansj/me/projects/me/vcfanno_lua/scripts/target.lua'
 
 ISILON = '/mnt/isilon/cbmi/variome/perry/'
 TABIX = ISILON + 'bin/tabix'
-BGZ = ISILON + 'bin/bgzip'
+BGZ = '/nas/is1/bin/bgzip'
 VT = ISILON + 'condas/miniconda3/envs/target_capture/bin/vt'
 PY27_T = '~/me/condas/miniconda3/envs/testPy27/bin/python'
-
+JAVA = '/nas/is1/bin/java'
+EFF = '/home/evansj/me/tools/snpEff/snpEff.jar'
+SIFT = '/home/evansj/me/tools/snpEff/SnpSift.jar'
+SIFT_DBNSFP = '/home/evansj/me/tools/snpEff/data/dbNSFP/dbNSFP2.4.txt.gz'
+EFF_CONFIG = '/home/evansj/me/tools/snpEff/snpEff.config'
 CLINVAR = '/mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/clinvar_20160203_noUnicode.tidy.vcf.gz'
+HEADER_HCKR =  '/nas/is1/perry/projects/me/vcfHeaderHckr/vcfHeadrHckr.py'
+VCFANNO = '/mnt/isilon/cbmi/variome/bin/vcfanno/0.0.11/bin/vcfanno'
+GEMINI_ANNO = '/mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data'
+

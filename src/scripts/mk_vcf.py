@@ -4,14 +4,14 @@
 """
 import pandas, argparse
 
-new_cols = ['input_var', 'clin_class', 'pos_fam', 'neg_fam', 'hom_fam']
+new_cols = ['chrom', 'pos', 'ref', 'alt'] + ['input_var', 'clin_class', 'pos_fam', 'neg_fam', 'hom_fam']
 
 def process_multi(r):
-    rr = r[r.clin_class=='PATHOGENIC']
+    rr = r[ (r.clin_class=='PATHOGENIC') | (r.clin_class=='pathogenic') | (r.clin_class=='pathogenic_dominant') | (r.clin_class=='pathogenic_recessive') ]
     if len(rr) == 1:
         return rr[new_cols]
     
-    rr = r[r.clin_class=='BENIGN']
+    rr = r[ (r.clin_class=='BENIGN') | (r.clin_class=='likely_benign') | (r.clin_class=='benign') ]
     if len(rr) == 1:
         return rr[new_cols]
     
@@ -36,9 +36,11 @@ def choose_one(rows):
         else:
             # only vus
             process_multi(rows)
+    i = 1/0
 
 def mk_var(row):
-    ls  = [row['chrom'], str(row['pos']), '.',
+#    print(row)
+    ls  = [str(row['chrom']), str(row['pos']), '.',
            row['ref'], row['alt'] ]
     return ls
 
@@ -64,7 +66,8 @@ def write_vcf(df, vcf_out):
 def main(args):
     df = pandas.read_csv(args.dat_file, sep='\t')
     g_cols = ('chrom', 'pos', 'ref', 'alt')
-    df_no_dups = df.groupby(g_cols).apply(choose_one).reset_index()
+    df_no_dups = df.groupby(g_cols).apply(choose_one)
+#    print( df_no_dups.head() )
     write_vcf(df_no_dups, args.vcf_out)
 
 if __name__ == "__main__":
