@@ -14,7 +14,7 @@ rule fg_lolly:
         benign_ls = [x + '#' + benign_color for x in s if str(x) != 'nan']
         s = set(df[(df.clin_class=='PATHOGENIC') | (df.clin_class=='LIKLEY_PATHOGENIC')]['Protein_Change'].values)
         path_ls = [x + '#' + path_color for x in s if str(x) != 'nan']
-        shell('~/me/bin/lollipops -o={output} -f=/home/evansj/me/fonts/arial.ttf {wildcards.gene} {path_ls} {benign_ls}')
+        shell('~/me/bin/lollipops -domain-labels=off -o={output} -f=/home/evansj/me/fonts/arial.ttf {wildcards.gene} {path_ls} {benign_ls}')
 
 def calc_final_sig(row):
     sig_set = set(str(row['clinSig'].split('|')))
@@ -37,7 +37,7 @@ rule clinvar_lolly:
         benign_ls = [x + '#' + benign_color for x in s if str(x) != 'nan']
         s = set(df[df.y==1]['Protein_Change'].values)
         path_ls = [x + '#' + path_color for x in s if str(x) != 'nan']
-        shell('~/me/bin/lollipops -o={output} -f=/home/evansj/me/fonts/arial.ttf {wildcards.gene} {path_ls} {benign_ls}')
+        shell('~/me/bin/lollipops -o={output} -domain-labels=off -f=/home/evansj/me/fonts/arial.ttf {wildcards.gene} {path_ls} {benign_ls}')
 
 rule lollies:
-    input: expand( DOCS + 'plots/{gene}.{aset}.lolly.png', gene=('SCN1A', 'GRIN2A', 'MECP2'), aset=('clinvar', 'panel_one') )
+    input: expand( DOCS + 'plots/{gene}.{aset}.lolly.png', gene=('GRIN2A',), aset=('clinvar', 'panel_one') )
