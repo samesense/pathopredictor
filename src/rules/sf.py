@@ -5,6 +5,7 @@ include: "sf_ann.py"
 include: "sf_clinvar.py"
 include: "sf_eval.py"
 include: "sf_grant.py"
+include: "sf_coords.py"
 
 rule all:
     input: DOCS + 'plots/missense_clinvar_roc_feature_union.png',

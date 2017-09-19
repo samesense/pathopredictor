@@ -45,3 +45,4 @@ HEADER_HCKR =  '/nas/is1/perry/projects/me/vcfHeaderHckr/vcfHeadrHckr.py'
 VCFANNO = '/mnt/isilon/cbmi/variome/bin/vcfanno/0.0.11/bin/vcfanno'
 GEMINI_ANNO = '/mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data'
 
+HG19_FA = DATA + 'raw/hg19.fa'
