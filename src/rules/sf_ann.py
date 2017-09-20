@@ -9,10 +9,16 @@ rule fix_mutalyzer:
     output: DATA + 'raw/mutalyzer.panel_two.fix'
     shell:  'cut -f 1,3 {input} > {output}'
 
+rule fix_missing_mutalyzer:
+    input:  DATA + 'raw/mutalyzer.panel_two.fix',
+            DATA + 'interim/panel_two.hash'
+    output: DATA + 'raw/mutalyzer.panel_two.fixMiss'
+    shell:  '{PY27} {SCRIPTS}use_blat_to_fix_mutalyzer.py {input} {output}'
+
 rule mk_dat_panel_two:
     input:  DATA + 'raw/EpilepsyVariantDataForAhmadClean_090517.xlsx',
-            DATA + 'raw/mutalyzer.panel_two.fix',
-            '/home/evansj/me/data/ucsc/hg19.2bit'
+            DATA + 'raw/mutalyzer.panel_two.fixMiss',
+            '/home/evansj/me/data/ucsc/hg19.2bit'            
     output: DATA + 'interim/panel_two.tab'
     shell:  'python {SCRIPTS}mk_tab_clinical_panel_two.py {input} {output}'
 

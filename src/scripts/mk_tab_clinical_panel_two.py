@@ -85,7 +85,10 @@ def main(args):
     twobit_file = args.twobit_file
     vcf_out = args.vcf_out
 
+    #coord_hash = load_coord_hash(args.blat_coord_hash)
     mut_df = pandas.read_csv(mutalyzer_results, sep='\t')
+    #mut_df.loc[:, 'Chromosomal Variant'] = mut_df.apply(lambda row: fix_mutalyzer(row, coord_hash), axis=1)
+    
     genome = twobitreader.TwoBitFile(twobit_file)
 
     df_init = pandas.read_excel(dat_file)
@@ -133,6 +136,7 @@ if __name__ == "__main__":
     desc = 'format lab 2 data'
     parser = argparse.ArgumentParser(description=desc)
     argLs = ('dat_file', 'mutalyzer_results',
+             'blat_coord_hash',
              'twobit_file', 'vcf_out')
     for param in argLs:
         parser.add_argument(param)

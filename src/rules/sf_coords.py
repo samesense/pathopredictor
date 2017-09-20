@@ -1,6 +1,7 @@
 """Convert difficult transcripts.
    Run after mutalyzer.
 """
+import pandas
 
 rule get_ncbi_seq:
     output: DATA + 'raw/fa/{nm}.cds.fa',
@@ -32,5 +33,18 @@ def load_missing_transcripts(mutalyzer_file):
 
 TS = load_missing_transcripts(DATA + 'raw/mutalyzer.panel_two.fix')
 
-rule test_blat:
-    input: expand( DATA + 'interim/blat_coord_hash/{nm}', nm = TS )
+def read_hash(hash_file):
+    df = pandas.read_csv(hash_file, sep='\t')
+    df['nm'] = hash_file.split('/')[-1]
+    return df
+
+def collapse_hash(hash_files, output):
+    dfs = [read_hash(hash_file)
+           for hash_file in hash_files]
+    pandas.concat(dfs).to_csv(output, index=False, sep='\t')
+
+rule hash_panel_two:
+    input:  expand( DATA + 'interim/blat_coord_hash/{nm}', nm = TS )
+    output: o = DATA + 'interim/panel_two.hash'
+    run:
+        collapse_hash(list(input), output.o)
