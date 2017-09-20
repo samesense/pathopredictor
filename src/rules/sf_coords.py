@@ -1,7 +1,8 @@
 """Convert difficult transcripts"""
 
 rule get_ncbi_seq:
-    output: DATA + 'raw/fa/{nm}.fa'
+    output: DATA + 'raw/fa/{nm}.cds.fa',
+            DATA + 'raw/fa/{nm}.full.fa'
     shell:  'python {SCRIPTS}get_ncbi_seq.py {wildcards.nm} {output}'
 
 rule blat:
@@ -10,8 +11,9 @@ rule blat:
     shell:  'blat {HG19_FA} {input} -out=pslx {output}'
 
 rule coord_hash:
-    input:  DATA + 'interim/blat/{nm}__blat',
-            DATA + 'raw/fa/{nm}.fa'
+    input:  DATA + 'interim/blat/{nm}.cds__blat',
+            DATA + 'interim/blat/{nm}.full__blat',
+            DATA + 'raw/fa/{nm}.cds.fa'
     output: DATA + 'interim/blat_coord_hash/{nm}'
     shell:  'python {SCRIPTS}mk_coord_hash.py {input} {output}'
 
