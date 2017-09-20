@@ -136,7 +136,6 @@ if __name__ == "__main__":
     desc = 'format lab 2 data'
     parser = argparse.ArgumentParser(description=desc)
     argLs = ('dat_file', 'mutalyzer_results',
-             'blat_coord_hash',
              'twobit_file', 'vcf_out')
     for param in argLs:
         parser.add_argument(param)
