@@ -11,9 +11,14 @@ rule plot_class_missense_counts:
     output: DOCS + 'plots/class_missense_counts.svg'
     shell:  'Rscript {SCRIPTS}plot_benign_path_counts.R {input} {output}'
 
-rule plot_mpc_hist:
+rule plot_mpc_hist_grant:
     input:  WORK + 'eval/dat'
     output: DOCS + 'plots/mpc_hist.svg'
+    shell:  'Rscript {SCRIPTS}plot_mpc_dist.R {input} {output}'
+
+rule plot_mpc_hist_paper:
+    input:  WORK + 'eval/dat.paper'
+    output: DOCS + 'plots/mpc_hist_paper.svg'
     shell:  'Rscript {SCRIPTS}plot_mpc_dist.R {input} {output}'
 
 rule plot_clinvar_roc:
@@ -32,4 +37,4 @@ rule png:
     shell: 'inkscape -z -f {input} -w 640 -e {output}'
 
 rule all_r_plots:
-    input: expand(DOCS + 'plots/{afile}.svg', afile=('mpc_hist', 'class_missense_counts', 'missense_clinvar_roc_feature_union', 'missense_fg_roc_feature_union'))
+    input: expand(DOCS + 'plots/{afile}.svg', afile=('mpc_hist', 'class_missense_counts', 'missense_clinvar_roc_feature_union', 'missense_fg_roc_feature_union', 'mpc_hist_paper'))

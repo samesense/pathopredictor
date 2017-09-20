@@ -20,12 +20,14 @@ rule run_docker:
     input:  WORK2 + 'docker_script/docker_r_figs.sh',
             WORK + 'eval/plot_data/missense_fg_roc_feature_union.dat',
             WORK + 'eval/plot_data/missense_clinvar_roc_feature_union.dat',
-            WORK + 'eval/dat'
+            WORK + 'eval/dat',
+            WORK + 'eval/dat.paper'
     output: l = WORK + 'docker_logs/docker_r_figs.log',
             r1 = DOCS + 'plots/class_missense_counts.svg',
             r2 = DOCS + 'plots/mpc_hist.svg',
             r3 = DOCS + 'plots/missense_clinvar_roc_feature_union.svg',
-            r4 = DOCS + 'plots/missense_fg_roc_feature_union.svg'
+            r4 = DOCS + 'plots/missense_fg_roc_feature_union.svg',
+            r5 = DOCS + 'plots/mpc_hist_paper.svg'
     run:  
         shell("ssh evansj@franklin.research.chop.edu 'sh {input}' > {output.l}")
         shell('touch {output.r1}')

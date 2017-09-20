@@ -35,12 +35,15 @@ def load_fg(dat_file):
     df_pre.loc[:, 'size_t'] = df_pre.apply(lambda row: eval_funcs.match(row, domain_info)[1], axis=1)
     df_pre.loc[:, 'path_na_t'] = df_pre.apply(lambda row: eval_funcs.match(row, domain_info)[2], axis=1)
 
-    df_x_pre = df_pre[ (df_pre.clin_class != 'VUS') & (df_pre.mpc>0) ]
+    crit = df_pre.apply(lambda row: row['clin_class'] != 'VUS' and row['mpc']>0 and not pandas.isnull(row['clin_class']), axis=1)
+    df_x_pre = df_pre[crit]
     df_s = df_x_pre.groupby('pfam').size().reset_index()
     multi_pfam = set( df_s[df_s[0]>1]['pfam'].values )
     df_x_pre.loc[:, 'multi_pfam'] = df_x_pre.apply(lambda row: row['pfam'] in multi_pfam, axis=1)
     df_x = df_x_pre[df_x_pre.multi_pfam]
-    df_x.loc[:, 'y'] = df_x.apply(lambda row: 1 if row['clin_class'] in ('PATHOGENIC', 'LIKLEY_PATHOGENIC')
+    paths = ('PATHOGENIC', 'LIKLEY_PATHOGENIC',
+             'pathogenic', 'pathogenic_recessive', 'pathogenic_dominant', 'likely_pathogenic')
+    df_x.loc[:, 'y'] = df_x.apply(lambda row: 1 if row['clin_class'] in paths
                                   else 0, axis=1)
     return df_x
 
@@ -130,7 +133,7 @@ def predict(df_x, out_png, plot_data_out):
 
 def main(args):
     df_x = load_fg(args.fg_var_file)
-    df_x['dataset'] = 'Clinical Lab 1'
+    df_x['dataset'] = args.label.replace('_', ' ') #'Clinical Lab 1'
     df_x['Classification'] = df_x.apply(lambda row: 'Pathogenic' if row['y']==1 else 'Benign', axis=1)
     cols = ['chrom', 'pos', 'ref', 'alt', 'Classification', 'gene', 'dataset', 'mpc']
     df_x[cols].to_csv(args.vars_out, index=False, sep='\t')
@@ -140,7 +143,7 @@ def main(args):
 if __name__ == "__main__":
     desc = 'fg roc for missense w/ mpc'
     parser = argparse.ArgumentParser(description=desc)
-    argLs = ('fg_var_file',
+    argLs = ('label', 'fg_var_file',
              'roc_out', 'vars_out', 'plot_data_out')
     for param in argLs:
         parser.add_argument(param)
