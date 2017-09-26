@@ -6,7 +6,7 @@
 ![mpc hist](plots/mpc_hist_paper.png)
 * Show new roc with very good mpc [notebook](http://franklin.research.chop.edu:8102/notebooks/epi_linked/notebooks/predict-for-missense-lab2-union_features.ipynb)
 * panel 1: 70 genes
-* panel 2: 45 genes (path dom/rec)
+* panel 2: 45 genes (path dom/rec) (21 common)
     * 102 missense variants
     * 37 path
     * 65 benign
