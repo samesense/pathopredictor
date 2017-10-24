@@ -2,6 +2,8 @@
 
 ### Updates
 * Domain pathogenic freq: sum of path variant frequencies
+* Entropy
+* Avg freq
 * Domain benign freq
 * Random forest classifier for feature importance
 
