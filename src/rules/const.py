@@ -15,6 +15,7 @@ if 'src' in p:
 else:
     PWD = p + '/'
 
+TMP = PWD + 'tmp/'
 WORK = PWD + 'work/'
 WORK2 = '/mnt/isilon/cbmi/variome/perry/projects/sarmadi/mahdi_epi/work/'
 DOCS = PWD + 'docs/'

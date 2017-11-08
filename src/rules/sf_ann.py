@@ -5,15 +5,18 @@ import pandas, csv
 from p_change import *
 
 rule fix_mutalyzer:
-    input:  DATA + 'raw/mutalyzer.panel_two'
-    output: DATA + 'raw/mutalyzer.panel_two.fix'
+    input:  DATA + 'raw/mutalyzer.{panel}'
+    output: DATA + 'raw/mutalyzer.{panel}.fix'
     shell:  'cut -f 1,3 {input} > {output}'
 
 rule fix_missing_mutalyzer:
-    input:  DATA + 'raw/mutalyzer.panel_two.fix',
-            DATA + 'interim/panel_two.hash'
-    output: DATA + 'raw/mutalyzer.panel_two.fixMiss'
+    input:  DATA + 'raw/mutalyzer.{panel}.fix',
+            DATA + 'interim/{panel}.hash'
+    output: DATA + 'raw/mutalyzer.{panel}.fixMiss'
     shell:  '{PY27} {SCRIPTS}use_blat_to_fix_mutalyzer.py {input} {output}'
+
+# rule tmp:
+#     input: DATA + 'raw/mutalyzer.uc.fixMiss'
 
 rule mk_dat_panel_two:
     input:  DATA + 'raw/EpilepsyVariantDataForAhmadClean_090517.xlsx',
@@ -22,6 +25,41 @@ rule mk_dat_panel_two:
     output: DATA + 'interim/panel_two.tab'
     shell:  'python {SCRIPTS}mk_tab_clinical_panel_two.py {input} {output}'
 
+rule mk_dat_panel_uc:
+    input:  DATA + 'interim/uc.dat',
+            DATA + 'raw/mutalyzer.uc.fixMiss',
+            '/home/evansj/me/data/ucsc/hg19.2bit'            
+    output: DATA + 'interim/uc.tab'
+    shell:  'python {SCRIPTS}mk_tab_uc.py {input} {output}'
+
+CRUZ_PY = '/home/evansj/me/franklin_condas/envs/cruzdb/bin/python'
+
+rule init_hg19_cruz:
+    output: TMP + 'cruz_init_hg19'
+    run:
+        shell('{CRUZ_PY} {SCRIPTS}init_cruzdb.py hg19')
+        shell('touch {output}')
+
+def fix_transcript(row):
+    return row['Transcript'].split('.')[0]
+
+# uc data is missing chrom        
+rule add_uc_chroms:
+    input:  x = DATA + 'raw/UC_all_panel_variants_01_20_2016.xlsx',
+            d = TMP + 'cruz_init_hg19'
+    output: o = DATA + 'interim/uc.dat'
+    run:
+        df = pandas.read_excel(input.x)
+        df.loc[:, 'simple_nm_tmp'] = df.apply(fix_transcript, axis=1)
+        with open(input.x + '.nm', 'w') as fout:
+            for nm in set(df['simple_nm_tmp']):
+                print(nm, file=fout)
+        shell('{CRUZ_PY} {SCRIPTS}add_chr_to_mutalyzer.py {input.x}.nm {output}.tmp')
+        df_chrom = pandas.read_csv(output.o + '.tmp', sep='\t')
+        m = pandas.merge(df, df_chrom, how='left', on='simple_nm_tmp')
+        shell('rm {input.x}.nm {output}.tmp')
+        m.to_csv(output.o, sep='\t', index=False)
+    
 # rule mk_dat_panel_one:
 #     input:  DATA + 'raw/EPIv6.xlsx',
 #             DATA + 'raw/mut.fix',
@@ -170,4 +208,4 @@ rule parse_vcf:
                        print('\t'.join(ls), file=fout_split_pfam)
             
 rule all_labs:
-    input: expand(DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.xls', lab=('EPIv6', 'panel_two'))
+    input: expand(DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.xls', lab=('EPIv6', 'panel_two', 'uc'))

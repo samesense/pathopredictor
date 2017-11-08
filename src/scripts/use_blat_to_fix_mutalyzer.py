@@ -18,13 +18,13 @@ def load_coord_hash(blat_coord_hash_file):
 
 def fix_mutalyzer(row, coord_hash):
     if not pandas.isnull(row['Chromosomal Variant']):
-        return row['Chromosomal Variant']
+        return row['Chromosomal Variant'] + '___?'
 
     # else mutalyzer cannot handle
     try:
         hgvs_name = hgvs.HGVSName(row['Input Variant'])
     except:
-        return ''
+        return '___'
     
     nm = hgvs_name.transcript
     if not nm:
@@ -34,21 +34,39 @@ def fix_mutalyzer(row, coord_hash):
 
     end = hgvs_name.cdna_end.coord
     end_offset = hgvs_name.cdna_end.offset
+
+    if row['Input Variant'] in ('NM_004985.4:c.*1638A>G', 'NM_001363.4:c.*6G>A', 'NM_004985.4:c.*2591A>G', 'NM_004985.4:c.*2888A>G', 'NM_004985.4:c.*3377C>T'):
+        return '___'
     
     if start == end and start_offset == 0 and start>0:
-#        print(nm, start, row['Input Variant'])
-        chrom, g_coord, c_nuc, strand = coord_hash[nm][start]
-        if strand == '+':
-            ref, alt = hgvs_name.ref_allele, hgvs_name.alt_allele
-        else:
-            ref, alt = comp[hgvs_name.ref_allele], comp[hgvs_name.alt_allele]
-        return 'XXX:g.%s%s>%s' % (g_coord, ref, alt)
-    return ''
+        #print(nm, start, row['Input Variant'])
+        try:
+            chrom, g_coord, c_nuc, strand = coord_hash[nm][start]
+            if strand == '+':
+                ref, alt = hgvs_name.ref_allele, hgvs_name.alt_allele
+            else:
+                ref, alt = comp[hgvs_name.ref_allele], comp[hgvs_name.alt_allele]
+            return 'XXX:g.%s%s>%s' % (g_coord, ref, alt) + '___' + chrom
+        except:
+            return '___'
+    return '___'
+
+def get_var(row):
+    if row['ChromosomalVariant_pre']=='___':
+        return ''
+    return row['ChromosomalVariant_pre'].split('___')[0]
+
+def get_chrom(row):
+    if row['ChromosomalVariant_pre']=='___':
+        return ''
+    return row['ChromosomalVariant_pre'].split('___')[1]
 
 def main(args):
     coord_hash = load_coord_hash(args.blat_coord_hash)
     mut_df = pandas.read_csv(args.mutalyzer_results, sep='\t')
-    mut_df.loc[:, 'Chromosomal Variant'] = mut_df.apply(lambda row: fix_mutalyzer(row, coord_hash), axis=1)
+    mut_df.loc[:, 'ChromosomalVariant_pre'] = mut_df.apply(lambda row: fix_mutalyzer(row, coord_hash), axis=1)
+    mut_df.loc[:, 'Chromosomal Variant'] = mut_df.apply(get_var, axis=1)
+    mut_df.loc[:, 'Chrom'] = mut_df.apply(get_chrom, axis=1)
     mut_df.to_csv(args.output, index=False, sep='\t')
 
 if __name__ == "__main__":
