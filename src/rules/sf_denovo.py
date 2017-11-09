@@ -1,4 +1,5 @@
 from const import *
+from p_change import *
 
 rule mk_denovo_vcf:
     input:  DATA + 'raw/denovo-db.variants.v.1.5.tsv',
@@ -42,4 +43,40 @@ rule fixHeader_denovo:
     output: DATA + 'interim/denovo/denovo.anno.hHack.vcf'
     shell:  'python {HEADER_HCKR} {input} {output} {HEADER_FIX}'
 
+
+rule parse_denovo_vcf:
+    input:  i = DATA + 'interim/denovo/denovo.anno.hHack.vcf'
+    output: o = DATA + 'interim/denovo/denovo.dat'
+    run:
+        with open(input.i) as f, open(output.o, 'w') as fout:
+           print('chrom\tpos\tref\talt\tpfam\teff\taf_1kg_all\tgene\tmpc\tmtr\tProtein_Change', file=fout)
+           for line in f:
+               if line[0] != '#':
+                   chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
+
+                   mtr = '0'
+                   if 'mtr=' in info:
+                       mtr = info.split('mtr=')[1].split(';')[0]
+
+                   mpc = '0'
+                   if 'mpc=' in info:
+                       mpc = info.split('mpc=')[1].split(';')[0]
+
+                   if 'pfam_domain' in info:
+                       pfam = info.split('pfam_domain=')[1].split(';')[0]
+                   else:
+                       pfam = 'fuck'
+                       
+                   if 'af_1kg_all=' in info:
+                       onekg = info.split('af_1kg_all=')[1].split(';')[0]
+                   else:
+                       onekg = '0'
+
+                   protein_change_pre = info.split('EFF=')[1].split(';')[0].split('(')[1].split('|')[3].split('/')[0]
+                   protein_change = convert_protein_change(protein_change_pre)
+
+                   eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
+                   gene = info.split('EFF=')[1].split(';')[0].split(',')[0].split('|')[-6]
+                   ls = (chrom, pos, ref, alt, pfam, eff, onekg, gene, mpc, mtr, protein_change)
+                   print('\t'.join(ls), file=fout)
 

@@ -7,7 +7,6 @@ def convert_protein_change(protein_change):
         # p.Arg151*
         # p.Val276fs
         p1 = protein_change.split('.')[1][:3]
-        print(protein_change)
         if '?' in protein_change:
             c2 = ''
             protein_pos = protein_change.split('.')[1][3:-1]
