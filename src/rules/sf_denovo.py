@@ -1,3 +1,6 @@
+"""Parse variatns from denovo-db:
+   http://denovo-db.gs.washington.edu/denovo-db/
+"""
 from const import *
 from p_change import *
 
@@ -42,7 +45,6 @@ rule fixHeader_denovo:
     input:  DATA + 'interim/denovo/denovo.anno.vcf'
     output: DATA + 'interim/denovo/denovo.anno.hHack.vcf'
     shell:  'python {HEADER_HCKR} {input} {output} {HEADER_FIX}'
-
 
 rule parse_denovo_vcf:
     input:  i = DATA + 'interim/denovo/denovo.anno.hHack.vcf'
