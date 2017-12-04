@@ -54,3 +54,4 @@ rule compose:
 
 rule grant_fig:
     input: DOCS + 'plots/grant_fig.png'
+

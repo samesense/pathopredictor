@@ -95,7 +95,7 @@ rule limit_eval:
 path_color = 'f8766d'
 rule denovo_lolly:
     input:  i = DATA + 'interim/denovo/denovo.limit.dat'
-    output: DOCS + 'plots/denovo_db/{gene}.denovodb.lolly.png'
+    output: DOCS + 'plots/denovo_db/{gene}.denovo_db.lolly.svg'
     run:  
         df_pre = pd.read_csv(input.i, sep='\t')
         df = df_pre[ (df_pre.gene==wildcards.gene) ]
@@ -104,5 +104,5 @@ rule denovo_lolly:
         shell('~/me/bin/lollipops -domain-labels=off -o={output} -f=/home/evansj/me/fonts/arial.ttf {wildcards.gene} {path_ls}')
 
 rule all_lollies:
-    input: expand(DOCS + 'plots/denovo_db/{gene}.denovodb.lolly.png', gene=FOCUS_GENES)
+    input: expand(DOCS + 'plots/denovo_db/{gene}.denovo_db.lolly.svg', gene=FOCUS_GENES)
         

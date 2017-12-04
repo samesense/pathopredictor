@@ -221,7 +221,7 @@ path_color = 'f8766d'
 benign_color = '00bfc4'
 rule denovo_lolly:
     input:  i = DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls'
-    output: DOCS + 'plots/{lab}/{gene}.{lab}.lolly.png'
+    output: DOCS + 'plots/{lab}/{gene}.{lab}.lolly.svg'
     run:  
         df_pre = pd.read_csv(input.i, sep='\t')
         df = df_pre[ (df_pre.gene==wildcards.gene) ]
@@ -232,7 +232,7 @@ rule denovo_lolly:
         shell('~/me/bin/lollipops -domain-labels=off -o={output} -f=/home/evansj/me/fonts/arial.ttf {wildcards.gene} {path_ls} {benign_ls}')
 
 rule all_lollies:
-    input: expand(DOCS + 'plots/{panel}/{gene}.{panel}.lolly.png', gene=FOCUS_GENES, panel=('EPIv6',))
+    input: expand(DOCS + 'plots/{panel}/{gene}.{panel}.lolly.svg', gene=FOCUS_GENES, panel=('EPIv6',))
                        
 rule all_labs:
     input: expand(DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.xls', lab=('EPIv6', 'panel_two', 'uc'))

@@ -7,7 +7,7 @@ path_color = 'f8766d'
 rule fg_lolly:
     input:  i = DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat.xls'
     output: DOCS + 'plots/{gene}.panel_one.lolly.png'
-    run:  
+    run:
         df_pre = pandas.read_csv(input.i, sep='\t')
         df = df_pre[ (df_pre.gene==wildcards.gene) ]
         s = set(df[(df.clin_class=='BENIGN') | (df.clin_class=='LIKELY_BENIGN')]['Protein_Change'].values)
