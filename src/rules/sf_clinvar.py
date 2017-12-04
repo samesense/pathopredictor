@@ -1,6 +1,7 @@
 """Annotate clinvar"""
 from const import *
 from p_change import *
+import pandas as pd
 
 rule snpeff_clinvar:
     input:  CLINVAR
@@ -81,3 +82,40 @@ rule parse_clinvar_vcf:
                    ls = (chrom, pos, ref, alt, pfam, eff, clin_sig, onekg, gene, mpc, mtr, protein_change)
                    print('\t'.join(ls), file=fout)
 
+def calc_final_sig(row):
+    sig_set = set(str(row['clinSig'].split('|')))
+    has_benign = '2' in sig_set or '3' in sig_set
+    has_path = '4' in sig_set or '5' in sig_set
+    if has_path and not has_benign:
+        return 1
+    if not has_path and has_benign:
+        return 0
+    return -1                   
+
+# focus genes and missense                   
+rule limit_eval:                   
+    input:  i = DATA + 'interim/clinvar/clinvar.dat'
+    output: o = DATA + 'interim/clinvar/clinvar.limit.dat'
+    run:
+        df = pd.read_csv(input.i, sep='\t')
+        df.loc[:, 'clin_class'] = df.apply(calc_final_sig, axis=1)
+        crit = df.apply(lambda row: row['gene'] in FOCUS_GENES and row['eff'] == 'missense_variant', axis=1)
+        
+        df[crit].to_csv(output.o, index=False, sep='\t')
+
+path_color = 'f8766d'
+benign_color = '00bfc4'
+rule denovo_lolly:
+    input:  i = DATA + 'interim/clinvar/clinvar.limit.dat'
+    output: DOCS + 'plots/clinvar/{gene}.clinvar.lolly.png'
+    run:  
+        df_pre = pd.read_csv(input.i, sep='\t')
+        df = df_pre[ (df_pre.gene==wildcards.gene) ]
+        s = set(df[df.clin_class==0]['Protein_Change'].values)
+        benign_ls = [x + '#' + benign_color for x in s if str(x) != 'nan']
+        s = set(df[df.clin_class==1]['Protein_Change'].values)
+        path_ls = [x + '#' + path_color for x in s if str(x) != 'nan']
+        shell('~/me/bin/lollipops -domain-labels=off -o={output} -f=/home/evansj/me/fonts/arial.ttf {wildcards.gene} {path_ls} {benign_ls}')
+
+rule all_lollies:
+    input: expand(DOCS + 'plots/clinvar/{gene}.clinvar.lolly.png', gene=FOCUS_GENES)
