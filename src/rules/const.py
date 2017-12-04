@@ -48,3 +48,7 @@ VCFANNO = '/mnt/isilon/cbmi/variome/bin/vcfanno/0.0.11/bin/vcfanno'
 GEMINI_ANNO = '/mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data'
 
 HG19_FA = DATA + 'raw/hg19.fa'
+
+FOCUS_GENES = ('SCN1A','SCN2A','KCNQ2', 'KCNQ3', 'CDKL5',
+               'PCDH19', 'SCN1B', 'SCN8A', 'SLC2A1',
+               'SPTAN1', 'STXBP1', 'TSC1')

@@ -3,6 +3,7 @@
 """
 from const import *
 from p_change import *
+import pandas as pd
 
 rule mk_denovo_vcf:
     input:  DATA + 'raw/denovo-db.variants.v.1.5.tsv',
@@ -67,7 +68,7 @@ rule parse_denovo_vcf:
                    if 'pfam_domain' in info:
                        pfam = info.split('pfam_domain=')[1].split(';')[0]
                    else:
-                       pfam = 'fuck'
+                       i = 1/0
                        
                    if 'af_1kg_all=' in info:
                        onekg = info.split('af_1kg_all=')[1].split(';')[0]
@@ -82,3 +83,26 @@ rule parse_denovo_vcf:
                    ls = (chrom, pos, ref, alt, pfam, eff, onekg, gene, mpc, mtr, protein_change)
                    print('\t'.join(ls), file=fout)
 
+# focus genes and missense                   
+rule limit_eval:                   
+    input:  i = DATA + 'interim/denovo/denovo.dat'
+    output: o = DATA + 'interim/denovo/denovo.limit.dat'
+    run:
+        df = pd.read_csv(input.i, sep='\t')
+        crit = df.apply(lambda row: row['gene'] in FOCUS_GENES and row['eff'] == 'missense_variant', axis=1)
+        df[crit].to_csv(output.o, index=False, sep='\t')
+
+path_color = 'f8766d'
+rule denovo_lolly:
+    input:  i = DATA + 'interim/denovo/denovo.limit.dat'
+    output: DOCS + 'plots/denovo_db/{gene}.denovodb.lolly.png'
+    run:  
+        df_pre = pd.read_csv(input.i, sep='\t')
+        df = df_pre[ (df_pre.gene==wildcards.gene) ]
+        s = df['Protein_Change'].values
+        path_ls = [x + '#' + path_color for x in s]
+        shell('~/me/bin/lollipops -domain-labels=off -o={output} -f=/home/evansj/me/fonts/arial.ttf {wildcards.gene} {path_ls}')
+
+rule all_lollies:
+    input: expand(DOCS + 'plots/denovo_db/{gene}.denovodb.lolly.png', gene=FOCUS_GENES)
+        
