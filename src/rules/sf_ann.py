@@ -1,6 +1,7 @@
 """Annotate epilepsy panel vcfs"""
 from const import *
-import pandas, csv
+import csv
+import pandas as pd
 
 from p_change import *
 
@@ -49,14 +50,14 @@ rule add_uc_chroms:
             d = TMP + 'cruz_init_hg19'
     output: o = DATA + 'interim/uc.dat'
     run:
-        df = pandas.read_excel(input.x)
+        df = pd.read_excel(input.x)
         df.loc[:, 'simple_nm_tmp'] = df.apply(fix_transcript, axis=1)
         with open(input.x + '.nm', 'w') as fout:
             for nm in set(df['simple_nm_tmp']):
                 print(nm, file=fout)
         shell('{CRUZ_PY} {SCRIPTS}add_chr_to_mutalyzer.py {input.x}.nm {output}.tmp')
-        df_chrom = pandas.read_csv(output.o + '.tmp', sep='\t')
-        m = pandas.merge(df, df_chrom, how='left', on='simple_nm_tmp')
+        df_chrom = pd.read_csv(output.o + '.tmp', sep='\t')
+        m = pd.merge(df, df_chrom, how='left', on='simple_nm_tmp')
         shell('rm {input.x}.nm {output}.tmp')
         m.to_csv(output.o, sep='\t', index=False)
     
@@ -206,6 +207,32 @@ rule parse_vcf:
                    for p in pfam.split(','):
                        ls = (chrom, pos, ref, alt, clin, p, onekg, eff, pos_fam, neg_fam, gene, mpc, mtr)
                        print('\t'.join(ls), file=fout_split_pfam)
-            
+
+# focus genes and missense                   
+rule limit_eval:                   
+    input:  i = DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.xls'
+    output: o = DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls'
+    run:
+        df = pd.read_csv(input.i, sep='\t')
+        crit = df.apply(lambda row: row['gene'] in FOCUS_GENES and row['eff'] == 'missense_variant' and row['clin_class'] != 'VUS', axis=1)
+        df[crit].to_csv(output.o, index=False, sep='\t')
+
+path_color = 'f8766d'
+benign_color = '00bfc4'
+rule denovo_lolly:
+    input:  i = DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls'
+    output: DOCS + 'plots/{lab}/{gene}.{lab}.lolly.png'
+    run:  
+        df_pre = pd.read_csv(input.i, sep='\t')
+        df = df_pre[ (df_pre.gene==wildcards.gene) ]
+        s = set(df[(df.clin_class=='BENIGN') | (df.clin_class=='LIKELY_BENIGN')]['Protein_Change'].values)
+        benign_ls = [x + '#' + benign_color for x in s]
+        s = set(df[(df.clin_class=='PATHOGENIC') | (df.clin_class=='LIKLEY_PATHOGENIC')]['Protein_Change'].values)
+        path_ls = [x + '#' + path_color for x in s]
+        shell('~/me/bin/lollipops -domain-labels=off -o={output} -f=/home/evansj/me/fonts/arial.ttf {wildcards.gene} {path_ls} {benign_ls}')
+
+rule all_lollies:
+    input: expand(DOCS + 'plots/{panel}/{gene}.{panel}.lolly.png', gene=FOCUS_GENES, panel=('EPIv6',))
+                       
 rule all_labs:
     input: expand(DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.xls', lab=('EPIv6', 'panel_two', 'uc'))
