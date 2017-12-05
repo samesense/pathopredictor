@@ -232,7 +232,7 @@ rule denovo_lolly:
         shell('~/me/bin/lollipops -domain-labels=off -o={output} -f=/home/evansj/me/fonts/arial.ttf {wildcards.gene} {path_ls} {benign_ls}')
 
 rule all_lollies:
-    input: expand(DOCS + 'plots/{panel}/{gene}.{panel}.lolly.svg', gene=FOCUS_GENES, panel=('EPIv6',))
+    input: expand(DOCS + 'plots/{panel}/{gene}.{panel}.lolly.svg', gene=FOCUS_GENES, panel=('EPIv6', 'panel_two', 'uc'))
                        
 rule all_labs:
     input: expand(DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.xls', lab=('EPIv6', 'panel_two', 'uc'))
