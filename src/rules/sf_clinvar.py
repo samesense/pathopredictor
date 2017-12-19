@@ -90,7 +90,7 @@ def calc_final_sig(row):
         return 1
     if not has_path and has_benign:
         return 0
-    return -1                   
+    return -1
 
 # focus genes
 rule limit_eval2:                   
@@ -99,7 +99,7 @@ rule limit_eval2:
     run:
         df = pd.read_csv(input.i, sep='\t')
         df.loc[:, 'clin_class'] = df.apply(calc_final_sig, axis=1)
-        crit = df.apply(lambda row: row['gene'] in FOCUS_GENES, axis=1)
+        crit = df.apply(lambda row: row['gene'] in FOCUS_GENES and row['clin_class'] != -1, axis=1)
         
         df[crit].to_csv(output.o, index=False, sep='\t')
 
@@ -110,10 +110,20 @@ rule limit_eval:
     run:
         df = pd.read_csv(input.i, sep='\t')
         df.loc[:, 'clin_class'] = df.apply(calc_final_sig, axis=1)
-        crit = df.apply(lambda row: row['gene'] in FOCUS_GENES and row['eff'] == 'missense_variant', axis=1)
+        crit = df.apply(lambda row: row['gene'] in FOCUS_GENES and row['eff'] == 'missense_variant' and row['clin_class'] != -1, axis=1)
         
         df[crit].to_csv(output.o, index=False, sep='\t')
 
+# missense                   
+rule limit_eval3:                   
+    input:  i = DATA + 'interim/clinvar/clinvar.dat'
+    output: o = DATA + 'interim/clinvar/clinvar.limit3.dat'
+    run:
+        df = pd.read_csv(input.i, sep='\t')
+        df.loc[:, 'clin_class'] = df.apply(calc_final_sig, axis=1)
+        crit = df.apply(lambda row: row['eff'] == 'missense_variant'and row['clin_class'] != -1, axis=1)
+        df[crit].to_csv(output.o, index=False, sep='\t')
+        
 path_color = 'f8766d'
 benign_color = '00bfc4'
 rule denovo_lolly:
