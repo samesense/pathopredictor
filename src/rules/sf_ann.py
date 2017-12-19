@@ -208,13 +208,27 @@ rule parse_vcf:
                        ls = (chrom, pos, ref, alt, clin, p, onekg, eff, pos_fam, neg_fam, gene, mpc, mtr)
                        print('\t'.join(ls), file=fout_split_pfam)
 
+def mk_class(row):
+    if row['clin_class'] in ('Benign', 'BENIGN', 'LIKELY BENIGN', 'likely benign', 'benign', 'LIKELY_BENIGN', 'likely_benign'):
+        return 'B'
+    elif row['clin_class'] in ('pathogenic recessive', 'pathogenic dominant', 'likely pathogenic', 'LIKLEY_PATHOGENIC', 'pathogenic_recessive',
+                               'LIKELY_PATHOGENIC', 'likely_pathogenic', 'likely_pathogenic', 'Reduced_function_allele', 'pathogenic_dominant',
+                               'PATHOGENIC', 'LIKELY PATHOGENIC', 'Reduced function allele', 'pathogenic'):
+        return 'P'
+    elif str(row['clin_class']) in ('VUS', 'nan', 'VOUS'):
+        return 'V'
+    else:
+        print(str(row['clin_class']))
+        i = 1/0
+                       
 # focus genes and missense                   
 rule limit_eval:                   
     input:  i = DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.xls'
     output: o = DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls'
     run:
         df = pd.read_csv(input.i, sep='\t')
-        crit = df.apply(lambda row: row['gene'] in FOCUS_GENES and row['eff'] == 'missense_variant' and row['clin_class'] != 'VUS', axis=1)
+        df.loc[:, 'class'] = df.apply(mk_class, axis=1)
+        crit = df.apply(lambda row: row['gene'] in FOCUS_GENES and row['eff'] == 'missense_variant' and row['class'] != 'V', axis=1)
         df[crit].to_csv(output.o, index=False, sep='\t')
 
 path_color = 'f8766d'
@@ -225,9 +239,9 @@ rule denovo_lolly:
     run:  
         df_pre = pd.read_csv(input.i, sep='\t')
         df = df_pre[ (df_pre.gene==wildcards.gene) ]
-        s = set(df[(df.clin_class=='BENIGN') | (df.clin_class=='LIKELY_BENIGN')]['Protein_Change'].values)
+        s = set(df[df['class']=='B']['Protein_Change'].values)
         benign_ls = [x + '#' + benign_color for x in s]
-        s = set(df[(df.clin_class=='PATHOGENIC') | (df.clin_class=='LIKLEY_PATHOGENIC')]['Protein_Change'].values)
+        s = set(df[df['class']=='P']['Protein_Change'].values)
         path_ls = [x + '#' + path_color for x in s]
         shell('~/me/bin/lollipops -domain-labels=off -o={output} -f=/home/evansj/me/fonts/arial.ttf {wildcards.gene} {path_ls} {benign_ls}')
 

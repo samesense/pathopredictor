@@ -92,6 +92,17 @@ def calc_final_sig(row):
         return 0
     return -1                   
 
+# focus genes
+rule limit_eval2:                   
+    input:  i = DATA + 'interim/clinvar/clinvar.dat'
+    output: o = DATA + 'interim/clinvar/clinvar.limit2.dat'
+    run:
+        df = pd.read_csv(input.i, sep='\t')
+        df.loc[:, 'clin_class'] = df.apply(calc_final_sig, axis=1)
+        crit = df.apply(lambda row: row['gene'] in FOCUS_GENES, axis=1)
+        
+        df[crit].to_csv(output.o, index=False, sep='\t')
+
 # focus genes and missense                   
 rule limit_eval:                   
     input:  i = DATA + 'interim/clinvar/clinvar.dat'

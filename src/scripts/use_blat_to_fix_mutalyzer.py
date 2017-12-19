@@ -1,5 +1,6 @@
 """Mutalyzer does not have some transcripts.
    Use my c. to g. to recover the missing ones.
+   https://github.com/counsyl/hgvs
 """
 import argparse, pandas, numpy
 import pyhgvs as hgvs

@@ -4,7 +4,6 @@
 import sys, pandas, twobitreader
 dat_file, vcf_out = sys.argv[1:]
 
-#dat_file = '../data/raw/EPIv6.xlsx'
 df_pre = pandas.read_excel(dat_file)
 crit = df_pre.apply(lambda row: row['Ref'] != '-'
                     and not row['Alt'] in ('dup', 'del', 'ins'),
