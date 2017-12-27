@@ -10,17 +10,17 @@ rule snpeff_clinvar:
                -strict -noStats hg19 -c {EFF_CONFIG} \
                {input} > {output}"""
 
-rule limit_clinvar_genes:
-    input:  DATA + 'raw/EPIv6.xlsx',
-            DATA + 'interim/clinvar/clinvar.eff.vcf'
-    output: DATA + 'interim/clinvar/clinvar.use.vcf'
-    shell:  'python {SCRIPTS}limit_clinvar_genes.py {input} {output}'
+# rule limit_clinvar_genes:
+#     input:  DATA + 'raw/EPIv6.xlsx',
+#             DATA + 'interim/clinvar/clinvar.eff.vcf'
+#     output: DATA + 'interim/clinvar/clinvar.use.vcf'
+#     shell:  'python {SCRIPTS}limit_clinvar_genes.py {input} {output}'
 
 DBNSFP_FIELDS = 'Interpro_domain,SIFT_score,Polyphen2_HVAR_pred,RadialSVM_pred,LR_pred,Reliability_index,FATHMM_pred,MutationAssessor_pred,MutationTaster_pred,phyloP100way_vertebrate,phastCons100way_vertebrate'
 
 rule annotateDbnsfp_clinvar:
-    input:  DATA + 'interim/clinvar/clinvar.use.vcf'
-    output: DATA + 'interim/clinvar/clinvar.use.eff.dbnsfp.vcf'
+    input:  DATA + 'interim/clinvar/clinvar.eff.vcf'
+    output: DATA + 'interim/clinvar/clinvar.eff.dbnsfp.vcf'
     shell:  """{JAVA} -Xmx32g -Xms16g -jar {SIFT} dbnsfp -v \
                -db {SIFT_DBNSFP} -f {DBNSFP_FIELDS} {input} > {output}"""
 
@@ -29,7 +29,7 @@ rule annotateDbnsfp_clinvar:
 # ann fixed pfam
 # parse genes
 rule vcfanno_clinvar:
-    input:   vcf = DATA + 'interim/clinvar/clinvar.use.eff.dbnsfp.vcf',
+    input:   vcf = DATA + 'interim/clinvar/clinvar.eff.dbnsfp.vcf',
              conf = CONFIG + 'vcfanno.conf',
              lua = VCFANNO_LUA_FILE
     output:  DATA + 'interim/clinvar/clinvar.anno.vcf'
