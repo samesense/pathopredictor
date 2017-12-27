@@ -1,4 +1,4 @@
 ## Results
 
 ### Clinvar counts
-* [total missense clinvar](https://render.githubusercontent.com/view/ipynb?commit=db4dbaabd77ce9600cf2ebf2d61d579deebf7224&enc_url=68747470733a2f2f7261772e67697468756275736572636f6e74656e742e636f6d2f73616d6573656e73652f6d616864695f6570692f646234646261616264373763653936303063663265626632643631643537396465656266373232342f6e6f7465626f6f6b732f636c696e7661722d7265706f72742e6970796e623f746f6b656e3d41414e6e3979647859724c6834736d344f6e4153384d4c36585f50774e5370336b7335615242484b7741253344253344&nwo=samesense%2Fmahdi_epi&path=notebooks%2Fclinvar-report.ipynb&repository_id=99615033&repository_type=Repository#clinvar-summary)
+* [total missense clinvar](https://github.com/samesense/mahdi_epi/blob/master/notebooks/clinvar-report.ipynb)
