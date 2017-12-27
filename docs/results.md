@@ -11,7 +11,7 @@
 * train using all of clinvar minus testing variants
 * train using clinvar panel genes minus testing variants
 
-### Single gene cutoff
+#### Single gene cutoff
 * When genes have at least 5 pathogenic and 5 benign variants, evaluate the gene
 * Use all methods from the global evaluation, but evaluation is limited by above statement
 * Train using clinvar variants from this gene
