@@ -228,7 +228,7 @@ rule limit_eval:
     run:
         df = pd.read_csv(input.i, sep='\t')
         df.loc[:, 'class'] = df.apply(mk_class, axis=1)
-        crit = df.apply(lambda row: row['gene'] in FOCUS_GENES and row['eff'] == 'missense_variant' and row['class'] != 'V', axis=1)
+        crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V', axis=1)
         df[crit].to_csv(output.o, index=False, sep='\t')
 
 path_color = 'f8766d'
@@ -249,4 +249,4 @@ rule all_lollies:
     input: expand(DOCS + 'plots/{panel}/{gene}.{panel}.lolly.svg', gene=FOCUS_GENES, panel=('EPIv6', 'panel_two', 'uc'))
                        
 rule all_labs:
-    input: expand(DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.xls', lab=('EPIv6', 'panel_two', 'uc'))
+    input: expand(DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls', lab=('EPIv6', 'uc',))
