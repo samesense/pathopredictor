@@ -13,7 +13,7 @@
 * Focused epilepsy gene panel:
     * SCN1A, SCN2A, KCNQ2, KCNQ3, CDKL5,
     * PCDH19, SCN1B, SCN8A, SLC2A1,
-    * SPTAN1, STXBP1, TSC
+    * SPTAN1, STXBP1, TSC
 
 #### Questions
 * Does training w/ clinvar do better than MPC>=2?
