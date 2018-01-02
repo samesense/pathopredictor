@@ -10,7 +10,7 @@
 * Noonan
 * UC epilepsy
 * GeneDx epilepsy
-* Foced epilepsy gene panel:
+* Focused epilepsy gene panel:
     * SCN1A, SCN2A, KCNQ2, KCNQ3, CDKL5,
     * PCDH19, SCN1B, SCN8A, SLC2A1,
     * SPTAN1, STXBP1, TSC
