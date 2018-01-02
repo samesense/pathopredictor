@@ -56,4 +56,4 @@ Yes, except for cardiomyopathy.
 #### Conclusion
 * The baseline MPC>2 can be beaten with training
 * Training with the disease panel is generally better than using clinvar
-* Gene specific models based on clinvar are not generally better than using the total panel - will investigate single gene models form epi data
+* Gene specific models based on clinvar are not generally better than using the total panel - will investigate single gene models from epi data
