@@ -18,7 +18,7 @@
 #### Questions
 * Does training w/ clinvar do better than MPC>=2?
 * Does training with the panel do better than MPC>=2?
-* Does training with panel genes from clinvar do better than all of clinvar?
+* Does training with panel genes from clinvar do better than all of clinvar? (I'm still evaluating all of the panel, not just panl genes in clinvar. This could be why the results are not as good as total clinvar.)
 * Does training with the panel do better than training with limited clinvar (only genes on panel)?
 * Do gene specific models do better than global models?
 
