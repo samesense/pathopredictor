@@ -60,15 +60,37 @@ def eval_basic_training(test_df_init, fout_stats, fout_eval):
     cols = ['mpc']
 
     # one gene at a time
-    # acc_df_ls = []
-    # genes = set(test_df_init['gene'])
+    acc_df_ls = []
+    genes = set(test_df_init['gene'])
 
-    #for test_gene in genes:
-        # sub_train_df = test_df_init[test_df_init.gene != test_gene]
-        # tree_clf_sub = tree.DecisionTreeClassifier(max_depth=1)
-        # X, y = sub_train_df[cols], sub_train_df['y']
-        # tree_clf_sub.fit(X, y)
+    for test_gene in genes:
+        sub_train_df = test_df_init[test_df_init.gene != test_gene]
+        tree_clf_sub = tree.DecisionTreeClassifier(max_depth=1)
+        X, y = sub_train_df[cols], sub_train_df['y']
+        tree_clf_sub.fit(X, y)
 
+        test_df_sub = test_df_init[test_df_init.gene == test_gene]
+        X_test_sub = test_df_sub[cols]
+        preds = tree_clf_sub.predict(X_test_sub)
+        test_df_sub['mpc_pred_holdOut'] = preds
+        test_df_sub.loc[:, 'PredictionStatusMPC_holdOut'] = test_df_sub.apply(lambda row: eval_pred(row, 'mpc_pred_holdOut'), axis=1)
+        acc_df_ls.append(test_df_sub)
+
+    test_df_final = pd.concat(acc_df_ls)
+    metrics_ls = ('PredictionStatusMPC_holdOut',)
+    for metric in metrics_ls:
+        counts = test_df_final.groupby(metric).size().reset_index().reset_index().rename(columns={0:'size'})
+        d = defaultdict(int)
+        for v in list(counts.values):
+            _, label, count = v
+            ls = ('no_disease', 'global_' + metric, label, str(count))
+            d[label] = count
+            print('\t'.join(ls), file=fout_eval)
+        tot_bad = d['WrongPath'] + d['WrongBenign']
+        ls = ('no_disease', 'global_' + metric, 'TotWrong', str(tot_bad))
+        print('\t'.join(ls), file=fout_eval)
+
+    # just mpc>2
     test_df = test_df_init
     X_test = test_df[cols]
         #preds = tree_clf_sub.predict(X_test)

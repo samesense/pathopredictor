@@ -24,7 +24,7 @@ rule eval_panel_single_gene:
 rule limit_for_plot:
     input:  WORK + '{method}.eval_panel.eval'
     output: WORK + '{method}.eval_panel.totWrong'
-    shell:  "grep 'TotWrong\|disease' {input} | grep -v ssue | grep -v earing > {output}"
+    shell:  "grep 'TotWrong\|count' {input} | grep -v ssue | grep -v earing > {output}"
 
 rule plot:
     input:  WORK + '{method}.eval_panel.totWrong'
