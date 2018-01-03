@@ -60,34 +60,33 @@ def eval_basic_training(test_df_init, fout_stats, fout_eval):
     cols = ['mpc']
 
     # one gene at a time
-    acc_df_ls = []
-    genes = set(test_df_init['gene'])
+    # acc_df_ls = []
+    # genes = set(test_df_init['gene'])
 
-    for test_gene in genes:
+    #for test_gene in genes:
         # sub_train_df = test_df_init[test_df_init.gene != test_gene]
         # tree_clf_sub = tree.DecisionTreeClassifier(max_depth=1)
         # X, y = sub_train_df[cols], sub_train_df['y']
         # tree_clf_sub.fit(X, y)
 
-        test_df = test_df_init[test_df_init.gene == test_gene]
-        X_test = test_df[cols]
+    test_df = test_df_init
+    X_test = test_df[cols]
         #preds = tree_clf_sub.predict(X_test)
         #test_df['mpc_pred_holdOut'] = preds
         #test_df.loc[:, 'PredictionStatusMPC_holdOut'] = test_df.apply(lambda row: eval_pred(row, 'mpc_pred_holdOut'), axis=1)
 
         # apply mpc>=2
-        test_df.loc[:, 'PredictionStatusMPC>2'] = test_df.apply(eval_mpc_raw, axis=1)
+    test_df.loc[:, 'PredictionStatusMPC>2'] = test_df.apply(eval_mpc_raw, axis=1)
 
-        acc_df_ls.append(test_df)
+    #    acc_df_ls.append(test_df)
 
-    test_df = pd.concat(acc_df_ls)
+    #test_df = pd.concat(acc_df_ls)
     #metrics_ls = ('PredictionStatusMPC_holdOut', 'PredictionStatusMPC>2',)
     metrics_ls = ('PredictionStatusMPC>2',)
     for metric in metrics_ls:
         counts = test_df.groupby(metric).size().reset_index().reset_index().rename(columns={0:'size'})
         d = defaultdict(int)
         for v in list(counts.values):
-            #print(v)
             _, label, count = v
             ls = ('no_disease', 'global_' + metric, label, str(count))
             d[label] = count
@@ -105,28 +104,28 @@ def eval_disease_as_training(disease, test_df_init, train_df_pre, fout_stats, fo
     tree_clf = tree.DecisionTreeClassifier(max_depth=1)
     X, y = train_df[cols], train_df['y']
     tree_clf.fit(X, y)
-
+    tree.export_graphviz(tree_clf, out_file=disease + '.dot')
+    
     # one gene at a time
-    acc_df_ls = []
-    genes = set(test_df_init['gene'])
+    # acc_df_ls = []
+    # genes = set(test_df_init['gene'])
 
-    for test_gene in genes:
-        test_df = test_df_init[test_df_init.gene == test_gene]
-        X_test = test_df[cols]
+#    for test_gene in genes:
+    test_df = test_df_init
+    X_test = test_df[cols]
 
-        preds = tree_clf.predict(X_test)
-        test_df['mpc_pred_' + disease] = preds
-        test_df.loc[:, 'PredictionStatusMPC_' + disease] = test_df.apply(lambda row: eval_pred(row, 'mpc_pred_' + disease), axis=1)
+    preds = tree_clf.predict(X_test)
+    test_df['mpc_pred_' + disease] = preds
+    test_df.loc[:, 'PredictionStatusMPC_' + disease] = test_df.apply(lambda row: eval_pred(row, 'mpc_pred_' + disease), axis=1)
 
-        acc_df_ls.append(test_df)
+#        acc_df_ls.append(test_df)
 
-    test_df = pd.concat(acc_df_ls)
+#    test_df = pd.concat(acc_df_ls)
     metrics_ls = ('PredictionStatusMPC_' + disease,)
     for metric in metrics_ls:
         counts = test_df.groupby(metric).size().reset_index().reset_index().rename(columns={0:'size'})
         d = defaultdict(int)
         for v in list(counts.values):
-            #print(v)
             _, label, count = v
             ls = (disease, 'global_' + metric, label, str(count))
             d[label] = count
@@ -178,6 +177,7 @@ def main(args):
         print('disease\tscore_type\teval_type\tvar_count', file=fout_eval)
         eval_basic_training(test_df, fout_stats, fout_eval)
         for disease in diseases:
+            print(disease, 'go')
             if str(disease) != 'nan':
                 if str(disease) == 'ALL':
                     dd = disease_df
