@@ -12,7 +12,8 @@
     * All combined
     
 ### Questions
-* Does training with a panel from above do better than MPC>=2 when testing on all of ClinVar?
+* Does training with a panel from above do better than MPC>=2 when testing on all of ClinVar? Yes, all panels are better.
+* Does leave one out clinvar do better than the panels? Yes, much better.
 * Does training with a panel from above do better than MPC>=2 when testing on all of denovo-db?
 * Does training with a panel form above for single gene model do better than a glboal model for Clinvar?
 * Does training with a panel form above for single gene model do better than a glboal model for denovo-db?
