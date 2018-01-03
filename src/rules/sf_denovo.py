@@ -20,7 +20,6 @@ rule snpeff_denovo:
                -strict -noStats hg19 -c {EFF_CONFIG} \
                {input} > {output}"""
 
-
 rule annotateDbnsfp_denovo:
     input:  DATA + 'interim/denovo/denovo.eff.vcf'
     output: DATA + 'interim/denovo/denovo.use.eff.dbnsfp.vcf'
@@ -89,7 +88,8 @@ rule limit_eval:
     output: o = DATA + 'interim/denovo/denovo.limit.dat'
     run:
         df = pd.read_csv(input.i, sep='\t')
-        crit = df.apply(lambda row: row['gene'] in FOCUS_GENES and row['eff'] == 'missense_variant', axis=1)
+        df['y'] = 1
+        crit = df.apply(lambda row: row['eff'] == 'missense_variant', axis=1)        
         df[crit].to_csv(output.o, index=False, sep='\t')
 
 path_color = 'f8766d'

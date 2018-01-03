@@ -1,3 +1,4 @@
+"""Predict status for gene panel vars"""
 include: "const.py"
 
 from snakemake.utils import R
@@ -32,7 +33,12 @@ rule plot:
         R("""
           require(ggplot2)
           d = read.delim("{input}", sep='\t', header=TRUE)
-          p = ggplot(data=d) + geom_col(aes(y=var_count,x=score_type, fill=score_type)) + facet_grid(disease~., scale='free') + theme_bw() + ylab('Wrong Predictions') + theme(axis.text.x = element_text(angle=45, hjust=1)) + xlab('') + theme(legend.position="none")
+          p = ggplot(data=d) +
+          geom_col(aes(y=var_count,x=score_type, fill=score_type)) +
+          facet_grid(disease~., scale='free') + theme_bw() +
+          ylab('Wrong Predictions') +
+          theme(axis.text.x = element_text(angle=45, hjust=1)) +
+          xlab('') + theme(legend.position="none")
           ggsave("{output}", p)
           """)
 

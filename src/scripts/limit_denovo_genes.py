@@ -7,9 +7,10 @@ df_pre = pandas.read_excel(xls_file)
 genes = set(df_pre['Gene Symbol'].values)
 cols = ['Chr', 'Position', 'Variant']
 denovo_df = pandas.read_csv(dat_file, dtype={'Position':int}, skiprows=0, header=1, sep='\t')
-#print(denovo_df.head())
+
 def filter_genes(row):
-    return row['Gene'] in genes
+    return True #row['Gene'] in genes
+
 new_data =[]
 
 for row in denovo_df[denovo_df.apply(filter_genes, axis=1)][cols].itertuples():
