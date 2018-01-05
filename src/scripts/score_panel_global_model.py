@@ -35,45 +35,78 @@ def eval_mpc_raw(row):
         return 'WrongBenign'
     return 'CorrectBenign'
 
-def print_data_stats(disease, clinvar_df_pre, disease_df, fout):
+def clinvar_stats(disease, clinvar_df_pre, disease_df, fout, clinvar_label):
     key_cols = ['chrom', 'pos', 'ref', 'alt']
     test_keys = {':'.join([str(x) for x in v]):True for v in disease_df[key_cols].values}
 
     crit = clinvar_df_pre.apply(lambda row: not ':'.join([str(row[x]) for x in key_cols]) in test_keys, axis=1)
     clinvar_df = clinvar_df_pre[crit]
-    print('clinvar w/o testing data - %s: %d' % (disease, len(clinvar_df)), file=fout)
+    print('%s clinvar w/o testing data - %s: %d' % (clinvar_label, disease, len(clinvar_df)), file=fout)
 
     disease_genes = set(disease_df['gene'])
     crit = clinvar_df.apply(lambda row: row['gene'] in disease_genes, axis=1)
     clinvar_df_limit_genes = clinvar_df[crit]
-    print('clinvar w/o testing data for %s genes: %d' % (disease, len(clinvar_df_limit_genes)), file=fout)
-
-    disease_panel_gene_count = len(set(disease_df['gene']))
-    gg = disease_df.groupby('y').size().reset_index().rename(columns={0:'size'})
-    print(disease)
-    print(gg)
-    benign_ex = list(gg[gg.y==0]['size'])[0]
-    path_ex = list(gg[gg.y==1]['size'])[0]
-    print('%s gene count: %d (%d pathogenic, %d benign)' % (disease, disease_panel_gene_count, path_ex, benign_ex), file=fout)
+    print('%s clinvar w/o testing data for %s genes: %d' % (clinvar_label, disease, len(clinvar_df_limit_genes)), file=fout)
 
     return clinvar_df, clinvar_df_limit_genes
 
-def eval_disease(disease, clinvar_df_pre, disease_df, fout_stats, fout_eval):
-    clinvar_df, clinvar_df_limit_genes = print_data_stats(disease, clinvar_df_pre, disease_df, fout_stats)
-    cols = ['mpc']
+def print_data_stats(disease, clinvar_df_pre_ls, disease_df, fout, clin_labels):
+    print('debug', disease, len(clinvar_df_pre_ls))
+    clin_dat = list(map(lambda x: clinvar_stats(disease, x[0], disease_df, fout, x[1]),
+                        list(zip(clinvar_df_pre_ls, clin_labels))))
+
+    disease_panel_gene_count = len(set(disease_df['gene']))
+    gg = disease_df.groupby('y').size().reset_index().rename(columns={0:'size'})
+    benign_ex = list(gg[gg.y==0]['size'])[0]
+    path_ex = list(gg[gg.y==1]['size'])[0]
+    print('%s gene count: %d (%d pathogenic, %d benign)' % (disease, disease_panel_gene_count, path_ex, benign_ex), file=fout)
     
-    # train clinvar
-    tree_clf_clinvar = tree.DecisionTreeClassifier(max_depth=1)
-    X, y = clinvar_df[cols], clinvar_df['y']
-    tree_clf_clinvar.fit(X, y)
+    return [x[0] for x in clin_dat], [x[1] for x in clin_dat]
 
-    tree_clf_clinvar_limit_genes = tree.DecisionTreeClassifier(max_depth=1)
-    X, y = clinvar_df_limit_genes[cols], clinvar_df_limit_genes['y']
-    tree_clf_clinvar_limit_genes.fit(X, y)
+def eval_clinvar(label, cols, clinvar_df, disease_df):
+    if len(clinvar_df):
+        # train clinvar
+        tree_clf_clinvar = tree.DecisionTreeClassifier(max_depth=1)
+        X, y = clinvar_df[cols], clinvar_df['y']
+        tree_clf_clinvar.fit(X, y)
+        
+        X_test = disease_df[cols]
+        preds = tree_clf_clinvar.predict(X_test)
+        disease_df['mpc_pred_clinvar_' + label] = preds
+        disease_df.loc[:, 'PredictionStatusMPC_clinvar_' + label] = disease_df.apply(lambda row: eval_pred(row, 'mpc_pred_clinvar_' + label), axis=1)
 
+def print_eval(disease, test_df, metric, fout):
+    if metric in test_df.columns.values:
+        counts = test_df.groupby(metric).size().reset_index().reset_index().rename(columns={0:'size'})
+        d = defaultdict(int)
+        for v in list(counts.values):
+            _, label, count = v
+            ls = (disease, 'global_' + metric, label, str(count))
+            d[label] = count
+            print('\t'.join(ls), file=fout)
+        tot_bad = d['WrongPath'] + d['WrongBenign']
+        ls = (disease, 'global_' + metric, 'TotWrong', str(tot_bad))
+        print('\t'.join(ls), file=fout)
+        
+def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, clin_labels):
+    print('debug', disease)
+    clinvar_df_ls, clinvar_df_limit_genes_ls = print_data_stats(disease, clinvar_df_pre_ls, disease_df, fout_stats, clin_labels)
+    print('debug', disease, len(clinvar_df_ls[0]))
+    cols = ['mpc']
+    list(map(lambda x: eval_clinvar(x[0], cols, x[1], disease_df),
+             list(zip(clin_labels, clinvar_df_ls))))
+    list(map(lambda x: eval_clinvar(x[0], cols, x[1], disease_df),
+             list(zip([x + '_limitGene' for x in clin_labels], clinvar_df_limit_genes_ls))))
+
+    # apply mpc>=2
+    disease_df.loc[:, 'PredictionStatusMPC>2'] = disease_df.apply(eval_mpc_raw, axis=1)
+        
     # one gene at a time
     acc_df_ls = []
     genes = set(disease_df['gene'])
+
+    metric_ls = ['PredictionStatusMPC_clinvar_' + label for label in clin_labels] + ['PredictionStatusMPC_clinvar_' + label + '_limitGene' for label in clin_labels] + ['PredictionStatusMPC>2']
+    list(map(lambda x: print_eval(disease, disease_df, x, fout_eval), metric_ls))
 
     for test_gene in genes:
         sub_train_df = disease_df[disease_df.gene != test_gene]
@@ -87,33 +120,10 @@ def eval_disease(disease, clinvar_df_pre, disease_df, fout_stats, fout_eval):
         test_df['mpc_pred'] = preds
         test_df.loc[:, 'PredictionStatusMPC'] = test_df.apply(lambda row: eval_pred(row, 'mpc_pred'), axis=1)
 
-        preds = tree_clf_clinvar.predict(X_test)
-        test_df['mpc_pred_clinvar'] = preds
-        test_df.loc[:, 'PredictionStatusMPC_clinvar'] = test_df.apply(lambda row: eval_pred(row, 'mpc_pred_clinvar'), axis=1)
-
-        preds = tree_clf_clinvar_limit_genes.predict(X_test)
-        test_df['mpc_pred_clinvar_limit_genes'] = preds
-        test_df.loc[:, 'PredictionStatusMPC_clinvar_limit_genes'] = test_df.apply(lambda row: eval_pred(row, 'mpc_pred_clinvar_limit_genes'), axis=1)
-
-        # apply mpc>=2
-        test_df.loc[:, 'PredictionStatusMPC>2'] = test_df.apply(eval_mpc_raw, axis=1)
-
         acc_df_ls.append(test_df)
 
     test_df = pd.concat(acc_df_ls)
-    metrics_ls = ('PredictionStatusMPC', 'PredictionStatusMPC_clinvar', 'PredictionStatusMPC_clinvar_limit_genes', 'PredictionStatusMPC>2')
-    for metric in metrics_ls:
-        counts = test_df.groupby(metric).size().reset_index().reset_index().rename(columns={0:'size'})
-        d = defaultdict(int)
-        for v in list(counts.values):
-            #print(v)
-            _, label, count = v
-            ls = (disease, 'global_' + metric, label, str(count))
-            d[label] = count
-            print('\t'.join(ls), file=fout_eval)
-        tot_bad = d['WrongPath'] + d['WrongBenign']
-        ls = (disease, 'global_' + metric, 'TotWrong', str(tot_bad))
-        print('\t'.join(ls), file=fout_eval)
+    print_eval(disease, test_df, 'PredictionStatusMPC', fout_eval)
 
 def main(args):
     FOCUS_GENES = ('SCN1A','SCN2A','KCNQ2', 'KCNQ3', 'CDKL5',
@@ -121,8 +131,9 @@ def main(args):
                    'SPTAN1', 'STXBP1', 'TSC1')
 
     # load clinvar
-    dat_file = args.clinvar
-    clinvar_df_pre = pd.read_csv(args.clinvar, sep='\t').rename(columns={'clin_class':'y'})
+    clin_labels = ('tot', 'single', 'mult', 'exp')
+    clinvars = (args.clinvar, args.clinvar_single, args.clinvar_mult, args.clinvar_exp)
+    clinvar_df_pre_ls = list(map(lambda x: pd.read_csv(x, sep='\t').rename(columns={'clin_class':'y'}), clinvars))
 
     # load genedx epi
     disease_genedx_df = pd.read_csv(args.gene_dx, sep='\t')
@@ -153,13 +164,13 @@ def main(args):
         print('disease\tscore_type\teval_type\tvar_count', file=fout_eval)
         for disease in diseases:
             if str(disease) != 'nan':
-                eval_disease(disease, clinvar_df_pre, disease_df[disease_df.Disease == disease],
-                             fout_stats, fout_eval)
+                eval_disease(disease, clinvar_df_pre_ls, disease_df[disease_df.Disease == disease],
+                             fout_stats, fout_eval, clin_labels)
     
 if __name__ == "__main__":
     desc = 'Eval global mpc cutoff'
     parser = argparse.ArgumentParser(description=desc)
-    argLs = ('clinvar', 'gene_dx', 'uc', 'other_disease', 'stats_out', 'eval_out')
+    argLs = ('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'gene_dx', 'uc', 'other_disease', 'stats_out', 'eval_out')
     for param in argLs:
         parser.add_argument(param)
     args = parser.parse_args()

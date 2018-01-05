@@ -67,7 +67,7 @@ rule parse_denovo_vcf:
                    if 'pfam_domain' in info:
                        pfam = info.split('pfam_domain=')[1].split(';')[0]
                    else:
-                       i = 1/0
+                       pfam = 'fuck'
                        
                    if 'af_1kg_all=' in info:
                        onekg = info.split('af_1kg_all=')[1].split(';')[0]

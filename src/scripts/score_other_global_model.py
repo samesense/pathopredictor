@@ -46,7 +46,10 @@ def print_data_stats(disease, test_df, train_df_pre, fout):
 
     test_panel_gene_count = len(set(test_df['gene']))
     gg = test_df.groupby('y').size().reset_index().rename(columns={0:'size'})
-    benign_ex = list(gg[gg.y==0]['size'])[0]
+    if len(gg[gg.y==0]):
+        benign_ex = list(gg[gg.y==0]['size'])[0]
+    else:
+        benign_ex = 0
     path_ex = list(gg[gg.y==1]['size'])[0]
     print('test gene count: %d (%d pathogenic, %d benign)' % (test_panel_gene_count, path_ex, benign_ex), file=fout)
 

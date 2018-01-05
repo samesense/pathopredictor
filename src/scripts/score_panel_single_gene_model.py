@@ -142,7 +142,7 @@ def main(args):
 if __name__ == "__main__":
     desc = 'Eval single gene mpc cutoff'
     parser = argparse.ArgumentParser(description=desc)
-    argLs = ('clinvar', 'gene_dx', 'uc', 'other_disease', 'stats_out', 'eval_out')
+    argLs = ('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'gene_dx', 'uc', 'other_disease', 'stats_out', 'eval_out')
     for param in argLs:
         parser.add_argument(param)
     args = parser.parse_args()
