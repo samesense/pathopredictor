@@ -49,7 +49,7 @@ rule parse_clinvar_vcf:
    output: o = DATA + 'interim/clinvar/clinvar.dat'
    run:
        with open(input.i) as f, open(output.o, 'w') as fout:
-           print('chrom\tpos\tref\talt\tpfam\teff\tclinSig\taf_1kg_all\tgene\tmpc\tmtr\tProtein_Change', file=fout)
+           print('chrom\tpos\tref\talt\tpfam\teff\tclinSig\taf_1kg_all\tgene\tmpc\tmtr\tProtein_Change\tconfidence', file=fout)
            for line in f:
                if line[0] != '#':
                    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
@@ -73,13 +73,14 @@ rule parse_clinvar_vcf:
                        onekg = '0'
 
                    clin_sig = info.split('CLNSIG=')[1].split(';')[0]
+                   confidence = info.split('CLNREVSTAT=')[1].split(';')[0]
                    
                    protein_change_pre = info.split('EFF=')[1].split(';')[0].split('(')[1].split('|')[3].split('/')[0]
                    protein_change = convert_protein_change(protein_change_pre)
 
                    eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
                    gene = info.split('EFF=')[1].split(';')[0].split(',')[0].split('|')[-6]
-                   ls = (chrom, pos, ref, alt, pfam, eff, clin_sig, onekg, gene, mpc, mtr, protein_change)
+                   ls = (chrom, pos, ref, alt, pfam, eff, clin_sig, onekg, gene, mpc, mtr, protein_change, confidence)
                    print('\t'.join(ls), file=fout)
 
 def calc_final_sig(row):
@@ -123,6 +124,34 @@ rule limit_eval3:
         df.loc[:, 'clin_class'] = df.apply(calc_final_sig, axis=1)
         crit = df.apply(lambda row: row['eff'] == 'missense_variant'and row['clin_class'] != -1, axis=1)
         df[crit].to_csv(output.o, index=False, sep='\t')
+
+# singlr
+# mult
+# exp
+# apply cutoff and higher
+rule limit_clinvar_by_conf:
+    input:  i=DATA + 'interim/clinvar/clinvar.limit3.dat'
+    output: o=DATA + 'interim/clinvar_{conf}/clinvar_{conf}.limit3.dat'
+    run:
+        df = pd.read_csv(input.i, sep='\t')
+        if wildcards.conf=='exp':
+            crit = df.apply(lambda row: len(set(row['confidence'].split('|'))) == 1
+                            and list(set(row['confidence'].split('|')))[0]==wildcards.conf, axis=1)
+        elif wildcards.conf=='mult':
+            crit = df.apply(lambda row: len(set(row['confidence'].split('|'))) == 1
+                            and (list(set(row['confidence'].split('|')))[0]==wildcards.conf
+                                 or list(set(row['confidence'].split('|')))[0]=='exp'), axis=1)
+        elif wildcards.conf=='single':
+            crit = df.apply(lambda row: len(set(row['confidence'].split('|'))) == 1
+                            and (list(set(row['confidence'].split('|')))[0]==wildcards.conf
+                                 or list(set(row['confidence'].split('|')))[0]=='exp'
+                                 or list(set(row['confidence'].split('|')))[0]=='mult'), axis=1)
+        else:
+            i = 1/0
+        df[crit].to_csv(output.o, index=False, sep='\t')
+
+rule all_confidence:
+    input: expand(DATA + 'interim/clinvar_{conf}/clinvar_{conf}.limit3.dat', conf=('exp', 'mult', 'single') )
         
 path_color = 'f8766d'
 benign_color = '00bfc4'
