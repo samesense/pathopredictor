@@ -4,7 +4,7 @@ include: "const.py"
 from snakemake.utils import R
 
 rule eval_panel_global:
-    input:  expand(DATA + 'interim/{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp')),
+    input:  expand(DATA + 'interim/{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo')),
             DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat.limit.xls',
             DATA + 'interim/uc.eff.dbnsfp.anno.hHack.dat.limit.xls',
             DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls'
@@ -13,7 +13,7 @@ rule eval_panel_global:
     shell:  'python {SCRIPTS}score_panel_global_model.py {input} {output}'
 
 rule eval_panel_single_gene:
-    input:  expand(DATA + 'interim/clinvar{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp')),
+    input:  expand(DATA + 'interim/clinvar{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo')),
             DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat.limit.xls',
             DATA + 'interim/uc.eff.dbnsfp.anno.hHack.dat.limit.xls',
             DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls'

@@ -51,7 +51,7 @@ def clinvar_stats(disease, clinvar_df_pre, disease_df, fout, clinvar_label):
     return clinvar_df, clinvar_df_limit_genes
 
 def print_data_stats(disease, clinvar_df_pre_ls, disease_df, fout, clin_labels):
-    print('debug', disease, len(clinvar_df_pre_ls))
+#    print('debug', disease, len(clinvar_df_pre_ls))
     clin_dat = list(map(lambda x: clinvar_stats(disease, x[0], disease_df, fout, x[1]),
                         list(zip(clinvar_df_pre_ls, clin_labels))))
 
@@ -89,9 +89,9 @@ def print_eval(disease, test_df, metric, fout):
         print('\t'.join(ls), file=fout)
         
 def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, clin_labels):
-    print('debug', disease)
+    #print('debug', disease)
     clinvar_df_ls, clinvar_df_limit_genes_ls = print_data_stats(disease, clinvar_df_pre_ls, disease_df, fout_stats, clin_labels)
-    print('debug', disease, len(clinvar_df_ls[0]))
+    print('debug', disease, len(clinvar_df_ls), len(clin_labels))
     cols = ['mpc']
     list(map(lambda x: eval_clinvar(x[0], cols, x[1], disease_df),
              list(zip(clin_labels, clinvar_df_ls))))
@@ -131,10 +131,12 @@ def main(args):
                    'SPTAN1', 'STXBP1', 'TSC1')
 
     # load clinvar
-    clin_labels = ('tot', 'single', 'mult', 'exp')
+    clin_labels = ('tot', 'single', 'mult', 'exp', 'denovo')
     clinvars = (args.clinvar, args.clinvar_single, args.clinvar_mult, args.clinvar_exp)
     clinvar_df_pre_ls = list(map(lambda x: pd.read_csv(x, sep='\t').rename(columns={'clin_class':'y'}), clinvars))
-
+    # add denvo
+    clinvar_df_pre_ls.append( pd.read_csv(args.denovo, sep='\t') )
+    
     # load genedx epi
     disease_genedx_df = pd.read_csv(args.gene_dx, sep='\t')
     disease_genedx_df.loc[:, 'y'] = disease_genedx_df.apply(lambda row: 1 if row['class']=='P' else 0, axis=1)
@@ -170,7 +172,8 @@ def main(args):
 if __name__ == "__main__":
     desc = 'Eval global mpc cutoff'
     parser = argparse.ArgumentParser(description=desc)
-    argLs = ('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'gene_dx', 'uc', 'other_disease', 'stats_out', 'eval_out')
+    argLs = ('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo',
+             'gene_dx', 'uc', 'other_disease', 'stats_out', 'eval_out')
     for param in argLs:
         parser.add_argument(param)
     args = parser.parse_args()
