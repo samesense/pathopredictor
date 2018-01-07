@@ -26,8 +26,8 @@ def mk_use_genes(clinvar_df_limit_genes):
     use_genes = list(dd[dd[0]]['gene'])
     return use_genes
 
-def eval_disease(disease, clinvar_df_pre, disease_df, fout_stats, fout_eval):
-    clinvar_df, clinvar_df_limit_genes = score_model_funcs.print_data_stats(disease, clinvar_df_pre, disease_df, fout_stats)
+def eval_disease(disease, clinvar_df_pre, disease_df, fout_stats, fout_eval, clin_labels):
+    clinvar_df_ls, clinvar_df_limit_genes_ls = score_model_funcs.print_data_stats(disease, clinvar_df_pre_ls, disease_df, fout_stats, clin_labels)
     eval_genes = mk_use_genes(clinvar_df_limit_genes)
     cols = ['mpc']
     
@@ -104,9 +104,12 @@ def main(args):
                    'SPTAN1', 'STXBP1', 'TSC1')
 
     # load clinvar
-    dat_file = '../data/interim/clinvar/clinvar.limit3.dat'
-    clinvar_df_pre = pd.read_csv(args.clinvar, sep='\t').rename(columns={'clin_class':'y'})
-
+    clin_labels = ('tot', 'single', 'mult', 'exp', 'denovo')
+    clinvars = (args.clinvar, args.clinvar_single, args.clinvar_mult, args.clinvar_exp)
+    clinvar_df_pre_ls = list(map(lambda x: pd.read_csv(x, sep='\t').rename(columns={'clin_class':'y'}), clinvars))
+    # add denvo
+    clinvar_df_pre_ls.append( pd.read_csv(args.denovo, sep='\t') )
+    
     # load genedx epi
     disease_genedx_df = pd.read_csv(args.gene_dx, sep='\t')
     disease_genedx_df.loc[:, 'y'] = disease_genedx_df.apply(lambda row: 1 if row['class']=='P' else 0, axis=1)
@@ -136,13 +139,14 @@ def main(args):
         print('disease\tscore_type\teval_type\tvar_count', file=fout_eval)
         for disease in diseases:
             if str(disease) != 'nan':
-                eval_disease(disease, clinvar_df_pre, disease_df[disease_df.Disease == disease],
-                             fout_stats, fout_eval)
+                eval_disease(disease, clinvar_df_pre_ls, disease_df[disease_df.Disease == disease],
+                             fout_stats, fout_eval, clin_labels)
     
 if __name__ == "__main__":
     desc = 'Eval single gene mpc cutoff'
     parser = argparse.ArgumentParser(description=desc)
-    argLs = ('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'gene_dx', 'uc', 'other_disease', 'stats_out', 'eval_out')
+    argLs = ('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo',
+             'gene_dx', 'uc', 'other_disease', 'stats_out', 'eval_out')
     for param in argLs:
         parser.add_argument(param)
     args = parser.parse_args()

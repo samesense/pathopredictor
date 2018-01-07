@@ -43,7 +43,7 @@ rule plot:
           """)
 
 rule all_eval:
-    input: expand(DOCS + 'plot/{method}.eval_panel.totWrong.png', method=('single',))
+    input: expand(DOCS + 'plot/{method}.eval_panel.totWrong.png', method=('global',))
 
 # ggplot(data=d) + geom_col(aes(y=var_count,x=score_type, fill=score_type)) + facet_grid(disease~., scale='free') + theme_bw() + ylab('Wrong Predictions') + theme(axis.text.x = element_text(angle=90)) + xlab('') + theme(legend.position="none")    
 
