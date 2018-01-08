@@ -48,12 +48,11 @@ No, except for Noonan and total GeneDx.
 #### Do gene specific clinvar models do better than global clinvar?
 Yes, except for cardiomyopathy.
 
-### Does increasing ClinVar annotation quality yield better results?
+#### Does increasing ClinVar annotation quality yield better results?
 Up to a the single evidence limit. Multiple evidence and expert seems to restricted.
 
-### Is Denovo-db training better than MPC>2?
+#### Is Denovo-db training better than MPC>2?
 Mostly no.
-
 
 #### Conclusion
 * The baseline MPC>2 can be beaten with training
