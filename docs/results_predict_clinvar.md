@@ -15,6 +15,7 @@
 * Does training with a panel from above do better than MPC>=2 when testing on all of ClinVar? Yes, all panels are better.
 * Does leave one out clinvar do better than the panels? Yes, much better.
 * Does training with a panel from above do better than MPC>=2 when testing on all of denovo-db? Yes.
-* Does the prediction of ClinVar hold-one-out improve relative to MPC>2 when increasing the quality of ClinVar annotations? Yes, but only for the expert annotations. 
+* Does the prediction of ClinVar hold-one-out improve relative to MPC>2 when increasing the quality of ClinVar annotations? Yes, but only for the expert annotations.
+* Does the prediction of ClinVar w/ panel training improve relative to MPC>2 when increasing the quality of ClinVar annotations? No, it seems that performance gets worse when increasing ClinVar quality.
 * Does training with a panel form above for single gene model do better than a glboal model for Clinvar?
 * Does training with a panel form above for single gene model do better than a glboal model for denovo-db?
