@@ -1,3 +1,6 @@
+### Goal
+We are training one MPC cutoff using labeled missense variants from clinical panels, and then predicting that status of missense variants from ClinVar and Denovo-db. Panel training is compared to a hold one gene out training strategy. ClinVar variants have been split by annotation confidence: expert, multiple evidence, single evidence, and all. Each level is determined in a this or better manner. Denovo-db has no benign variants, so it cannot be used for training.
+
 ### Panels
     * Cardiomyopathy
     * Noonan
