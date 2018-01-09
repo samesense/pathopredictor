@@ -55,7 +55,7 @@ def print_data_stats(disease, test_df, train_df_pre, fout):
 
     return train_df
 
-def eval_basic_training(test_df_init, fout_stats, fout_eval):
+def eval_basic_training(clin_type, test_df_init, fout_stats, fout_eval):
     """Train w/ hold out one.
        Also test mpc>2
     """
@@ -90,7 +90,7 @@ def eval_basic_training(test_df_init, fout_stats, fout_eval):
             d[label] = count
             print('\t'.join(ls), file=fout_eval)
         tot_bad = d['WrongPath'] + d['WrongBenign']
-        ls = ('no_disease', 'global_' + metric, 'TotWrong', str(tot_bad))
+        ls = (clin_type, 'no_disease', 'global_' + metric, 'TotWrong', str(tot_bad))
         print('\t'.join(ls), file=fout_eval)
 
     # just mpc>2
@@ -117,10 +117,10 @@ def eval_basic_training(test_df_init, fout_stats, fout_eval):
             d[label] = count
             print('\t'.join(ls), file=fout_eval)
         tot_bad = d['WrongPath'] + d['WrongBenign']
-        ls = ('no_disease', 'global_' + metric, 'TotWrong', str(tot_bad))
+        ls = (clin_type, 'no_disease', 'global_' + metric, 'TotWrong', str(tot_bad))
         print('\t'.join(ls), file=fout_eval)
 
-def eval_disease_as_training(disease, test_df_init, train_df_pre, fout_stats, fout_eval):
+def eval_disease_as_training(clin_type, disease, test_df_init, train_df_pre, fout_stats, fout_eval):
     """Train w/ disease, and test w/ test_df (clinvar or denovo-db)"""
     train_df = print_data_stats(disease, test_df_init, train_df_pre, fout_stats)
     cols = ['mpc']
@@ -156,7 +156,7 @@ def eval_disease_as_training(disease, test_df_init, train_df_pre, fout_stats, fo
             d[label] = count
             print('\t'.join(ls), file=fout_eval)
         tot_bad = d['WrongPath'] + d['WrongBenign']
-        ls = (disease, 'global_' + metric, 'TotWrong', str(tot_bad))
+        ls = (clin_type, disease, 'global_' + metric, 'TotWrong', str(tot_bad))
         print('\t'.join(ls), file=fout_eval)
 
 def main(args):
@@ -197,10 +197,10 @@ def main(args):
                             disease_genedx_limitGene_df, disease_uc_limitGene_df,
                             other_disease_df])
     diseases = set(disease_df['Disease']) | set(('ALL',))
-
+    clin_type = args.test_file.split('/')[-2]
     with open(args.stats_out, 'w') as fout_stats, open(args.eval_out, 'w') as fout_eval:
-        print('disease\tscore_type\teval_type\tvar_count', file=fout_eval)
-        eval_basic_training(test_df, fout_stats, fout_eval)
+        print('clinvar_type\tdisease\tscore_type\teval_type\tvar_count', file=fout_eval)
+        eval_basic_training(clin_type, test_df, fout_stats, fout_eval)
         for disease in diseases:
             print(disease, 'go')
             if str(disease) != 'nan':
@@ -209,7 +209,7 @@ def main(args):
                 else:
                     dd = disease_df[disease_df.Disease == disease]
                     
-                eval_disease_as_training(disease, test_df, dd,
+                eval_disease_as_training(clin_type, disease, test_df, dd,
                                          fout_stats, fout_eval)
     
 if __name__ == "__main__":
