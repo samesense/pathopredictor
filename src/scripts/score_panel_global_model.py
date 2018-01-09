@@ -26,12 +26,22 @@ def eval_pred(row, col):
         return 'WrongPath'
     return 'WrongBenign'
 
-def eval_mpc_raw(row):
+def mk_basic_call(row, score_cols):
+    """Call is pathogenic/1 if all scores are met"""
+    cutoffs = {'mpc':2, 'revel':.375}
+    for col in score_cols:
+        if row[col] < cutoffs[col]:
+            return 0
+    return 1
+
+def eval_mpc_raw(row, score_cols):
+    call = mk_basic_call(row, score_cols)
     if row['y'] == 1:
-        if row['mpc']>=float(2):
+        if call == 1:
             return 'CorrectPath'
         return 'WrongPath'
-    if row['mpc']>=float(2):
+    # else benign
+    if call == 1:
         return 'WrongBenign'
     return 'CorrectBenign'
 
@@ -64,13 +74,15 @@ def print_data_stats(disease, clinvar_df_pre_ls, disease_df, fout, clin_labels):
     return [x[0] for x in clin_dat], [x[1] for x in clin_dat]
 
 def eval_clinvar(label, cols, clinvar_df, disease_df):
+    print(label, clinvar_df.columns.values)
     if len(clinvar_df):
         # train clinvar
-        tree_clf_clinvar = tree.DecisionTreeClassifier(max_depth=1)
+        tree_clf_clinvar = tree.DecisionTreeClassifier( max_depth=len(cols) )
         X, y = clinvar_df[cols], clinvar_df['y']
         tree_clf_clinvar.fit(X, y)
         
         X_test = disease_df[cols]
+        print(X_test)
         preds = tree_clf_clinvar.predict(X_test)
         disease_df['mpc_pred_clinvar_' + label] = preds
         disease_df.loc[:, 'PredictionStatusMPC_clinvar_' + label] = disease_df.apply(lambda row: eval_pred(row, 'mpc_pred_clinvar_' + label), axis=1)
@@ -88,18 +100,18 @@ def print_eval(disease, test_df, metric, fout):
         ls = (disease, 'global_' + metric, 'TotWrong', str(tot_bad))
         print('\t'.join(ls), file=fout)
         
-def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, clin_labels):
+def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, clin_labels, cols):
     #print('debug', disease)
     clinvar_df_ls, clinvar_df_limit_genes_ls = print_data_stats(disease, clinvar_df_pre_ls, disease_df, fout_stats, clin_labels)
     print('debug', disease, len(clinvar_df_ls), len(clin_labels))
-    cols = ['mpc']
+    #cols = ['mpc']
     list(map(lambda x: eval_clinvar(x[0], cols, x[1], disease_df),
              list(zip(clin_labels, clinvar_df_ls))))
     list(map(lambda x: eval_clinvar(x[0], cols, x[1], disease_df),
              list(zip([x + '_limitGene' for x in clin_labels], clinvar_df_limit_genes_ls))))
 
     # apply mpc>=2
-    disease_df.loc[:, 'PredictionStatusMPC>2'] = disease_df.apply(eval_mpc_raw, axis=1)
+    disease_df.loc[:, 'PredictionStatusMPC>2'] = disease_df.apply(lambda x: eval_mpc_raw(x, cols), axis=1)
         
     # one gene at a time
     acc_df_ls = []
@@ -110,7 +122,7 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, 
 
     for test_gene in genes:
         sub_train_df = disease_df[disease_df.gene != test_gene]
-        tree_clf_sub = tree.DecisionTreeClassifier(max_depth=1)
+        tree_clf_sub = tree.DecisionTreeClassifier( max_depth=len(cols) )
         X, y = sub_train_df[cols], sub_train_df['y']
         tree_clf_sub.fit(X, y)
 
@@ -126,6 +138,7 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, 
     print_eval(disease, test_df, 'PredictionStatusMPC', fout_eval)
 
 def main(args):
+    score_cols = args.score_cols.split('-')
     FOCUS_GENES = ('SCN1A','SCN2A','KCNQ2', 'KCNQ3', 'CDKL5',
                    'PCDH19', 'SCN1B', 'SCN8A', 'SLC2A1',
                    'SPTAN1', 'STXBP1', 'TSC1')
@@ -167,12 +180,12 @@ def main(args):
         for disease in diseases:
             if str(disease) != 'nan':
                 eval_disease(disease, clinvar_df_pre_ls, disease_df[disease_df.Disease == disease],
-                             fout_stats, fout_eval, clin_labels)
+                             fout_stats, fout_eval, clin_labels, score_cols)
     
 if __name__ == "__main__":
     desc = 'Eval global mpc cutoff'
     parser = argparse.ArgumentParser(description=desc)
-    argLs = ('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo',
+    argLs = ('score_cols', 'clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo',
              'gene_dx', 'uc', 'other_disease', 'stats_out', 'eval_out')
     for param in argLs:
         parser.add_argument(param)

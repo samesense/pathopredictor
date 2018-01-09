@@ -26,12 +26,22 @@ def eval_pred(row, col):
         return 'WrongPath'
     return 'WrongBenign'
 
-def eval_mpc_raw(row):
+def mk_basic_call(row, score_cols):
+    """Call is pathogenic/1 if all scores are met"""
+    cutoffs = {'mpc':2, 'revel':.375}
+    for col in score_cols:
+        if row[col] < cutoffs[col]:
+            return 0
+    return 1
+
+def eval_mpc_raw(row, score_cols):
+    call = mk_basic_call(row, score_cols)
     if row['y'] == 1:
-        if row['mpc']>=float(2):
+        if call == 1:
             return 'CorrectPath'
         return 'WrongPath'
-    if row['mpc']>=float(2):
+    # else benign
+    if call == 1:
         return 'WrongBenign'
     return 'CorrectBenign'
 
@@ -55,12 +65,11 @@ def print_data_stats(disease, test_df, train_df_pre, fout):
 
     return train_df
 
-def eval_basic_training(clin_type, test_df_init, fout_stats, fout_eval):
+def eval_basic_training(clin_type, test_df_init, fout_stats, fout_eval, cols):
     """Train w/ hold out one.
        Also test mpc>2
     """
     # train
-    cols = ['mpc']
 
     # one gene at a time
     acc_df_ls = []
@@ -68,7 +77,7 @@ def eval_basic_training(clin_type, test_df_init, fout_stats, fout_eval):
 
     for test_gene in genes:
         sub_train_df = test_df_init[test_df_init.gene != test_gene]
-        tree_clf_sub = tree.DecisionTreeClassifier(max_depth=1)
+        tree_clf_sub = tree.DecisionTreeClassifier( max_depth=len(cols) )
         X, y = sub_train_df[cols], sub_train_df['y']
         tree_clf_sub.fit(X, y)
 
@@ -101,7 +110,7 @@ def eval_basic_training(clin_type, test_df_init, fout_stats, fout_eval):
         #test_df.loc[:, 'PredictionStatusMPC_holdOut'] = test_df.apply(lambda row: eval_pred(row, 'mpc_pred_holdOut'), axis=1)
 
         # apply mpc>=2
-    test_df.loc[:, 'PredictionStatusMPC>2'] = test_df.apply(eval_mpc_raw, axis=1)
+    test_df.loc[:, 'PredictionStatusMPC>2'] = test_df.apply(lambda x: eval_mpc_raw(x, cols), axis=1)
 
     #    acc_df_ls.append(test_df)
 
@@ -120,13 +129,13 @@ def eval_basic_training(clin_type, test_df_init, fout_stats, fout_eval):
         ls = (clin_type, 'no_disease', 'global_' + metric, 'TotWrong', str(tot_bad))
         print('\t'.join(ls), file=fout_eval)
 
-def eval_disease_as_training(clin_type, disease, test_df_init, train_df_pre, fout_stats, fout_eval):
+def eval_disease_as_training(clin_type, disease, test_df_init, train_df_pre, fout_stats, fout_eval, cols):
     """Train w/ disease, and test w/ test_df (clinvar or denovo-db)"""
     train_df = print_data_stats(disease, test_df_init, train_df_pre, fout_stats)
     cols = ['mpc']
     
     # train
-    tree_clf = tree.DecisionTreeClassifier(max_depth=1)
+    tree_clf = tree.DecisionTreeClassifier( max_depth=len(cols) )
     X, y = train_df[cols], train_df['y']
     tree_clf.fit(X, y)
     tree.export_graphviz(tree_clf, out_file=disease + '.dot')
@@ -152,7 +161,7 @@ def eval_disease_as_training(clin_type, disease, test_df_init, train_df_pre, fou
         d = defaultdict(int)
         for v in list(counts.values):
             _, label, count = v
-            ls = (disease, 'global_' + metric, label, str(count))
+            ls = (clin_type, disease, 'global_' + metric, label, str(count))
             d[label] = count
             print('\t'.join(ls), file=fout_eval)
         tot_bad = d['WrongPath'] + d['WrongBenign']
@@ -200,7 +209,7 @@ def main(args):
     clin_type = args.test_file.split('/')[-2]
     with open(args.stats_out, 'w') as fout_stats, open(args.eval_out, 'w') as fout_eval:
         print('clinvar_type\tdisease\tscore_type\teval_type\tvar_count', file=fout_eval)
-        eval_basic_training(clin_type, test_df, fout_stats, fout_eval)
+        eval_basic_training(clin_type, test_df, fout_stats, fout_eval, score_cols)
         for disease in diseases:
             print(disease, 'go')
             if str(disease) != 'nan':
@@ -210,12 +219,12 @@ def main(args):
                     dd = disease_df[disease_df.Disease == disease]
                     
                 eval_disease_as_training(clin_type, disease, test_df, dd,
-                                         fout_stats, fout_eval)
+                                         fout_stats, fout_eval, score_cols)
     
 if __name__ == "__main__":
     desc = 'Eval global mpc cutoff. Train panel and test clinvar|denovo-db'
     parser = argparse.ArgumentParser(description=desc)
-    argLs = ('test_file', 'gene_dx', 'uc', 'other_disease', 'stats_out', 'eval_out')
+    argLs = ('score_cols', 'test_file', 'gene_dx', 'uc', 'other_disease', 'stats_out', 'eval_out')
     for param in argLs:
         parser.add_argument(param)
     args = parser.parse_args()

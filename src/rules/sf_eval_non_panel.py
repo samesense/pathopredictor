@@ -9,24 +9,24 @@ rule eval_clinvar_global:
             DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat.limit.xls',
             DATA + 'interim/uc.eff.dbnsfp.anno.hHack.dat.limit.xls',
             DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls'
-    output: WORK + 'global.eval_{dat}.stats',
-            WORK + 'global.eval_{dat}.eval'
-    shell:  'python {SCRIPTS}score_other_global_model.py {input} {output}'
+    output: WORK + 'global.eval_{dat}.{cols}.stats',
+            WORK + 'global.eval_{dat}.{cols}.eval'
+    shell:  'python {SCRIPTS}score_other_global_model.py {wildcards.cols} {input} {output}'
 
 rule limit_for_plot:
-    input:  WORK + '{method}.eval_{dat}.eval'
-    output: WORK + '{method}.eval_{dat}.totWrong'
+    input:  WORK + '{method}.eval_{dat}.{cols}.eval'
+    output: WORK + '{method}.eval_{dat}.{cols}.totWrong'
     shell:  "grep 'TotWrong\|count' {input} | grep -v ssue | grep -v earing > {output}"
 
 rule cat:
-    input:  expand( WORK + '{{method}}.eval_{dat}.totWrong', dat=('clinvar', 'denovo', 'clinvar_mult', 'clinvar_single', 'clinvar_exp') )
-    output: o=WORK + 'totWrong/{method}'
+    input:  expand( WORK + '{{method}}.eval_{dat}.{{cols}}.totWrong', dat=('clinvar', 'denovo', 'clinvar_mult', 'clinvar_single', 'clinvar_exp') )
+    output: o = WORK + 'totWrong/{method}.{cols}'
     run:
         pd.concat( [pd.read_csv(x, sep='\t') for x in list(input)] ).to_csv(output.o, index=False, sep='\t')
         
 rule plot:
-    input:  WORK + 'totWrong/{method}'
-    output: DOCS + 'plot/{method}.other.totWrong.png'
+    input:  WORK + 'totWrong/{method}.{cols}'
+    output: DOCS + 'plot/{method}.other.{cols}.totWrong.png'
     run:
         R("""
           require(ggplot2)
@@ -41,5 +41,5 @@ rule plot:
           """)
 
 rule all_eval:
-    input: expand( DOCS + 'plot/{method}.other.totWrong.png', method=('global',) )
+    input: expand( DOCS + 'plot/{method}.other.{cols}.totWrong.png', method=('global',), cols=('mpc', 'revel', 'mpc-revel') )
     

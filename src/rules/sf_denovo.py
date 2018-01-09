@@ -51,7 +51,7 @@ rule parse_denovo_vcf:
     output: o = DATA + 'interim/denovo/denovo.dat'
     run:
         with open(input.i) as f, open(output.o, 'w') as fout:
-           print('chrom\tpos\tref\talt\tpfam\teff\taf_1kg_all\tgene\tmpc\tmtr\tProtein_Change', file=fout)
+           print('chrom\tpos\tref\talt\tpfam\teff\taf_1kg_all\tgene\tmpc\tmtr\tProtein_Change\trevel', file=fout)
            for line in f:
                if line[0] != '#':
                    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
@@ -59,6 +59,10 @@ rule parse_denovo_vcf:
                    mtr = '0'
                    if 'mtr=' in info:
                        mtr = info.split('mtr=')[1].split(';')[0]
+
+                   revel = '-1'
+                   if 'REVEL=' in info:
+                       revel = info.split('REVEL=')[1].split(';')[0]
 
                    mpc = '0'
                    if 'mpc=' in info:
@@ -79,13 +83,13 @@ rule parse_denovo_vcf:
 
                    eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
                    gene = info.split('EFF=')[1].split(';')[0].split(',')[0].split('|')[-6]
-                   ls = (chrom, pos, ref, alt, pfam, eff, onekg, gene, mpc, mtr, protein_change)
+                   ls = (chrom, pos, ref, alt, pfam, eff, onekg, gene, mpc, mtr, protein_change, revel)
                    print('\t'.join(ls), file=fout)
 
 # focus genes and missense                   
 rule limit_eval:                   
     input:  i = DATA + 'interim/denovo/denovo.dat'
-    output: o = DATA + 'interim/denovo/denovo.limit.dat'
+    output: o = DATA + 'interim/denovo/denovo.limit3.dat'
     run:
         df = pd.read_csv(input.i, sep='\t')
         df['y'] = 1

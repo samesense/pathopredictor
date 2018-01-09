@@ -89,8 +89,8 @@ rule parse_vcf:
            o2 = DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.splitPfam.dat'
    run:
        with open(input.i) as f, open(output.o, 'w') as fout, open(output.o2, 'w') as fout_split_pfam:
-           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tgene\tmpc\tmtr\texac_af\texac_ac\texac_an\texac_cov_frac\tkaviar_af\tProtein_Change\tHugo_Symbol', file=fout)
-           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tgene\tmpc\tmtr',
+           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tgene\tmpc\tmtr\trevel\texac_af\texac_ac\texac_an\texac_cov_frac\tkaviar_af\tProtein_Change\tHugo_Symbol', file=fout)
+           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tgene\tmpc\tmtr\trevel',
                  file=fout_split_pfam)
            for line in f:
                if not line[0] == '#':
@@ -120,6 +120,11 @@ rule parse_vcf:
                    if 'mtr=' in info:
                        mtr = info.split('mtr=')[1].split(';')[0]
 
+                   revel = '-1'
+                   if 'REVEL=' in info:
+                       revel = info.split('REVEL=')[1].split(';')[0]
+
+
                    clin = info.split('CLIN_CLASS=')[1].split(';')[0]
 
                    if 'pfam_domain' in info:
@@ -141,12 +146,12 @@ rule parse_vcf:
 
                    gene = info.split('EFF=')[1].split(';')[0].split(',')[0].split('|')[-6]
                    ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff,
-                         gene, mpc, mtr, exac_af, exac_ac, exac_an,
+                         gene, mpc, mtr, revel, exac_af, exac_ac, exac_an,
                          exac_cov_frac, kv_af, protein_change, gene)
                    print('\t'.join(ls), file=fout)
 
                    for p in pfam.split(','):
-                       ls = (chrom, pos, ref, alt, clin, p, onekg, eff, gene, mpc, mtr)
+                       ls = (chrom, pos, ref, alt, clin, p, onekg, eff, gene, mpc, mtr, revel)
                        print('\t'.join(ls), file=fout_split_pfam)
 
 def mk_class(row):
