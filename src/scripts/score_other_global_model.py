@@ -95,7 +95,7 @@ def eval_basic_training(clin_type, test_df_init, fout_stats, fout_eval, cols):
         d = defaultdict(int)
         for v in list(counts.values):
             _, label, count = v
-            ls = ('no_disease', 'global_' + metric, label, str(count))
+            ls = (clin_type, 'no_disease', 'global_' + metric, label, str(count))
             d[label] = count
             print('\t'.join(ls), file=fout_eval)
         tot_bad = d['WrongPath'] + d['WrongBenign']
@@ -122,7 +122,7 @@ def eval_basic_training(clin_type, test_df_init, fout_stats, fout_eval, cols):
         d = defaultdict(int)
         for v in list(counts.values):
             _, label, count = v
-            ls = ('no_disease', 'global_' + metric, label, str(count))
+            ls = (clin_type, 'no_disease', 'global_' + metric, label, str(count))
             d[label] = count
             print('\t'.join(ls), file=fout_eval)
         tot_bad = d['WrongPath'] + d['WrongBenign']
@@ -169,6 +169,7 @@ def eval_disease_as_training(clin_type, disease, test_df_init, train_df_pre, fou
         print('\t'.join(ls), file=fout_eval)
 
 def main(args):
+    score_cols = args.score_cols.split('-')
     FOCUS_GENES = ('SCN1A','SCN2A','KCNQ2', 'KCNQ3', 'CDKL5',
                    'PCDH19', 'SCN1B', 'SCN8A', 'SLC2A1',
                    'SPTAN1', 'STXBP1', 'TSC1')
