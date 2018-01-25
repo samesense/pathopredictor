@@ -75,10 +75,15 @@ rule ahmad_percent_wrong:
         m[crit].to_csv(output.o, index=False, sep='\t')
 
 rule concat_extra:
-    input:  expand( WORK + 'global.{cols}.eval_panel.eval.percentWrong', cols=('mpc', 'revel', 'mpc-revel', 'ccr', 'mpc-revel-ccr', 'mpc-ccr', 'revel-mpc'))
+    input:  expand( WORK + 'global.{cols}.eval_panel.eval.percentWrong', cols=('mpc', 'revel', 'mpc-revel', 'ccr', 'mpc-revel-ccr', 'mpc-ccr', 'revel-ccr'))
     output: o = WORK + 'cc'
     run:
-        pd.concat([pd.read_csv(afile, sep='\t') for afile in list(input)]).drop_duplicates().to_csv(output.o, index=False, sep='\t')
+        m = pd.concat([pd.read_csv(afile, sep='\t') for afile in list(input)]).drop_duplicates(subset=['color', 'disease', 'score_type', 'st', 'dis'])
+        print( m[['dis', 'percent_wrong']].groupby('dis').apply(min) )
+        min_df = m[['dis', 'percent_wrong']].groupby('dis').apply(min).rename(columns={'dis':'dis_junk', 'percent_wrong':'min'}).reset_index()
+        d = pd.merge(m, min_df, on='dis', how='left')
+        d.loc[:, 'min_color'] = d.apply(lambda row: row['percent_wrong']==row['min'], axis=1)
+        d.to_csv(output.o, sep='\t', index=False)
 
 rule plot_ahmad:
     input:  WORK + '{method}.{cols}.eval_panel.eval.percentWrong'
@@ -88,7 +93,7 @@ rule plot_ahmad:
           require(ggplot2)
           d = read.delim("{input}", sep='\t', header=TRUE)
           p = ggplot(data=d) +
-          geom_col(aes(y=percent_wrong, x=st, fill=color)) +
+          geom_col(aes(y=percent_wrong, x=st, fill=min_color)) +
           facet_grid(dis~.) + theme_bw() +
           theme(axis.text.x = element_text(angle=90, hjust=1)) +
           ylab('Wrong prediction fraction') +
@@ -104,7 +109,7 @@ rule plot_ahmad2:
           require(ggplot2)
           d = read.delim("{input}", sep='\t', header=TRUE)
           p = ggplot(data=d) +
-          geom_col(aes(y=percent_wrong, x=st, fill=color)) +
+          geom_col(aes(y=percent_wrong, x=st, fill=min_color)) +
           facet_grid(dis~.) + theme_bw() +
           theme(axis.text.x = element_text(angle=90, hjust=1)) +
           ylab('Wrong prediction fraction') +
@@ -112,8 +117,6 @@ rule plot_ahmad2:
           ggsave("{output}", p, height=15)
           """)
 
-        
+
 rule all_ahmad:
     input: expand( DOCS + 'plot/{method}.{cols}.byDisease.png', method=('global',), cols=('mpc', 'revel', 'mpc-revel') )
-                   
-    

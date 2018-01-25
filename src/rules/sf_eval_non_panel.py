@@ -83,5 +83,5 @@ rule plot:
           """)
 
 rule all_eval:
-    input: expand( DOCS + 'plot/{method}.other.{cols}.totWrong.png', method=('global',), cols=('mpc', 'revel', 'mpc-revel', 'ccr', 'mpc-revel-ccr', 'mpc-ccr', 'revel-mpc') )
+    input: expand( DOCS + 'plot/{method}.other.{cols}.totWrong.png', method=('global',), cols=('mpc', 'revel', 'mpc-revel', 'ccr', 'mpc-revel-ccr', 'mpc-ccr', 'revel-ccr') )
     
