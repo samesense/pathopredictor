@@ -4,7 +4,7 @@ import pandas as pd
 include: "const.py"
 include: "sf_eval_non_panel.py"
 
-rule percent_wrong:
+rule ahmad_percent_wrong:
     input:  panel = WORK + '{method}.eval_panel.{cols}.eval',
             non_panel = expand( WORK + '{{method}}.eval_{dat}.{{cols}}.eval', \
                                 dat=('clinvar', 'denovo', 'clinvar_mult', 'clinvar_single', 'clinvar_exp') )
@@ -31,12 +31,29 @@ rule percent_wrong:
             if score_type == 'global_PredictionStatusMPC>2':
                 return 'paper_' + wildcards.cols
             elif '::' in score_type:
-                return 'predict_' + score_type.split('::')[0]
+#                if not 'no_disease' in score_type:
+                return 'predict_' + score_type.split('::')[0] + '_' + wildcards.cols
+                # else:
+                #     prefix = 'panel_indep_'
+                #     if '>2' in score_type:
+                #         return prefix + 'paper_' + wildcards.cols
+                #     return prefix + 'self-trained'               
+                
             elif score_type == 'global_PredictionStatusMPC':
-                return 'panel-trained'
+                return 'panel-trained_' + wildcards.cols
             elif 'global' == score_type[:6]:
                 return score_type.replace('global_PredictionStatusMPC', 'train_with')
-            return score_type            
+            return score_type
+
+        def rename_disease(disease, score_type):
+            if disease == 'no_disease':
+                if '_holdOut' in score_type:
+                    return 'self-trained'
+                elif '>2' in score_type:
+                    return 'paper-cutoff'
+                else:
+                    i = 1/0                    
+            return disease
                 
         non_panel_dfs = pd.concat( [load_other_df(afile) for afile in input.non_panel] )
         non_panel_dfs['color'] = 'predict clinvar'
@@ -48,11 +65,20 @@ rule percent_wrong:
         panel_df['color'] = 'predict_panel'
         m = pd.concat([panel_df, non_panel_dfs])
         m.loc[:, 'st'] = m.apply(lambda row: rename_score(row['score_type']), axis=1)
-        crit = m.apply(lambda row: not row['disease'] in ('ALL', 'no_disease')
+        m.loc[:, 'dis'] = m.apply(lambda row: rename_disease(row['disease'], row['score_type']), axis=1)
+        crit = m.apply(lambda row: not row['disease'] in ('ALL',)
                        and not 'earing' in row['disease']
-                       and not 'issue' in row['disease'],
+                       and not 'issue' in row['disease']
+                       and not ('no_disease' == row['disease'] and '>2' in row['score_type'])
+                       and row['color'] != 'predict clinvar',
                        axis=1)
         m[crit].to_csv(output.o, index=False, sep='\t')
+
+rule concat_extra:
+    input:  expand( WORK + 'global.{cols}.eval_panel.eval.percentWrong', cols=('mpc', 'revel', 'mpc-revel', 'ccr', 'mpc-revel-ccr', 'mpc-ccr', 'revel-mpc'))
+    output: o = WORK + 'cc'
+    run:
+        pd.concat([pd.read_csv(afile, sep='\t') for afile in list(input)]).drop_duplicates().to_csv(output.o, index=False, sep='\t')
 
 rule plot_ahmad:
     input:  WORK + '{method}.{cols}.eval_panel.eval.percentWrong'
@@ -63,13 +89,30 @@ rule plot_ahmad:
           d = read.delim("{input}", sep='\t', header=TRUE)
           p = ggplot(data=d) +
           geom_col(aes(y=percent_wrong, x=st, fill=color)) +
-          facet_grid(disease~.) + theme_bw() +
+          facet_grid(dis~.) + theme_bw() +
           theme(axis.text.x = element_text(angle=90, hjust=1)) +
           ylab('Wrong prediction fraction') +
           xlab('') + theme(legend.position="none") + coord_flip()
-          ggsave("{output}", p, height=10)
+          ggsave("{output}", p, height=15)
           """)
 
+rule plot_ahmad2:
+    input:  WORK + 'cc'
+    output: DOCS + 'plot/global.byDisease.png'
+    run:
+        R("""
+          require(ggplot2)
+          d = read.delim("{input}", sep='\t', header=TRUE)
+          p = ggplot(data=d) +
+          geom_col(aes(y=percent_wrong, x=st, fill=color)) +
+          facet_grid(dis~.) + theme_bw() +
+          theme(axis.text.x = element_text(angle=90, hjust=1)) +
+          ylab('Wrong prediction fraction') +
+          xlab('') + theme(legend.position="none") + coord_flip()
+          ggsave("{output}", p, height=15)
+          """)
+
+        
 rule all_ahmad:
     input: expand( DOCS + 'plot/{method}.{cols}.byDisease.png', method=('global',), cols=('mpc', 'revel', 'mpc-revel') )
                    

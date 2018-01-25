@@ -49,10 +49,14 @@ rule parse_clinvar_vcf:
    output: o = DATA + 'interim/clinvar/clinvar.dat'
    run:
        with open(input.i) as f, open(output.o, 'w') as fout:
-           print('chrom\tpos\tref\talt\tpfam\teff\tclinSig\taf_1kg_all\tgene\tmpc\tmtr\tProtein_Change\tconfidence\trevel', file=fout)
+           print('chrom\tpos\tref\talt\tpfam\teff\tclinSig\taf_1kg_all\tgene\tmpc\tmtr\tProtein_Change\tconfidence\trevel\tccr', file=fout)
            for line in f:
                if line[0] != '#':
                    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
+
+                   ccr = '-1'
+                   if 'ccr_pct' in info:
+                       ccr = info.split('ccr_pct=')[1].split(';')[0]
 
                    mtr = '0'
                    if 'mtr=' in info:
@@ -84,7 +88,7 @@ rule parse_clinvar_vcf:
 
                    eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
                    gene = info.split('EFF=')[1].split(';')[0].split(',')[0].split('|')[-6]
-                   ls = (chrom, pos, ref, alt, pfam, eff, clin_sig, onekg, gene, mpc, mtr, protein_change, confidence, revel)
+                   ls = (chrom, pos, ref, alt, pfam, eff, clin_sig, onekg, gene, mpc, mtr, protein_change, confidence, revel, ccr)
                    print('\t'.join(ls), file=fout)
 
 def calc_final_sig(row):

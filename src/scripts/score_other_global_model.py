@@ -28,7 +28,7 @@ def eval_pred(row, col):
 
 def mk_basic_call(row, score_cols):
     """Call is pathogenic/1 if all scores are met"""
-    cutoffs = {'mpc':2, 'revel':.375}
+    cutoffs = {'mpc':2, 'revel':.375, 'ccr':.9}
     for col in score_cols:
         if row[col] < cutoffs[col]:
             return 0

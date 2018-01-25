@@ -28,7 +28,7 @@ def eval_pred(row, col):
 
 def mk_basic_call(row, score_cols):
     """Call is pathogenic/1 if all scores are met"""
-    cutoffs = {'mpc':2, 'revel':.375}
+    cutoffs = {'mpc':2, 'revel':.375, 'ccr':.9}
     for col in score_cols:
         if row[col] < cutoffs[col]:
             return 0
@@ -74,7 +74,7 @@ def print_data_stats(disease, clinvar_df_pre_ls, disease_df, fout, clin_labels):
     return [x[0] for x in clin_dat], [x[1] for x in clin_dat]
 
 def eval_clinvar(label, cols, clinvar_df, disease_df):
-    print(label, clinvar_df.columns.values)
+    #print(label, clinvar_df.columns.values)
     if len(clinvar_df):
         # train clinvar
         tree_clf_clinvar = tree.DecisionTreeClassifier( max_depth=len(cols) )
@@ -84,6 +84,7 @@ def eval_clinvar(label, cols, clinvar_df, disease_df):
         X_test = disease_df[cols]
         print(X_test)
         preds = tree_clf_clinvar.predict(X_test)
+        
         disease_df['mpc_pred_clinvar_' + label] = preds
         disease_df.loc[:, 'PredictionStatusMPC_clinvar_' + label] = disease_df.apply(lambda row: eval_pred(row, 'mpc_pred_clinvar_' + label), axis=1)
 
