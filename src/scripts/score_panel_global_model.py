@@ -102,10 +102,7 @@ def print_eval(disease, test_df, metric, fout):
         print('\t'.join(ls), file=fout)
         
 def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, clin_labels, cols):
-    #print('debug', disease)
     clinvar_df_ls, clinvar_df_limit_genes_ls = print_data_stats(disease, clinvar_df_pre_ls, disease_df, fout_stats, clin_labels)
-    print('debug', disease, len(clinvar_df_ls), len(clin_labels))
-    #cols = ['mpc']
     list(map(lambda x: eval_clinvar(x[0], cols, x[1], disease_df),
              list(zip(clin_labels, clinvar_df_ls))))
     list(map(lambda x: eval_clinvar(x[0], cols, x[1], disease_df),
@@ -113,7 +110,7 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, 
 
     # apply mpc>=2
     disease_df.loc[:, 'PredictionStatusMPC>2'] = disease_df.apply(lambda x: eval_mpc_raw(x, cols), axis=1)
-        
+
     # one gene at a time
     acc_df_ls = []
     genes = set(disease_df['gene'])
@@ -127,9 +124,18 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, 
         X, y = sub_train_df[cols], sub_train_df['y']
         tree_clf_sub.fit(X, y)
 
+        #regression for multiple scores
+        if len(cols)>1:
+            lm =  linear_model.LinearRegression(normalize=True, fit_intercept=True)
+            lm.fit(X, y)
+
+
         test_df = disease_df[disease_df.gene == test_gene]
         X_test = test_df[cols]
         preds = tree_clf_sub.predict(X_test)
+        if len(cols)>1:
+            lm_preds = lm.predict(X_test)
+            test_df['-'.join(cols) + '_pred_lm'] = lm_preds
         test_df['mpc_pred'] = preds
         test_df.loc[:, 'PredictionStatusMPC'] = test_df.apply(lambda row: eval_pred(row, 'mpc_pred'), axis=1)
 
@@ -137,6 +143,7 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, 
 
     test_df = pd.concat(acc_df_ls)
     print_eval(disease, test_df, 'PredictionStatusMPC', fout_eval)
+    return test_df
 
 def main(args):
     score_cols = args.score_cols.split('-')
@@ -176,18 +183,21 @@ def main(args):
                             other_disease_df])
     diseases = set(disease_df['Disease'])
 
+    eval_df_ls = []
     with open(args.stats_out, 'w') as fout_stats, open(args.eval_out, 'w') as fout_eval:
         print('disease\tscore_type\teval_type\tvar_count', file=fout_eval)
         for disease in diseases:
             if str(disease) != 'nan':
-                eval_disease(disease, clinvar_df_pre_ls, disease_df[disease_df.Disease == disease],
-                             fout_stats, fout_eval, clin_labels, score_cols)
-    
+                eval_df = eval_disease(disease, clinvar_df_pre_ls, disease_df[disease_df.Disease == disease],
+                                       fout_stats, fout_eval, clin_labels, score_cols)
+                eval_df_ls.append(eval_df)
+    pd.concat(eval_df_ls).to_csv(args.out_df, index=False, sep='\t')
+
 if __name__ == "__main__":
     desc = 'Eval global mpc cutoff'
     parser = argparse.ArgumentParser(description=desc)
     argLs = ('score_cols', 'clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo',
-             'gene_dx', 'uc', 'other_disease', 'stats_out', 'eval_out')
+             'gene_dx', 'uc', 'other_disease', 'stats_out', 'eval_out', 'out_df')
     for param in argLs:
         parser.add_argument(param)
     args = parser.parse_args()

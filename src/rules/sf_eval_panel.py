@@ -1,4 +1,7 @@
 """Predict status for gene panel vars"""
+import pandas as pd
+from functools import reduce
+
 include: "const.py"
 
 from snakemake.utils import R
@@ -9,7 +12,8 @@ rule eval_panel_global:
             DATA + 'interim/uc.eff.dbnsfp.anno.hHack.dat.limit.xls',
             DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls'
     output: WORK + 'global.eval_panel.{cols}.stats',
-            WORK + 'global.eval_panel.{cols}.eval'
+            WORK + 'global.eval_panel.{cols}.eval',
+            WORK + 'roc_df/{cols}'
     shell:  'python {SCRIPTS}score_panel_global_model.py {wildcards.cols} {input} {output}'
 
 rule eval_panel_single_gene:
@@ -42,9 +46,29 @@ rule plot:
           ggsave("{output}", p)
           """)
 
-rule all_eval:
-    input: expand( DOCS + 'plot/{method}.eval_panel.{cols}.totWrong.png', method=('global',), cols=('mpc', 'revel', 'mpc-revel', 'ccr', 'mpc-revel-ccr', 'mpc-ccr', 'revel-ccr') )
+def read_df(afile):
+    col = afile.split('/')[-1]
+    df_pre = pd.read_csv(afile, sep='\t')
+    if col in df_pre.columns.values:
+        df = df_pre[['chrom', 'pos', 'alt', col, 'y', 'Disease']]
+    elif col + '_pred_lm' in df_pre.columns.values:
+        df = df_pre[['chrom', 'pos', 'alt', col + '_pred_lm', 'y', 'Disease']]
+    else:
+        print(col)
+    return df
 
+rule combine_predictions:
+    input:  expand( WORK + 'roc_df/{cols}', cols=('mpc', 'revel', 'mpc-revel', 'ccr', 'mpc-revel-ccr', 'mpc-ccr', 'revel-ccr') ) 
+    output: o = WORK + 'roc_df_combo'
+    run:
+        dfs = [read_df(afile) for afile in list(input)]
+        keys = ['Disease', 'chrom', 'pos', 'alt', 'y']
+        m = reduce(lambda left, right: pd.merge(left, right, on=keys), dfs)
+        m.to_csv(output.o, index=False, sep='\t')
+
+rule all_eval:
+    input: expand( DOCS + 'plot/{method}.eval_panel.{cols}.totWrong.png', method=('global',), cols=('mpc', 'revel', 'mpc-revel', 'ccr', 'mpc-revel-ccr', 'mpc-ccr', 'revel-ccr') ), \
+          
 # ggplot(data=d) + geom_col(aes(y=var_count,x=score_type, fill=score_type)) + facet_grid(disease~., scale='free') + theme_bw() + ylab('Wrong Predictions') + theme(axis.text.x = element_text(angle=90)) + xlab('') + theme(legend.position="none")    
 
 
