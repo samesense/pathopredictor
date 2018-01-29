@@ -28,7 +28,7 @@ def eval_pred(row, col):
 
 def mk_basic_call(row, score_cols):
     """Call is pathogenic/1 if all scores are met"""
-    cutoffs = {'mpc':2, 'revel':.375, 'ccr':.9}
+    cutoffs = {'is_domain':1, 'mpc':2, 'revel':.375, 'ccr':90}
     for col in score_cols:
         if row[col] < cutoffs[col]:
             return 0
@@ -129,7 +129,6 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, 
             lm =  linear_model.LinearRegression(normalize=True, fit_intercept=True)
             lm.fit(X, y)
 
-
         test_df = disease_df[disease_df.gene == test_gene]
         X_test = test_df[cols]
         preds = tree_clf_sub.predict(X_test)
@@ -157,7 +156,9 @@ def main(args):
     clinvar_df_pre_ls = list(map(lambda x: pd.read_csv(x, sep='\t').rename(columns={'clin_class':'y'}), clinvars))
     # add denvo
     clinvar_df_pre_ls.append( pd.read_csv(args.denovo, sep='\t') )
-    
+
+    for df in clinvar_df_pre_ls:
+        df.loc[:, 'is_domain'] = df.apply(lambda row: 0 if 'none' in row else 1, axis=1)
     # load genedx epi
     disease_genedx_df = pd.read_csv(args.gene_dx, sep='\t')
     disease_genedx_df.loc[:, 'y'] = disease_genedx_df.apply(lambda row: 1 if row['class']=='P' else 0, axis=1)
@@ -173,7 +174,7 @@ def main(args):
     crit = disease_uc_df.apply(lambda row: row['gene'] in FOCUS_GENES, axis=1)
     disease_uc_limitGene_df= disease_uc_df[crit]
     disease_uc_limitGene_df['Disease'] = 'uc-epi-limitGene'
-    
+
     # load other disease
     other_disease_df = pd.read_csv(args.other_disease, sep='\t')
     other_disease_df.loc[:, 'y'] = other_disease_df.apply(lambda row: 1 if row['class']=='P' else 0, axis=1)
@@ -181,6 +182,7 @@ def main(args):
     disease_df = pd.concat([disease_genedx_df, disease_uc_df,
                             disease_genedx_limitGene_df, disease_uc_limitGene_df,
                             other_disease_df])
+    disease_df.loc[:, 'is_domain'] = disease_df.apply(lambda row: 0 if 'none' in row['pfam'] else 1, axis=1)
     diseases = set(disease_df['Disease'])
 
     eval_df_ls = []

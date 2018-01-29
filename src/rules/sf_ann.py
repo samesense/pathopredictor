@@ -111,7 +111,7 @@ rule vcfanno:
              lua = VCFANNO_LUA_FILE
     output:  DATA + 'interim/{lab}.eff.dbnsfp.anno.vcf'
     threads: 10
-    shell:   """{VCFANNO} -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
+    shell:   """vcfanno -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
                 {input.conf} {input.vcf} > {output}"""
 
 HEADER_FIX = 'eff_indel_splice,1,Flag AC,1,Integer AF,1,Float dbNSFP_FATHMM_pred,.,String dbNSFP_Interpro_domain,.,String dbNSFP_LR_pred,.,String dbNSFP_phyloP100way_vertebrate,.,String dbNSFP_phastCons100way_vertebrate,.,String dbNSFP_SIFT_score,.,String dbNSFP_Reliability_index,.,String dbNSFP_RadialSVM_pred,.,String dbNSFP_RadialSVM_pred,.,String dbNSFP_Polyphen2_HVAR_pred,.,String dbNSFP_MutationTaster_pred,.,String dbNSFP_MutationAssessor_pred,.,String'
