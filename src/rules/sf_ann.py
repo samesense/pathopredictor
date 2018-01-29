@@ -16,20 +16,17 @@ rule fix_missing_mutalyzer:
     output: DATA + 'raw/mutalyzer.{panel}.fixMiss'
     shell:  '{PY27} {SCRIPTS}use_blat_to_fix_mutalyzer.py {input} {output}'
 
-# rule tmp:
-#     input: DATA + 'raw/mutalyzer.uc.fixMiss'
-
 rule mk_dat_panel_two:
     input:  DATA + 'raw/EpilepsyVariantDataForAhmadClean_090517.xlsx',
             DATA + 'raw/mutalyzer.panel_two.fixMiss',
-            '/home/evansj/me/data/ucsc/hg19.2bit'            
+            '/home/evansj/me/data/ucsc/hg19.2bit'
     output: DATA + 'interim/panel_two.tab'
     shell:  'python {SCRIPTS}mk_tab_clinical_panel_two.py {input} {output}'
 
 rule mk_dat_panel_uc:
     input:  DATA + 'interim/uc.dat',
             DATA + 'raw/mutalyzer.uc.fixMiss',
-            '/home/evansj/me/data/ucsc/hg19.2bit'            
+            '/home/evansj/me/data/ucsc/hg19.2bit'
     output: DATA + 'interim/uc.tab'
     shell:  'python {SCRIPTS}mk_tab_uc.py {input} {output}'
 
@@ -44,7 +41,7 @@ rule init_hg19_cruz:
 def fix_transcript(row):
     return row['Transcript'].split('.')[0]
 
-# uc data is missing chrom        
+# uc data is missing chrom
 rule add_uc_chroms:
     input:  x = DATA + 'raw/UC_all_panel_variants_01_20_2016.xlsx',
             d = TMP + 'cruz_init_hg19'
@@ -60,7 +57,7 @@ rule add_uc_chroms:
         m = pd.merge(df, df_chrom, how='left', on='simple_nm_tmp')
         shell('rm {input.x}.nm {output}.tmp')
         m.to_csv(output.o, sep='\t', index=False)
-    
+
 # rule mk_dat_panel_one:
 #     input:  DATA + 'raw/EPIv6.xlsx',
 #             DATA + 'raw/mut.fix',
@@ -111,7 +108,7 @@ rule vcfanno:
              lua = VCFANNO_LUA_FILE
     output:  DATA + 'interim/{lab}.eff.dbnsfp.anno.vcf'
     threads: 10
-    shell:   """vcfanno -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
+    shell:   """{VCFANNO} -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
                 {input.conf} {input.vcf} > {output}"""
 
 HEADER_FIX = 'eff_indel_splice,1,Flag AC,1,Integer AF,1,Float dbNSFP_FATHMM_pred,.,String dbNSFP_Interpro_domain,.,String dbNSFP_LR_pred,.,String dbNSFP_phyloP100way_vertebrate,.,String dbNSFP_phastCons100way_vertebrate,.,String dbNSFP_SIFT_score,.,String dbNSFP_Reliability_index,.,String dbNSFP_RadialSVM_pred,.,String dbNSFP_RadialSVM_pred,.,String dbNSFP_Polyphen2_HVAR_pred,.,String dbNSFP_MutationTaster_pred,.,String dbNSFP_MutationAssessor_pred,.,String'
@@ -126,12 +123,6 @@ rule zip:
     output: DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.vcf.gz'
     shell:  '{BGZ} -c {input} > {output}'
 
-# rule gemini:
-#     input:  df=DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.vcf.gz'
-#             jp=PWD + 'files/CAP.JUNK_PED.ped'
-#     output: DATA + 'interim/EPIv6.db'
-#     shell:  """{GPY} {VCFTODB} --legacy-compression {input.df} {input.jp} {output}"""
-    
 # neg fam counts ppl
 # pos fam counts ppl
 # need to convert hom to a count of two
@@ -229,15 +220,16 @@ def mk_class(row):
     else:
         print(str(row['clin_class']))
         i = 1/0
-                       
-# focus genes and missense                   
-rule limit_eval:                   
+
+# focus genes and missense
+# must have ccr score
+rule limit_eval:
     input:  i = DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.xls'
     output: o = DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls'
     run:
         df = pd.read_csv(input.i, sep='\t')
         df.loc[:, 'class'] = df.apply(mk_class, axis=1)
-        crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V', axis=1)
+        crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1, axis=1)
         df[crit].to_csv(output.o, index=False, sep='\t')
 
 path_color = 'f8766d'
@@ -245,7 +237,7 @@ benign_color = '00bfc4'
 rule denovo_lolly:
     input:  i = DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls'
     output: DOCS + 'plots/{lab}/{gene}.{lab}.lolly.svg'
-    run:  
+    run:
         df_pre = pd.read_csv(input.i, sep='\t')
         df = df_pre[ (df_pre.gene==wildcards.gene) ]
         s = set(df[df['class']=='B']['Protein_Change'].values)
@@ -256,6 +248,6 @@ rule denovo_lolly:
 
 rule all_lollies:
     input: expand(DOCS + 'plots/{panel}/{gene}.{panel}.lolly.svg', gene=FOCUS_GENES, panel=('EPIv6', 'panel_two', 'uc'))
-                       
+
 rule all_labs:
     input: expand(DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls', lab=('EPIv6', 'uc',))
