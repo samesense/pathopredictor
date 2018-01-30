@@ -64,6 +64,18 @@ rule eval_by_gene:
         size_df = df.groupby(keys).size().reset_index().rename(columns={0:'size'})
         m = pd.merge(wrong_df, size_df, on=keys).to_csv(output.o, index=False, sep='\t')
 
+def read_gene_df(afile):
+    feats = afile.split('/')[-1]
+    df = pd.read_csv(afile, sep='\t')
+    df['combo'] = feats
+    return df
+
+rule combine_features_by_gene:
+    input: expand(DATA + 'interim/by_gene_eval/{feature}', feature=COMBO_FEATS)
+    output: o=DATA + 'by_gene_feat_combo'
+    run:
+        pd.concat([read_gene_df(afile) for afile in list(input)]).to_csv(output.o, index=False, sep='\t')
+
 rule plot_gene_eval:
     input: DATA + 'interim/by_gene_eval/{features}'
     output: DOCS + 'plot/by_gene/{features}.by_gene.png'
