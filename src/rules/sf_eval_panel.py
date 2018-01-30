@@ -47,6 +47,39 @@ rule plot:
           ggsave("{output}", p)
           """)
 
+def calc_wrong(rows):
+    tot = len(rows)
+    crit = rows.apply(lambda row: 'Wrong' in row['PredictionStatusMPC'], axis=1)
+    return len(rows[crit])/tot
+
+rule eval_by_gene:
+    input:  i = WORK + 'roc_df/{features}'
+    output: o = DATA + 'interim/by_gene_eval/{features}'
+    run:
+        keys = ['Disease', 'Hugo_Symbol',]
+        df_pre = pd.read_csv(input.i, sep='\t')
+        crit = df_pre.apply(lambda row: not 'issue' in row['Disease'] and not 'earing' in row['Disease'], axis=1)
+        df = df_pre[crit]
+        wrong_df = df.groupby(keys).apply(calc_wrong).reset_index().rename(columns={0:'wrongFrac'})
+        size_df = df.groupby(keys).size().reset_index().rename(columns={0:'size'})
+        m = pd.merge(wrong_df, size_df, on=keys).to_csv(output.o, index=False, sep='\t')
+
+rule plot_gene_eval:
+    input: DATA + 'interim/by_gene_eval/{features}'
+    output: DOCS + 'plot/by_gene/{features}.by_gene.png'
+    run:
+        R("""
+          require(ggplot2)
+          d = read.delim("{input}", sep='\t', header=TRUE)
+          p = ggplot(data=d, aes(x=size, y=wrongFrac, label=Hugo_Symbol)) +
+          geom_text(size=2) +
+          facet_wrap(~Disease, scale='free', ncol=1) +
+          theme_bw() +
+          ylab('Incorrect fraction of predictions') +
+          xlab('Number of variants')
+          ggsave("{output}", p, height=20)
+          """)
+
 def read_df(afile):
     col = afile.split('/')[-1]
     df_pre = pd.read_csv(afile, sep='\t')
@@ -69,6 +102,9 @@ rule combine_predictions:
 
 rule all_eval:
     input: expand( DOCS + 'plot/{method}.eval_panel.{cols}.totWrong.png', method=('global',), cols=COMBO_FEATS)
+
+rule gene_evals:
+    input: expand(DOCS + 'plot/by_gene/{feats}.by_gene.png', feats=COMBO_FEATS)
 
 # ggplot(data=d) + geom_col(aes(y=var_count,x=score_type, fill=score_type)) + facet_grid(disease~., scale='free') + theme_bw() + ylab('Wrong Predictions') + theme(axis.text.x = element_text(angle=90)) + xlab('') + theme(legend.position="none")    
 
