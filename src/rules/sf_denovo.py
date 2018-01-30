@@ -2,7 +2,6 @@
    http://denovo-db.gs.washington.edu/denovo-db/
 """
 from const import *
-from p_change import *
 import pandas as pd
 
 rule mk_denovo_vcf:
@@ -11,10 +10,8 @@ rule mk_denovo_vcf:
     output: DATA + 'interim/denovo/denovo.vcf'
     shell:  '  python {SCRIPTS}limit_denovo_genes.py {input} {output}'
 
-DBNSFP_FIELDS = 'Interpro_domain,SIFT_score,Polyphen2_HVAR_pred,RadialSVM_pred,LR_pred,Reliability_index,FATHMM_pred,MutationAssessor_pred,MutationTaster_pred,phyloP100way_vertebrate,phastCons100way_vertebrate'
-
 rule snpeff_denovo:
-    input:  DATA + 'interim/denovo/denovo.vcf' 
+    input:  DATA + 'interim/denovo/denovo.vcf'
     output: DATA + 'interim/denovo/denovo.eff.vcf'
     shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff \
                -strict -noStats hg19 -c {EFF_CONFIG} \
@@ -38,8 +35,6 @@ rule vcfanno_denovo:
     threads: 10
     shell:   """{VCFANNO} -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
                 {input.conf} {input.vcf} > {output}"""
-
-HEADER_FIX = 'eff_indel_splice,1,Flag AC,1,Integer AF,1,Float dbNSFP_FATHMM_pred,.,String dbNSFP_Interpro_domain,.,String dbNSFP_LR_pred,.,String dbNSFP_phyloP100way_vertebrate,.,String dbNSFP_phastCons100way_vertebrate,.,String dbNSFP_SIFT_score,.,String dbNSFP_Reliability_index,.,String dbNSFP_RadialSVM_pred,.,String dbNSFP_RadialSVM_pred,.,String dbNSFP_Polyphen2_HVAR_pred,.,String dbNSFP_MutationTaster_pred,.,String dbNSFP_MutationAssessor_pred,.,String'
 
 rule fixHeader_denovo:
     input:  DATA + 'interim/denovo/denovo.anno.vcf'
@@ -76,7 +71,7 @@ rule parse_denovo_vcf:
                        pfam = info.split('pfam_domain=')[1].split(';')[0]
                    else:
                        pfam = 'fuck'
-                       
+
                    if 'af_1kg_all=' in info:
                        onekg = info.split('af_1kg_all=')[1].split(';')[0]
                    else:
@@ -90,27 +85,26 @@ rule parse_denovo_vcf:
                    ls = (chrom, pos, ref, alt, pfam, eff, onekg, gene, mpc, mtr, protein_change, revel, ccr)
                    print('\t'.join(ls), file=fout)
 
-# focus genes and missense                   
-rule limit_eval:                   
+# focus genes and missense
+rule limit_eval_denovo:
     input:  i = DATA + 'interim/denovo/denovo.dat'
     output: o = DATA + 'interim/denovo/denovo.limit3.dat'
     run:
         df = pd.read_csv(input.i, sep='\t')
         df['y'] = 1
-        crit = df.apply(lambda row: row['eff'] == 'missense_variant', axis=1)        
+        crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['ccr']>-1, axis=1)
         df[crit].to_csv(output.o, index=False, sep='\t')
 
 path_color = 'f8766d'
 rule denovo_lolly:
     input:  i = DATA + 'interim/denovo/denovo.limit.dat'
     output: DOCS + 'plots/denovo_db/{gene}.denovo_db.lolly.svg'
-    run:  
+    run:
         df_pre = pd.read_csv(input.i, sep='\t')
         df = df_pre[ (df_pre.gene==wildcards.gene) ]
         s = df['Protein_Change'].values
         path_ls = [x + '#' + path_color for x in s]
         shell('~/me/bin/lollipops -domain-labels=off -o={output} -f=/home/evansj/me/fonts/arial.ttf {wildcards.gene} {path_ls}')
 
-rule all_lollies:
+rule all_lollies_denovo:
     input: expand(DOCS + 'plots/denovo_db/{gene}.denovo_db.lolly.svg', gene=FOCUS_GENES)
-        

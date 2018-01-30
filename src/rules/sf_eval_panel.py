@@ -58,15 +58,8 @@ def read_df(afile):
         print(col)
     return df
 
-def powerset(iterable):
-    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
-    s = list(iterable)
-    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
-
-feats = ('mpc', 'revel', 'ccr', 'is_domain')
-combo_feats = ['-'.join(x) for x in powerset(feats) if x]
 rule combine_predictions:
-    input:  expand( WORK + 'roc_df/{cols}', cols=combo_feats )
+    input:  expand( WORK + 'roc_df/{cols}', cols=COMBO_FEATS)
     output: o = WORK + 'roc_df_combo'
     run:
         dfs = [read_df(afile) for afile in list(input)]
@@ -75,7 +68,7 @@ rule combine_predictions:
         m.to_csv(output.o, index=False, sep='\t')
 
 rule all_eval:
-    input: expand( DOCS + 'plot/{method}.eval_panel.{cols}.totWrong.png', method=('global',), cols=combo_feats)
+    input: expand( DOCS + 'plot/{method}.eval_panel.{cols}.totWrong.png', method=('global',), cols=COMBO_FEATS)
 
 # ggplot(data=d) + geom_col(aes(y=var_count,x=score_type, fill=score_type)) + facet_grid(disease~., scale='free') + theme_bw() + ylab('Wrong Predictions') + theme(axis.text.x = element_text(angle=90)) + xlab('') + theme(legend.position="none")    
 

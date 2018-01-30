@@ -1,24 +1,21 @@
 """Parse other diseases from paper"""
-from const import *
 import csv
 import pandas as pd
 
-from p_change import *
-
-def mk_var(row):
+def mk_var_other(row):
     ls  = [str(row['Chr']), str(int(row['Pos'])), '.',
            str(row['Ref']), str(row['Alt']) ]
     return ls
 
-def mk_vcf_line(row, fout):
+def mk_vcf_line_other(row, fout):
     if str(row['Chr']) != 'nan': #wtf
         ls = (str(row['Cat (Dis)']),)
         info = 'CLIN_CLASS=%s' % ls
-        var = mk_var(row)
+        var = mk_var_other(row)
         ls  = var + ['.', '.', info]
         print('\t'.join(ls), file=fout)
 
-rule mk_vcf:
+rule mk_vcf_other:
     input:  i = DATA + 'raw/Clinicalvariants_LMM.xlsx'
     output: o = DATA + 'interim/other/other.pre.vcf'
     run:
@@ -28,28 +25,26 @@ rule mk_vcf:
             print('##fileformat=VCFv4.2', file=fout)
             print('##INFO=<ID=CLIN_CLASS,Number=1,Type=String,Description="pos_fam_count">', file=fout)
             print('#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO', file=fout)
-            df.apply(lambda row: mk_vcf_line(row, fout), axis=1)
+            df.apply(lambda row: mk_vcf_line_other(row, fout), axis=1)
 
-rule sort_vcf:
+rule sort_vcf_other:
     input:  DATA + 'interim/other/{lab}.pre.vcf'
     output: DATA + 'interim/other/{lab}.vcf'
     shell:  'cat {input} | vcf-sort > {output}'
 
-rule bgzipVcf:
+rule bgzipVcf_other:
     input:  DATA + 'interim/other/{lab}.vcf'
     output: DATA + 'interim/other/{lab}.vcf.gz'
     shell:  '{BGZ} -c {input} > {output}'
 
-rule snpeff:
+rule snpeff_other:
     input:  DATA + 'interim/other/{lab}.vcf.gz'
     output: DATA + 'interim/other/{lab}.eff.vcf'
     shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff \
                -strict -noStats hg19 -c {EFF_CONFIG} \
                {input} > {output}"""
 
-DBNSFP_FIELDS = 'Interpro_domain,SIFT_score,Polyphen2_HVAR_pred,RadialSVM_pred,LR_pred,Reliability_index,FATHMM_pred,MutationAssessor_pred,MutationTaster_pred,phyloP100way_vertebrate,phastCons100way_vertebrate'
-
-rule annotateDbnsfp:
+rule annotateDbnsfp_other:
     input:  DATA + 'interim/other/{lab}.eff.vcf'
     output: DATA + 'interim/other/{lab}.eff.dbnsfp.vcf'
     shell:  """{JAVA} -Xmx32g -Xms16g -jar {SIFT} dbnsfp -v \
@@ -59,7 +54,7 @@ rule annotateDbnsfp:
 # /mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/hg19.pfam.ucscgenes.enum.bed.gz
 # ann fixed pfam
 # parse genes
-rule vcfanno:
+rule vcfanno_other:
     input:   vcf = DATA + 'interim/other/{lab}.eff.dbnsfp.vcf',
              conf = CONFIG + 'vcfanno.conf',
              lua = VCFANNO_LUA_FILE
@@ -68,14 +63,12 @@ rule vcfanno:
     shell:   """{VCFANNO} -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
                 {input.conf} {input.vcf} > {output}"""
 
-HEADER_FIX = 'eff_indel_splice,1,Flag AC,1,Integer AF,1,Float dbNSFP_FATHMM_pred,.,String dbNSFP_Interpro_domain,.,String dbNSFP_LR_pred,.,String dbNSFP_phyloP100way_vertebrate,.,String dbNSFP_phastCons100way_vertebrate,.,String dbNSFP_SIFT_score,.,String dbNSFP_Reliability_index,.,String dbNSFP_RadialSVM_pred,.,String dbNSFP_RadialSVM_pred,.,String dbNSFP_Polyphen2_HVAR_pred,.,String dbNSFP_MutationTaster_pred,.,String dbNSFP_MutationAssessor_pred,.,String'
-
-rule fixHeader:
+rule fixHeader_other:
     input:  DATA + 'interim/other/{lab}.eff.dbnsfp.anno.vcf'
     output: DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.vcf'
     shell:  'python {HEADER_HCKR} {input} {output} {HEADER_FIX}'
 
-rule zip:
+rule zip_other:
     input:  DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.vcf'
     output: DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.vcf.gz'
     shell:  '{BGZ} -c {input} > {output}'
@@ -83,7 +76,7 @@ rule zip:
 # neg fam counts ppl
 # pos fam counts ppl
 # need to convert hom to a count of two
-rule parse_vcf:
+rule parse_vcf_other:
    input:  i = DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.vcf'
    output: o = DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.dat.xls',
            o2 = DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.splitPfam.dat'
@@ -158,7 +151,7 @@ rule parse_vcf:
                        ls = (chrom, pos, ref, alt, clin, p, onekg, eff, gene, mpc, mtr, revel, ccr)
                        print('\t'.join(ls), file=fout_split_pfam)
 
-def mk_class(row):
+def mk_class_other(row):
     cc = str(row['clin_class'])
     if 'athogenic' in cc:
         return 'P'
@@ -170,17 +163,17 @@ def mk_class(row):
         print(str(row['clin_class']))
         i = 1/0
 
-# use all genes        
-rule add_diseaase:                   
+# use all genes
+rule add_diseaase_other:
     input:  d = DATA + 'raw/gene_disease.xlsx',
             i = DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.dat.xls'
     output: o = DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls'
     run:
         disease_df = pd.read_excel(input.d, skiprows=[0,1,2]).rename(columns={'Gene':'gene'})
         df = pd.merge(pd.read_csv(input.i, sep='\t'), disease_df, on='gene', how='left')
-        df.loc[:, 'class'] = df.apply(mk_class, axis=1)
-        crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V', axis=1)
+        df.loc[:, 'class'] = df.apply(mk_class_other, axis=1)
+        crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1, axis=1)
         df[crit].to_csv(output.o, index=False, sep='\t')
 
-rule all:
-    input: DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls'
+# rule all:
+#     input: DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls'

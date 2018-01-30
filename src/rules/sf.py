@@ -2,13 +2,19 @@
 
 include: "const.py"
 include: "sf_ann.py"
+include: "sf_other_disease.py"
 include: "sf_clinvar.py"
-include: "sf_eval.py"
-include: "sf_grant.py"
+include: "sf_denovo.py"
+
+include: "sf_eval_panel.py"
 include: "sf_coords.py"
+include: "sf_eval_ahmad.py" # plot_ahmad
 
-rule all:
-    input: DOCS + 'plots/missense_clinvar_roc_feature_union.png',
-           DOCS + 'plots/missense_fg_roc.png', WORK + 'eval/missense_fg.dat'
+rule all_dat:
+    input: DATA + 'interim/denovo/denovo.limit3.dat', \
+           DATA + 'interim/clinvar/clinvar.limit3.dat', \
+           DATA +  'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls',  \
+           expand(DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls', lab=('uc', 'EPIv6') ), \
 
-#DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat.xls', DATA + 'interim/clinvar/clinvar.dat'
+
+

@@ -1,8 +1,8 @@
 """Combine evaluations by disease."""
 import pandas as pd
 
-include: "const.py"
-include: "sf_eval_non_panel.py"
+#include: "const.py"
+#include: "sf_eval_non_panel.py"
 
 rule ahmad_percent_wrong:
     input:  panel = WORK + '{method}.eval_panel.{cols}.eval',
@@ -54,7 +54,7 @@ rule ahmad_percent_wrong:
                 else:
                     i = 1/0                    
             return disease
-                
+ 
         non_panel_dfs = pd.concat( [load_other_df(afile) for afile in input.non_panel] )
         non_panel_dfs['color'] = 'predict clinvar'
         panel_df = (pd.read_csv(input.panel, sep='\t')
@@ -75,7 +75,7 @@ rule ahmad_percent_wrong:
         m[crit].to_csv(output.o, index=False, sep='\t')
 
 rule concat_extra:
-    input:  expand( WORK + 'global.{cols}.eval_panel.eval.percentWrong', cols=('mpc', 'revel', 'mpc-revel', 'ccr', 'mpc-revel-ccr', 'mpc-ccr', 'revel-ccr'))
+    input:  expand( WORK + 'global.{cols}.eval_panel.eval.percentWrong', cols=COMBO_FEATS)
     output: o = WORK + 'cc'
     run:
         m = pd.concat([pd.read_csv(afile, sep='\t') for afile in list(input)]).drop_duplicates(subset=['color', 'disease', 'score_type', 'st', 'dis'])
@@ -86,22 +86,6 @@ rule concat_extra:
         d.to_csv(output.o, sep='\t', index=False)
 
 rule plot_ahmad:
-    input:  WORK + '{method}.{cols}.eval_panel.eval.percentWrong'
-    output: DOCS + 'plot/{method}.{cols}.byDisease.png'
-    run:
-        R("""
-          require(ggplot2)
-          d = read.delim("{input}", sep='\t', header=TRUE)
-          p = ggplot(data=d) +
-          geom_col(aes(y=percent_wrong, x=st, fill=min_color)) +
-          facet_grid(dis~.) + theme_bw() +
-          theme(axis.text.x = element_text(angle=90, hjust=1)) +
-          ylab('Wrong prediction fraction') +
-          xlab('') + theme(legend.position="none") + coord_flip()
-          ggsave("{output}", p, height=15)
-          """)
-
-rule plot_ahmad2:
     input:  WORK + 'cc'
     output: DOCS + 'plot/global.byDisease.png'
     run:
@@ -116,7 +100,3 @@ rule plot_ahmad2:
           xlab('') + theme(legend.position="none") + coord_flip()
           ggsave("{output}", p, height=15)
           """)
-
-
-rule all_ahmad:
-    input: expand( DOCS + 'plot/{method}.{cols}.byDisease.png', method=('global',), cols=('mpc', 'revel', 'mpc-revel') )

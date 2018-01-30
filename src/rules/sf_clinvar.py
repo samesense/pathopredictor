@@ -1,6 +1,4 @@
 """Annotate clinvar"""
-from const import *
-from p_change import *
 import pandas as pd
 
 rule snpeff_clinvar:
@@ -15,8 +13,6 @@ rule snpeff_clinvar:
 #             DATA + 'interim/clinvar/clinvar.eff.vcf'
 #     output: DATA + 'interim/clinvar/clinvar.use.vcf'
 #     shell:  'python {SCRIPTS}limit_clinvar_genes.py {input} {output}'
-
-DBNSFP_FIELDS = 'Interpro_domain,SIFT_score,Polyphen2_HVAR_pred,RadialSVM_pred,LR_pred,Reliability_index,FATHMM_pred,MutationAssessor_pred,MutationTaster_pred,phyloP100way_vertebrate,phastCons100way_vertebrate'
 
 rule annotateDbnsfp_clinvar:
     input:  DATA + 'interim/clinvar/clinvar.eff.vcf'
@@ -36,8 +32,6 @@ rule vcfanno_clinvar:
     threads: 10
     shell:   """{VCFANNO} -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
                 {input.conf} {input.vcf} > {output}"""
-
-HEADER_FIX = 'eff_indel_splice,1,Flag AC,1,Integer AF,1,Float dbNSFP_FATHMM_pred,.,String dbNSFP_Interpro_domain,.,String dbNSFP_LR_pred,.,String dbNSFP_phyloP100way_vertebrate,.,String dbNSFP_phastCons100way_vertebrate,.,String dbNSFP_SIFT_score,.,String dbNSFP_Reliability_index,.,String dbNSFP_RadialSVM_pred,.,String dbNSFP_RadialSVM_pred,.,String dbNSFP_Polyphen2_HVAR_pred,.,String dbNSFP_MutationTaster_pred,.,String dbNSFP_MutationAssessor_pred,.,String'
 
 rule fixHeader_clinvar:
     input:  DATA + 'interim/clinvar/clinvar.anno.vcf'
@@ -91,7 +85,7 @@ rule parse_clinvar_vcf:
                    ls = (chrom, pos, ref, alt, pfam, eff, clin_sig, onekg, gene, mpc, mtr, protein_change, confidence, revel, ccr)
                    print('\t'.join(ls), file=fout)
 
-def calc_final_sig(row):
+def calc_final_sig_clinvar(row):
     sig_set = set(str(row['clinSig'].split('|')))
     has_benign = '2' in sig_set or '3' in sig_set
     has_path = '4' in sig_set or '5' in sig_set
@@ -102,35 +96,34 @@ def calc_final_sig(row):
     return -1
 
 # focus genes
-rule limit_eval2:                   
+rule limit_eval2_clinvar:
     input:  i = DATA + 'interim/clinvar/clinvar.dat'
     output: o = DATA + 'interim/clinvar/clinvar.limit2.dat'
     run:
         df = pd.read_csv(input.i, sep='\t')
-        df.loc[:, 'clin_class'] = df.apply(calc_final_sig, axis=1)
+        df.loc[:, 'clin_class'] = df.apply(calc_final_sig_clinvar, axis=1)
         crit = df.apply(lambda row: row['gene'] in FOCUS_GENES and row['clin_class'] != -1, axis=1)
-        
+
         df[crit].to_csv(output.o, index=False, sep='\t')
 
-# focus genes and missense                   
-rule limit_eval:                   
+# focus genes and missense
+rule limit_eval_clinvar:
     input:  i = DATA + 'interim/clinvar/clinvar.dat'
     output: o = DATA + 'interim/clinvar/clinvar.limit.dat'
     run:
         df = pd.read_csv(input.i, sep='\t')
-        df.loc[:, 'clin_class'] = df.apply(calc_final_sig, axis=1)
+        df.loc[:, 'clin_class'] = df.apply(calc_final_sig_clinvar, axis=1)
         crit = df.apply(lambda row: row['gene'] in FOCUS_GENES and row['eff'] == 'missense_variant' and row['clin_class'] != -1, axis=1)
-        
         df[crit].to_csv(output.o, index=False, sep='\t')
 
-# missense                   
-rule limit_eval3:                   
+# missense
+rule limit_eval3_clinvar:
     input:  i = DATA + 'interim/clinvar/clinvar.dat'
     output: o = DATA + 'interim/clinvar/clinvar.limit3.dat'
     run:
         df = pd.read_csv(input.i, sep='\t')
-        df.loc[:, 'clin_class'] = df.apply(calc_final_sig, axis=1)
-        crit = df.apply(lambda row: row['eff'] == 'missense_variant'and row['clin_class'] != -1, axis=1)
+        df.loc[:, 'clin_class'] = df.apply(calc_final_sig_clinvar, axis=1)
+        crit = df.apply(lambda row: row['eff'] == 'missense_variant'and row['clin_class'] != -1 and row['ccr']>-1, axis=1)
         df[crit].to_csv(output.o, index=False, sep='\t')
 
 # singlr
@@ -160,10 +153,10 @@ rule limit_clinvar_by_conf:
 
 rule all_confidence:
     input: expand(DATA + 'interim/clinvar_{conf}/clinvar_{conf}.limit3.dat', conf=('exp', 'mult', 'single') )
-        
+
 path_color = 'f8766d'
 benign_color = '00bfc4'
-rule denovo_lolly:
+rule clinvar_lolly:
     input:  i = DATA + 'interim/clinvar/clinvar.limit.dat'
     output: DOCS + 'plots/clinvar/{gene}.clinvar.lolly.svg'
     run:  
@@ -175,5 +168,5 @@ rule denovo_lolly:
         path_ls = [x + '#' + path_color for x in s if str(x) != 'nan']
         shell('~/me/bin/lollipops -domain-labels=off -o={output} -f=/home/evansj/me/fonts/arial.ttf {wildcards.gene} {path_ls} {benign_ls}')
 
-rule all_lollies:
+rule all_lollies_clinvar:
     input: expand(DOCS + 'plots/clinvar/{gene}.clinvar.lolly.svg', gene=FOCUS_GENES)

@@ -1,6 +1,6 @@
 import os, sys
-# sys.path.append('/home/evansj/me/projects/me/tool_dirs/')
-# from tools import *
+from itertools import combinations, chain
+from p_change import *
 
 # SECRETS = '/home/evansj/me/.secrets/'
 # sys.path.append(SECRETS)
@@ -52,3 +52,17 @@ HG19_FA = DATA + 'raw/hg19.fa'
 FOCUS_GENES = ('SCN1A','SCN2A','KCNQ2', 'KCNQ3', 'CDKL5',
                'PCDH19', 'SCN1B', 'SCN8A', 'SLC2A1',
                'SPTAN1', 'STXBP1', 'TSC1')
+
+def powerset(iterable):
+    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    s = list(iterable)
+    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
+
+feats = ('mpc', 'revel', 'ccr', 'is_domain')
+COMBO_FEATS = ['-'.join(x) for x in powerset(feats) if x]
+
+DBNSFP_FIELDS = 'Interpro_domain,SIFT_score,Polyphen2_HVAR_pred,RadialSVM_pred,LR_pred,Reliability_index,FATHMM_pred,MutationAssessor_pred,MutationTaster_pred,phyloP100way_vertebrate,phastCons100way_vertebrate'
+
+HEADER_FIX = 'eff_indel_splice,1,Flag AC,1,Integer AF,1,Float dbNSFP_FATHMM_pred,.,String dbNSFP_Interpro_domain,.,String dbNSFP_LR_pred,.,String dbNSFP_phyloP100way_vertebrate,.,String dbNSFP_phastCons100way_vertebrate,.,String dbNSFP_SIFT_score,.,String dbNSFP_Reliability_index,.,String dbNSFP_RadialSVM_pred,.,String dbNSFP_RadialSVM_pred,.,String dbNSFP_Polyphen2_HVAR_pred,.,String dbNSFP_MutationTaster_pred,.,String dbNSFP_MutationAssessor_pred,.,String'
+
+CRUZ_PY = '/home/evansj/me/franklin_condas/envs/cruzdb/bin/python'
