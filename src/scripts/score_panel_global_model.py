@@ -61,7 +61,6 @@ def clinvar_stats(disease, clinvar_df_pre, disease_df, fout, clinvar_label):
     return clinvar_df, clinvar_df_limit_genes
 
 def print_data_stats(disease, clinvar_df_pre_ls, disease_df, fout, clin_labels):
-#    print('debug', disease, len(clinvar_df_pre_ls))
     clin_dat = list(map(lambda x: clinvar_stats(disease, x[0], disease_df, fout, x[1]),
                         list(zip(clinvar_df_pre_ls, clin_labels))))
 
@@ -70,7 +69,7 @@ def print_data_stats(disease, clinvar_df_pre_ls, disease_df, fout, clin_labels):
     benign_ex = list(gg[gg.y==0]['size'])[0]
     path_ex = list(gg[gg.y==1]['size'])[0]
     print('%s gene count: %d (%d pathogenic, %d benign)' % (disease, disease_panel_gene_count, path_ex, benign_ex), file=fout)
-    
+
     return [x[0] for x in clin_dat], [x[1] for x in clin_dat]
 
 def eval_clinvar(label, cols, clinvar_df, disease_df):
@@ -80,11 +79,11 @@ def eval_clinvar(label, cols, clinvar_df, disease_df):
         tree_clf_clinvar = tree.DecisionTreeClassifier( max_depth=len(cols) )
         X, y = clinvar_df[cols], clinvar_df['y']
         tree_clf_clinvar.fit(X, y)
-        
+
         X_test = disease_df[cols]
         print(X_test)
         preds = tree_clf_clinvar.predict(X_test)
-        
+
         disease_df['mpc_pred_clinvar_' + label] = preds
         disease_df.loc[:, 'PredictionStatusMPC_clinvar_' + label] = disease_df.apply(lambda row: eval_pred(row, 'mpc_pred_clinvar_' + label), axis=1)
 
@@ -100,7 +99,7 @@ def print_eval(disease, test_df, metric, fout):
         tot_bad = d['WrongPath'] + d['WrongBenign']
         ls = (disease, 'global_' + metric, 'TotWrong', str(tot_bad))
         print('\t'.join(ls), file=fout)
-        
+
 def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, clin_labels, cols):
     clinvar_df_ls, clinvar_df_limit_genes_ls = print_data_stats(disease, clinvar_df_pre_ls, disease_df, fout_stats, clin_labels)
     list(map(lambda x: eval_clinvar(x[0], cols, x[1], disease_df),

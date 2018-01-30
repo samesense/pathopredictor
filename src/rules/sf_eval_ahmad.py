@@ -6,15 +6,11 @@ import pandas as pd
 
 rule ahmad_percent_wrong:
     input:  panel = WORK + '{method}.eval_panel.{cols}.eval',
-            non_panel = expand( WORK + '{{method}}.eval_{dat}.{{cols}}.eval', \
-                                dat=('clinvar', 'denovo', 'clinvar_mult', 'clinvar_single', 'clinvar_exp') )
     output: o = WORK + '{method}.{cols}.eval_panel.eval.percentWrong'
     run:
         def calc_wrong_percent(rows):
             tot_wrong = list(rows[rows.eval_type == 'TotWrong']['var_count'].values)[0]
             tot_preds = sum(rows[rows.eval_type != 'TotWrong']['var_count'])
-            # print('tw', tot_wrong)
-            # print('s', tot_preds)
             return tot_wrong/tot_preds
 
         def load_other_df(afile):
@@ -52,18 +48,16 @@ rule ahmad_percent_wrong:
                 elif '>2' in score_type:
                     return 'paper-cutoff'
                 else:
-                    i = 1/0                    
+                    i = 1/0
             return disease
- 
-        non_panel_dfs = pd.concat( [load_other_df(afile) for afile in input.non_panel] )
-        non_panel_dfs['color'] = 'predict clinvar'
+
         panel_df = (pd.read_csv(input.panel, sep='\t')
                     .groupby(('disease', 'score_type'))
                     .apply(calc_wrong_percent)
                     .reset_index()
                     .rename(columns={0:'percent_wrong'}) )
         panel_df['color'] = 'predict_panel'
-        m = pd.concat([panel_df, non_panel_dfs])
+        m = panel_df
         m.loc[:, 'st'] = m.apply(lambda row: rename_score(row['score_type']), axis=1)
         m.loc[:, 'dis'] = m.apply(lambda row: rename_disease(row['disease'], row['score_type']), axis=1)
         crit = m.apply(lambda row: not row['disease'] in ('ALL',)
@@ -95,8 +89,8 @@ rule plot_ahmad:
           p = ggplot(data=d) +
           geom_col(aes(y=percent_wrong, x=st, fill=min_color)) +
           facet_grid(dis~.) + theme_bw() +
-          theme(axis.text.x = element_text(angle=90, hjust=1)) +
+          theme(axis.text.x = element_text(angle=90, hjust=1, size=8)) +
           ylab('Wrong prediction fraction') +
-          xlab('') + theme(legend.position="none") + coord_flip()
-          ggsave("{output}", p, height=15)
+          xlab('') + theme(legend.position="none") + coord_flip() + theme(axis.text.y = element_text(size=6)) 
+          ggsave("{output}", p, height=20)
           """)

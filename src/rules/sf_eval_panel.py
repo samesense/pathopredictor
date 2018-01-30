@@ -9,8 +9,8 @@ from snakemake.utils import R
 
 rule eval_panel_global:
     input:  expand(DATA + 'interim/{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo')),
-            DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat.limit.xls',
-            DATA + 'interim/uc.eff.dbnsfp.anno.hHack.dat.limit.xls',
+            DATA + 'interim/epi/EPIv6.eff.dbnsfp.anno.hHack.dat.limit.xls',
+            DATA + 'interim/epi/uc.eff.dbnsfp.anno.hHack.dat.limit.xls',
             DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls'
     output: WORK + 'global.eval_panel.{cols}.stats',
             WORK + 'global.eval_panel.{cols}.eval',
@@ -19,8 +19,8 @@ rule eval_panel_global:
 
 rule eval_panel_single_gene:
     input:  expand(DATA + 'interim/clinvar{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo')),
-            DATA + 'interim/EPIv6.eff.dbnsfp.anno.hHack.dat.limit.xls',
-            DATA + 'interim/uc.eff.dbnsfp.anno.hHack.dat.limit.xls',
+            DATA + 'interim/epi/EPIv6.eff.dbnsfp.anno.hHack.dat.limit.xls',
+            DATA + 'interim/epi/uc.eff.dbnsfp.anno.hHack.dat.limit.xls',
             DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls'
     output: WORK + 'single.eval_panel.stats',
             WORK + 'single.eval_panel.eval'
