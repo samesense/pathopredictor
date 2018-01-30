@@ -15,6 +15,11 @@ rule all_dat:
            DATA + 'interim/clinvar/clinvar.limit3.dat', \
            DATA +  'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls',  \
            expand(DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls', lab=('uc', 'EPIv6') ), \
+           TMP + 'trees/revel-ccr-is_domain', \
+           TMP + 'trees/revel-is_domain', \
+           TMP + 'trees/revel', \
+
+
 
 
 

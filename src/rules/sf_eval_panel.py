@@ -80,6 +80,13 @@ rule plot_gene_eval:
           ggsave("{output}", p, height=20)
           """)
 
+rule draw_tree:
+    input:  DATA + 'interim/epi/EPIv6.eff.dbnsfp.anno.hHack.dat.limit.xls',
+            DATA + 'interim/epi/uc.eff.dbnsfp.anno.hHack.dat.limit.xls',
+            DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls'
+    output: TMP + 'trees/{features}'
+    shell:  '{PY27} {SCRIPTS}draw_tree.py {wildcards.features} {input}; touch {output}'
+
 def read_df(afile):
     col = afile.split('/')[-1]
     df_pre = pd.read_csv(afile, sep='\t')
