@@ -33,9 +33,9 @@ rule plot_gene_heatmap:
         R("""
           require(ggplot2)
           d = read.delim("{input}", sep='\t', header=TRUE)
-          p = ggplot(data=d[d$Disease=="genedx-epi-limitGene",]) +
-              geom_raster(aes(y=Hugo_Symbol, x=combo, fill=wrongFrac)) +
-              ylab('') + theme_bw() +
+          p = ggplot(data=d[d$Disease=="{wildcards.disease}",]) +
+              geom_raster(aes(y=Hugo_Symbol, x=reorder(combo, predictorWrongFracTot), fill=wrongFrac)) +
+              ylab('') + xlab('') + theme_bw() +
               scale_fill_gradient(low = "steelblue", high = "white") +
               labs(fill="Wrong prediction fraction") +
               theme(axis.text.x = element_text(angle=90, hjust=1))
@@ -80,8 +80,10 @@ rule eval_by_gene:
         crit = df_pre.apply(lambda row: not 'issue' in row['Disease'] and not 'earing' in row['Disease'], axis=1)
         df = df_pre[crit]
         wrong_df = df.groupby(keys).apply(calc_wrong).reset_index().rename(columns={0:'wrongFrac'})
+        tot_wrong_df = df.groupby(['Disease']).apply(calc_wrong).reset_index().rename(columns={0:'predictorWrongFracTot'})
         size_df = df.groupby(keys).size().reset_index().rename(columns={0:'size'})
-        m = pd.merge(wrong_df, size_df, on=keys).to_csv(output.o, index=False, sep='\t')
+        m = pd.merge(wrong_df, size_df, on=keys)
+        pd.merge(m, tot_wrong_df, on='Disease', how='left').to_csv(output.o, index=False, sep='\t')
 
 def read_gene_df(afile):
     feats = afile.split('/')[-1]

@@ -101,7 +101,7 @@ def print_eval(disease, test_df, metric, fout):
         print('\t'.join(ls), file=fout)
 
 def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, clin_labels, cols):
-    plot_panel_tree(disease, disease_df, cols)
+    #plot_panel_tree(disease, disease_df, cols)
     clinvar_df_ls, clinvar_df_limit_genes_ls = print_data_stats(disease, clinvar_df_pre_ls, disease_df, fout_stats, clin_labels)
     list(map(lambda x: eval_clinvar(x[0], cols, x[1], disease_df),
              list(zip(clin_labels, clinvar_df_ls))))
