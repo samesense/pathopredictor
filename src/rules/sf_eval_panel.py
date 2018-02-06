@@ -40,10 +40,24 @@ rule plot_gene_heatmap:
               labs(fill="Wrong prediction fraction") +
               theme(axis.text.x = element_text(angle=90, hjust=1))
           ggsave("{output}", p)
-        """)
+          """)
 
+rule size_bar_plot:
+    input:  DATA + 'interim/by_gene_feat_combo'
+    output: DOCS + 'plot/gene_var_count/{disease}.varCount.png'
+    run:
+        R("""
+        require(ggplot2)
+        d = read.delim("{input}", sep='\t', header=TRUE)
+        p = ggplot(data=d[d$Disease=="{wildcards.disease}",]) +
+            geom_col(aes(x=reorder(Hugo_Symbol, size), y=size)) +
+            coord_flip() + xlab('') + ylab('Variant count') + theme_bw()
+        ggsave("{output}", p)
+        """)
+ 
 rule heatmaps:
-    input: expand(DOCS + 'plot/gene_heatmap/{disease}.heatmap.png', disease=('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy'))
+    input: expand(DOCS + 'plot/gene_heatmap/{disease}.heatmap.png', disease=('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy')), \
+           expand(DOCS + 'plot/gene_var_count/{disease}.varCount.png', disease=('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy'))
 
 rule limit_for_plot:
     input:  WORK + '{method}.eval_panel.{cols}.eval'
