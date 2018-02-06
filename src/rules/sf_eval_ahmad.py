@@ -79,6 +79,17 @@ rule concat_extra:
         d.loc[:, 'min_color'] = d.apply(lambda row: row['percent_wrong']==row['min'], axis=1)
         d.to_csv(output.o, sep='\t', index=False)
 
+rule concat_extra_gene:
+    input:  expand( WORK + 'global.{cols}.eval_panel.eval.percentWrong', cols=COMBO_FEATS)
+    output: o = WORK + 'cc'
+    run:
+        m = pd.concat([pd.read_csv(afile, sep='\t') for afile in list(input)]).drop_duplicates(subset=['color', 'disease', 'score_type', 'st', 'dis'])
+        print( m[['dis', 'percent_wrong']].groupby('dis').apply(min) )
+        min_df = m[['dis', 'percent_wrong']].groupby('dis').apply(min).rename(columns={'dis':'dis_junk', 'percent_wrong':'min'}).reset_index()
+        d = pd.merge(m, min_df, on='dis', how='left')
+        d.loc[:, 'min_color'] = d.apply(lambda row: row['percent_wrong']==row['min'], axis=1)
+        d.to_csv(output.o, sep='\t', index=False)
+
 rule plot_ahmad:
     input:  WORK + 'cc'
     output: DOCS + 'plot/global.byDisease.png'
@@ -91,6 +102,6 @@ rule plot_ahmad:
           facet_grid(dis~.) + theme_bw() +
           theme(axis.text.x = element_text(angle=90, hjust=1, size=8)) +
           ylab('Wrong prediction fraction') +
-          xlab('') + theme(legend.position="none") + coord_flip() + theme(axis.text.y = element_text(size=6)) 
+          xlab('') + theme(legend.position="none") + coord_flip() + theme(axis.text.y = element_text(size=6))
           ggsave("{output}", p, height=20)
           """)

@@ -25,7 +25,26 @@ rule eval_panel_single_gene:
     output: WORK + 'single.eval_panel.stats',
             WORK + 'single.eval_panel.eval'
     shell:  'python {SCRIPTS}score_panel_single_gene_model.py {input} {output}'
-    
+
+rule plot_gene_heatmap:
+    input:  DATA + 'interim/by_gene_feat_combo'
+    output: DOCS + 'plot/gene_heatmap/{disease}.heatmap.png'
+    run:
+        R("""
+          require(ggplot2)
+          d = read.delim("{input}", sep='\t', header=TRUE)
+          p = ggplot(data=d[d$Disease=="genedx-epi-limitGene",]) +
+              geom_raster(aes(y=Hugo_Symbol, x=combo, fill=wrongFrac)) +
+              ylab('') + theme_bw() +
+              scale_fill_gradient(low = "steelblue", high = "white") +
+              labs(fill="Wrong prediction fraction") +
+              theme(axis.text.x = element_text(angle=90, hjust=1))
+          ggsave("{output}", p)
+        """)
+
+rule heatmaps:
+    input: expand(DOCS + 'plot/gene_heatmap/{disease}.heatmap.png', disease=('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy'))
+
 rule limit_for_plot:
     input:  WORK + '{method}.eval_panel.{cols}.eval'
     output: WORK + '{method}.eval_panel.{cols}.totWrong'
@@ -72,12 +91,12 @@ def read_gene_df(afile):
 
 rule combine_features_by_gene:
     input: expand(DATA + 'interim/by_gene_eval/{feature}', feature=COMBO_FEATS)
-    output: o=DATA + 'by_gene_feat_combo'
+    output: o=DATA + 'interim/by_gene_feat_combo'
     run:
         pd.concat([read_gene_df(afile) for afile in list(input)]).to_csv(output.o, index=False, sep='\t')
 
 rule plot_gene_eval:
-    input: DATA + 'interim/by_gene_eval/{features}'
+    input:  DATA + 'interim/by_gene_eval/{features}'
     output: DOCS + 'plot/by_gene/{features}.by_gene.png'
     run:
         R("""
