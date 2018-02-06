@@ -46,6 +46,7 @@ def eval_mpc_raw(row, score_cols):
     return 'CorrectBenign'
 
 def clinvar_stats(disease, clinvar_df_pre, disease_df, fout, clinvar_label):
+    """Remove disease panel testing data from clinvar"""
     key_cols = ['chrom', 'pos', 'ref', 'alt']
     test_keys = {':'.join([str(x) for x in v]):True for v in disease_df[key_cols].values}
 
@@ -108,11 +109,15 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, 
     list(map(lambda x: eval_clinvar(x[0], cols, x[1], disease_df),
              list(zip([x + '_limitGene' for x in clin_labels], clinvar_df_limit_genes_ls))))
 
+    # keep track of clinvar results
+    for label, df in zip(clin_labels, clinvar_df_limit_genes_ls):
+        df['Disease'] = disease + ':' + label
     # apply mpc>=2
     disease_df.loc[:, 'PredictionStatusMPC>2'] = disease_df.apply(lambda x: eval_mpc_raw(x, cols), axis=1)
 
     # one gene at a time
     acc_df_ls = []
+    clinvar_acc = []
     genes = set(disease_df['gene'])
 
     metric_ls = ['PredictionStatusMPC_clinvar_' + label for label in clin_labels] + ['PredictionStatusMPC_clinvar_' + label + '_limitGene' for label in clin_labels] + ['PredictionStatusMPC>2']
@@ -140,9 +145,23 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, 
 
         acc_df_ls.append(test_df)
 
+        for clin_label, clinvar_df_full in zip(clin_labels, clinvar_df_limit_genes_ls):
+            # limit to gene
+            clinvar_df = clinvar_df_full[clinvar_df_full.gene==test_gene]
+            X = clinvar_df[cols]
+            if len(clinvar_df):
+                clinvar_preds = tree_clf_sub.predict(X)
+                if len(cols)>1:
+                    lm_preds = lm.predict(X)
+                    clinvar_df['_'.join(cols) + '_pred_lm'] = lm_preds
+                clinvar_df['mpc_pred'] = clinvar_preds
+                clinvar_df.loc[:, 'PredictionStatusMPC'] = clinvar_df.apply(lambda row: eval_pred(row, 'mpc_pred'), axis=1)
+                clinvar_acc.append(clinvar_df)
+
     test_df = pd.concat(acc_df_ls)
+    clinvar_result_df = pd.concat(clinvar_acc)
     print_eval(disease, test_df, 'PredictionStatusMPC', fout_eval)
-    return test_df
+    return test_df, clinvar_result_df
 
 def main(args):
     score_cols = args.score_cols.split('-')
@@ -185,21 +204,23 @@ def main(args):
     disease_df.loc[:, 'is_domain'] = disease_df.apply(lambda row: 0 if 'none' in row['pfam'] else 1, axis=1)
     diseases = set(disease_df['Disease'])
 
-    eval_df_ls = []
+    eval_df_ls, eval_df_clinvar_ls = [], []
     with open(args.stats_out, 'w') as fout_stats, open(args.eval_out, 'w') as fout_eval:
         print('disease\tscore_type\teval_type\tvar_count', file=fout_eval)
         for disease in diseases:
             if str(disease) != 'nan':
-                eval_df = eval_disease(disease, clinvar_df_pre_ls, disease_df[disease_df.Disease == disease],
-                                       fout_stats, fout_eval, clin_labels, score_cols)
-                eval_df_ls.append(eval_df)
+                eval_panel_df, eval_clinvar_df = eval_disease(disease, clinvar_df_pre_ls, disease_df[disease_df.Disease == disease],
+                                                              fout_stats, fout_eval, clin_labels, score_cols)
+                eval_df_ls.append(eval_panel_df)
+                eval_df_clinvar_ls.append(eval_clinvar_df)
     pd.concat(eval_df_ls).to_csv(args.out_df, index=False, sep='\t')
+    pd.concat(eval_df_clinvar_ls).to_csv(args.out_df_clinvar_eval, index=False, sep='\t')
 
 if __name__ == "__main__":
-    desc = 'Eval global mpc cutoff'
+    desc = 'Eval combinations of features on panel and clinvar'
     parser = argparse.ArgumentParser(description=desc)
     argLs = ('score_cols', 'clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo',
-             'gene_dx', 'uc', 'other_disease', 'stats_out', 'eval_out', 'out_df')
+             'gene_dx', 'uc', 'other_disease', 'stats_out', 'eval_out', 'out_df', 'out_df_clinvar_eval')
     for param in argLs:
         parser.add_argument(param)
     args = parser.parse_args()

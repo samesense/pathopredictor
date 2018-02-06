@@ -14,7 +14,8 @@ rule eval_panel_global:
             DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls'
     output: WORK + 'global.eval_panel.{cols}.stats',
             WORK + 'global.eval_panel.{cols}.eval',
-            WORK + 'roc_df/{cols}'
+            WORK + 'roc_df_panel/{cols}',
+            WORK + 'roc_df_clinvar/{cols}'
     shell:  'python {SCRIPTS}score_panel_global_model.py {wildcards.cols} {input} {output}'
 
 rule eval_panel_single_gene:
@@ -27,14 +28,14 @@ rule eval_panel_single_gene:
     shell:  'python {SCRIPTS}score_panel_single_gene_model.py {input} {output}'
 
 rule plot_gene_heatmap:
-    input:  DATA + 'interim/by_gene_feat_combo'
-    output: DOCS + 'plot/gene_heatmap/{disease}.heatmap.png'
+    input:  DATA + 'interim/{eval_source}.by_gene_feat_combo'
+    output: DOCS + 'plot/gene_heatmap/{eval_source}.{disease}.heatmap.png'
     run:
         R("""
           require(ggplot2)
           d = read.delim("{input}", sep='\t', header=TRUE)
           p = ggplot(data=d[d$Disease=="{wildcards.disease}",]) +
-              geom_raster(aes(y=Hugo_Symbol, x=reorder(combo, predictorWrongFracTot), fill=wrongFrac)) +
+              geom_raster(aes(y=gene, x=reorder(combo, predictorWrongFracTot), fill=wrongFrac)) +
               ylab('') + xlab('') + theme_bw() +
               scale_fill_gradient(low = "steelblue", high = "white") +
               labs(fill="Wrong prediction fraction") +
@@ -43,21 +44,24 @@ rule plot_gene_heatmap:
           """)
 
 rule size_bar_plot:
-    input:  DATA + 'interim/by_gene_feat_combo'
-    output: DOCS + 'plot/gene_var_count/{disease}.varCount.png'
+    input:  DATA + 'interim/{eval_source}.by_gene_feat_combo'
+    output: DOCS + 'plot/gene_var_count/{eval_source}.{disease}.varCount.png'
     run:
         R("""
-        require(ggplot2)
-        d = read.delim("{input}", sep='\t', header=TRUE)
-        p = ggplot(data=d[d$Disease=="{wildcards.disease}",]) +
-            geom_col(aes(x=reorder(Hugo_Symbol, size), y=size)) +
-            coord_flip() + xlab('') + ylab('Variant count') + theme_bw()
-        ggsave("{output}", p)
-        """)
- 
+          require(ggplot2)
+          d = read.delim("{input}", sep='\t', header=TRUE)
+          p = ggplot(data=d[d$Disease=="{wildcards.disease}",]) +
+              geom_col(aes(x=reorder(gene, size), y=size)) +
+              coord_flip() + xlab('') + ylab('Variant count') + theme_bw()
+          ggsave("{output}", p)
+          """)
+
 rule heatmaps:
-    input: expand(DOCS + 'plot/gene_heatmap/{disease}.heatmap.png', disease=('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy')), \
-           expand(DOCS + 'plot/gene_var_count/{disease}.varCount.png', disease=('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy'))
+    input: expand(DOCS + 'plot/gene_heatmap/{eval_source}.{disease}.heatmap.png', eval_source=('panel',), disease=('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy')), \
+           expand(DOCS + 'plot/gene_var_count/{eval_source}.{disease}.varCount.png', eval_source=('panel',), disease=('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy')), \
+           expand(DOCS + 'plot/gene_heatmap/{eval_source}.{disease}:{d2}.heatmap.png', eval_source=('clinvar',), d2=('tot', 'single', 'mult', 'exp'), disease=('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy')), \
+           expand(DOCS + 'plot/gene_var_count/{eval_source}.{disease}:{d2}.varCount.png', eval_source=('clinvar',), d2=('tot', 'single', 'mult', 'exp'), disease=('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy'))
+
 
 rule limit_for_plot:
     input:  WORK + '{method}.eval_panel.{cols}.eval'
@@ -86,10 +90,10 @@ def calc_wrong(rows):
     return len(rows[crit])/tot
 
 rule eval_by_gene:
-    input:  i = WORK + 'roc_df/{features}'
-    output: o = DATA + 'interim/by_gene_eval/{features}'
+    input:  i = WORK + 'roc_df_{eval_source}/{features}'
+    output: o = DATA + 'interim/by_gene_eval/{eval_source}.{features}'
     run:
-        keys = ['Disease', 'Hugo_Symbol',]
+        keys = ['Disease', 'gene',]
         df_pre = pd.read_csv(input.i, sep='\t')
         crit = df_pre.apply(lambda row: not 'issue' in row['Disease'] and not 'earing' in row['Disease'], axis=1)
         df = df_pre[crit]
@@ -106,19 +110,19 @@ def read_gene_df(afile):
     return df
 
 rule combine_features_by_gene:
-    input: expand(DATA + 'interim/by_gene_eval/{feature}', feature=COMBO_FEATS)
-    output: o=DATA + 'interim/by_gene_feat_combo'
+    input: expand(DATA + 'interim/by_gene_eval/{{eval_source}}.{feature}', feature=COMBO_FEATS)
+    output: o=DATA + 'interim/{eval_source}.by_gene_feat_combo'
     run:
         pd.concat([read_gene_df(afile) for afile in list(input)]).to_csv(output.o, index=False, sep='\t')
 
 rule plot_gene_eval:
-    input:  DATA + 'interim/by_gene_eval/{features}'
-    output: DOCS + 'plot/by_gene/{features}.by_gene.png'
+    input:  DATA + 'interim/by_gene_eval/{eval_source}.{features}'
+    output: DOCS + 'plot/by_gene/{eval_source}.{features}.by_gene.png'
     run:
         R("""
           require(ggplot2)
           d = read.delim("{input}", sep='\t', header=TRUE)
-          p = ggplot(data=d, aes(x=size, y=wrongFrac, label=Hugo_Symbol)) +
+          p = ggplot(data=d, aes(x=size, y=wrongFrac, label=gene)) +
           geom_text(size=2) +
           facet_wrap(~Disease, scale='free', ncol=1) +
           theme_bw() +
@@ -146,8 +150,8 @@ def read_df(afile):
     return df
 
 rule combine_predictions:
-    input:  expand( WORK + 'roc_df/{cols}', cols=COMBO_FEATS)
-    output: o = WORK + 'roc_df_combo'
+    input:  expand( WORK + 'roc_df_{{eval_source}}/{cols}', cols=COMBO_FEATS)
+    output: o = WORK + '{eval_source}.roc_df_combo'
     run:
         dfs = [read_df(afile) for afile in list(input)]
         keys = ['Disease', 'chrom', 'pos', 'alt', 'y']

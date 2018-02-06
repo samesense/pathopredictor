@@ -1,3 +1,4 @@
+docs/plot/
 src/rules/*pdf
 docs/plot/by_gene/
 notebooks/roc_eval
