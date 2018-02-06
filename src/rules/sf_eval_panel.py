@@ -47,14 +47,17 @@ rule size_bar_plot:
     input:  DATA + 'interim/{eval_source}.by_gene_feat_combo'
     output: DOCS + 'plot/gene_var_count/{eval_source}.{disease}.varCount.png'
     run:
+        shell('head -1 {input} | cut -f 1,2,4 > {output}.tmp')
+        shell('tail -n +2 {input} >> {output}.tmp')
         R("""
           require(ggplot2)
-          d = read.delim("{input}", sep='\t', header=TRUE)
+          d = read.delim("{input}.tmp", sep='\t', header=TRUE)
           p = ggplot(data=d[d$Disease=="{wildcards.disease}",]) +
               geom_col(aes(x=reorder(gene, size), y=size)) +
               coord_flip() + xlab('') + ylab('Variant count') + theme_bw()
           ggsave("{output}", p)
           """)
+        shell('rm {output}.tmp')
 
 rule heatmaps:
     input: expand(DOCS + 'plot/gene_heatmap/{eval_source}.{disease}.heatmap.png', eval_source=('panel',), disease=('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy')), \
