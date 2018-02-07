@@ -47,24 +47,24 @@ rule size_bar_plot:
     input:  DATA + 'interim/{eval_source}.by_gene_feat_combo'
     output: DOCS + 'plot/gene_var_count/{eval_source}.{disease}.varCount.png'
     run:
-        shell('head -1 {input} | cut -f 1,2,4 > {output}.tmp')
-        shell('tail -n +2 {input} >> {output}.tmp')
+        shell("head -1 {input} | cut -f 1,2,4 | sed 's/Hugo_Symbol/gene/g' > {output}.tmp")
+        shell('tail -n +2 {input} | cut -f 1,2,4 | sort -u >> {output}.tmp')
         R("""
           require(ggplot2)
-          d = read.delim("{input}.tmp", sep='\t', header=TRUE)
+          d = read.delim("{output}.tmp", sep='\t', header=TRUE)
           p = ggplot(data=d[d$Disease=="{wildcards.disease}",]) +
               geom_col(aes(x=reorder(gene, size), y=size)) +
               coord_flip() + xlab('') + ylab('Variant count') + theme_bw()
           ggsave("{output}", p)
           """)
-        shell('rm {output}.tmp')
+        #shell('rm {output}.tmp')
 
+DD = ('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy', 'Rasopathies')
 rule heatmaps:
-    input: expand(DOCS + 'plot/gene_heatmap/{eval_source}.{disease}.heatmap.png', eval_source=('panel',), disease=('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy')), \
-           expand(DOCS + 'plot/gene_var_count/{eval_source}.{disease}.varCount.png', eval_source=('panel',), disease=('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy')), \
-           expand(DOCS + 'plot/gene_heatmap/{eval_source}.{disease}:{d2}.heatmap.png', eval_source=('clinvar',), d2=('tot', 'single', 'mult', 'exp'), disease=('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy')), \
-           expand(DOCS + 'plot/gene_var_count/{eval_source}.{disease}:{d2}.varCount.png', eval_source=('clinvar',), d2=('tot', 'single', 'mult', 'exp'), disease=('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy'))
-
+    input: expand(DOCS + 'plot/gene_heatmap/{eval_source}.{disease}.heatmap.png', eval_source=('panel',), disease=DD), \
+           expand(DOCS + 'plot/gene_var_count/{eval_source}.{disease}.varCount.png', eval_source=('panel',), disease=DD), \
+           expand(DOCS + 'plot/gene_heatmap/{eval_source}.{disease}:{d2}.heatmap.png', eval_source=('clinvar',), d2=('tot', 'single', 'mult', 'exp'), disease=DD), \
+           expand(DOCS + 'plot/gene_var_count/{eval_source}.{disease}:{d2}.varCount.png', eval_source=('clinvar',), d2=('tot', 'single', 'mult', 'exp'), disease=DD)
 
 rule limit_for_plot:
     input:  WORK + '{method}.eval_panel.{cols}.eval'
@@ -113,7 +113,7 @@ def read_gene_df(afile):
     return df
 
 rule combine_features_by_gene:
-    input: expand(DATA + 'interim/by_gene_eval/{{eval_source}}.{feature}', feature=COMBO_FEATS)
+    input:  expand(DATA + 'interim/by_gene_eval/{{eval_source}}.{feature}', feature=COMBO_FEATS)
     output: o=DATA + 'interim/{eval_source}.by_gene_feat_combo'
     run:
         pd.concat([read_gene_df(afile) for afile in list(input)]).to_csv(output.o, index=False, sep='\t')
