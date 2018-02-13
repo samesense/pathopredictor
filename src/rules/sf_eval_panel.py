@@ -37,7 +37,7 @@ rule plot_gene_heatmap:
           p = ggplot(data=d[d$Disease=="{wildcards.disease}",]) +
               geom_raster(aes(y=gene, x=reorder(combo, predictorWrongFracTot), fill=wrongFrac)) +
               ylab('') + xlab('') + theme_bw() +
-              scale_fill_gradient(low = "steelblue", high = "white") +
+              scale_fill_gradient(low = "blue", high = "yellow") +
               labs(fill="Wrong prediction fraction") +
               theme(axis.text.x = element_text(angle=90, hjust=1))
           ggsave("{output}", p)
@@ -53,7 +53,7 @@ rule size_bar_plot:
           require(ggplot2)
           d = read.delim("{output}.tmp", sep='\t', header=TRUE)
           p = ggplot(data=d[d$Disease=="{wildcards.disease}",]) +
-              geom_col(aes(x=reorder(gene, size), y=size, fill=var_class), position="dodge") +
+              geom_col(aes(x=reorder(gene, size), y=size), position="dodge") +
               geom_hline(aes(yintercept=10), colour="#990000", linetype="dashed") +
               coord_flip() + xlab('') + ylab('Variant count') + theme_bw()
           ggsave("{output}", p)
@@ -97,7 +97,7 @@ rule eval_by_gene:
     input:  i = WORK + 'roc_df_{eval_source}/{features}'
     output: o = DATA + 'interim/by_gene_eval/{eval_source}.{features}'
     run:
-        keys = ['Disease', 'gene', 'y']
+        keys = ['Disease', 'gene', ]
         df_pre = pd.read_csv(input.i, sep='\t')
         crit = df_pre.apply(lambda row: not 'issue' in row['Disease'] and not 'earing' in row['Disease'], axis=1)
         df = df_pre[crit]
@@ -105,8 +105,8 @@ rule eval_by_gene:
         tot_wrong_df = df.groupby(['Disease']).apply(calc_wrong).reset_index().rename(columns={0:'predictorWrongFracTot'})
         size_df = df.groupby(keys).size().reset_index().rename(columns={0:'size'})
         m = pd.merge(wrong_df, size_df, on=keys)
-        m.loc[:, 'var_class'] = m.apply(lambda row: 'pathogenic' if row['y'] == 1 else 'benign', axis=1)
-        pd.merge(m, tot_wrong_df, on='Disease', how='left')[['Disease', 'gene', 'var_class', 'size', 'predictorWrongFracTot', 'wrongFrac']].to_csv(output.o, index=False, sep='\t')
+        #m.loc[:, 'var_class'] = m.apply(lambda row: 'pathogenic' if row['y'] == 1 else 'benign', axis=1)
+        pd.merge(m, tot_wrong_df, on='Disease', how='left')[['Disease', 'gene', 'size', 'predictorWrongFracTot', 'wrongFrac']].to_csv(output.o, index=False, sep='\t')
 
 def read_gene_df(afile):
     feats = afile.split('/')[-1]
