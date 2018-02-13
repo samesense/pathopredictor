@@ -10,6 +10,8 @@ include: "sf_eval_panel.py"
 include: "sf_coords.py"
 include: "sf_eval_ahmad.py" # plot_ahmad
 
+include: "sf_predict_clinvar.py"
+
 rule all_dat:
     input: DATA + 'interim/denovo/denovo.limit3.dat', \
            DATA + 'interim/clinvar/clinvar.limit3.dat', \
