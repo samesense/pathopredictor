@@ -129,16 +129,22 @@ rule concat_extra_gene:
 #theme(legend.position="none") 
 rule plot_ahmad:
     input:  WORK + 'cc'
-    output: DOCS + 'plot/global.byDisease.png'
+    output: DOCS + 'plot/global.byDisease.byVarClass{byVarClass}.png'
     run:
+        if wildcards.byVarClass == 'True':
+            plot_cmd = 'geom_col(aes(y=percent_wrong, x=reorder(st, percent_wrong), fill=var_class), position="dodge")'
+        else:
+            plot_cmd = 'geom_col(aes(y=percent_wrong, x=reorder(st, percent_wrong)), position="dodge")'
         R("""
           require(ggplot2)
           d = read.delim("{input}", sep='\t', header=TRUE)
-          p = ggplot(data=d) +
-          geom_col(aes(y=percent_wrong, x=reorder(st, percent_wrong), fill=var_class), position="dodge") +
-          facet_grid(dis~.) + theme_bw() +
-          theme(axis.text.x = element_text(angle=90, hjust=1, size=8)) +
-          ylab('Wrong prediction fraction') +
-          xlab('') + coord_flip() + theme(axis.text.y = element_text(size=6))
+          p = ggplot(data=d) + {plot_cmd} +
+              facet_grid(dis~.) + theme_bw() +
+              theme(axis.text.x = element_text(angle=90, hjust=1, size=8)) +
+              ylab('Wrong prediction fraction') +
+              xlab('') + coord_flip() + theme(axis.text.y = element_text(size=6))
           ggsave("{output}", p, height=20)
           """)
+
+rule ahmad_prediction_plots:
+    input: expand( DOCS + 'plot/global.byDisease.byVarClass{byVarClass}.png', byVarClass=('True', 'False') )
