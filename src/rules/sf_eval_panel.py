@@ -97,7 +97,7 @@ rule eval_by_gene:
     input:  i = WORK + 'roc_df_{eval_source}/{features}'
     output: o = DATA + 'interim/by_gene_eval/{eval_source}.{features}'
     run:
-        keys = ['Disease', 'gene', ]
+        keys = ['Disease', 'gene',]
         df_pre = pd.read_csv(input.i, sep='\t')
         crit = df_pre.apply(lambda row: not 'issue' in row['Disease'] and not 'earing' in row['Disease'], axis=1)
         df = df_pre[crit]
