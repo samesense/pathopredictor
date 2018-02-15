@@ -6,7 +6,7 @@ rule mk_sample_data:
         pd.read_csv(input.i, sep='\t')[keys].rename(columns={'y':'obs_class','mpc_pred':'predicted_class'}).to_csv(output.o, index=False, sep=',')
 
 rule mk_genes:
-    input:  DATA +  'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls', 
+    input:  DATA +  'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls',
             expand(DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls', lab=('uc', 'EPIv6') )
     output: o=WORK + 'genes'
     run:
@@ -16,3 +16,8 @@ rule mk_genes:
         with open(output.o, 'w') as fout:
             for gene in genes:
                 print(gene, file=fout)
+
+rule count_bases:
+    input:  WORK + 'genes'
+    output: WORK + 'genes.bases'
+    shell:  '{CRUZ_PY} {SCRIPTS}count_bases.py {input} {output}'
