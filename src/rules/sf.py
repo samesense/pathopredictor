@@ -1,4 +1,8 @@
 """Main snakefile"""
+import pandas as pd
+from functools import reduce
+from itertools import combinations, chain
+from snakemake.utils import R
 
 include: "const.py"
 include: "sf_ann.py"
@@ -9,7 +13,7 @@ include: "sf_denovo.py"
 include: "sf_eval_panel.py"
 include: "sf_coords.py"
 include: "sf_eval_ahmad.py" # plot_ahmad
-
+include: "paper.plots.py"
 include: "sf_predict_clinvar.py"
 
 include: "sf.webtool.py"
