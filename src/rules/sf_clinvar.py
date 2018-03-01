@@ -4,7 +4,7 @@ import pandas as pd
 rule snpeff_clinvar:
     input:  CLINVAR
     output: DATA + 'interim/clinvar/clinvar.eff.vcf'
-    shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff \
+    shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff -dataDir {DATA}raw/snpeff/data/ \
                -strict -noStats hg19 -c {EFF_CONFIG} \
                {input} > {output}"""
 
@@ -14,18 +14,18 @@ rule snpeff_clinvar:
 #     output: DATA + 'interim/clinvar/clinvar.use.vcf'
 #     shell:  'python {SCRIPTS}limit_clinvar_genes.py {input} {output}'
 
-rule annotateDbnsfp_clinvar:
-    input:  DATA + 'interim/clinvar/clinvar.eff.vcf'
-    output: DATA + 'interim/clinvar/clinvar.eff.dbnsfp.vcf'
-    shell:  """{JAVA} -Xmx32g -Xms16g -jar {SIFT} dbnsfp -v \
-               -db {SIFT_DBNSFP} -f {DBNSFP_FIELDS} {input} > {output}"""
+# rule annotateDbnsfp_clinvar:
+#     input:  DATA + 'interim/clinvar/clinvar.eff.vcf'
+#     output: DATA + 'interim/clinvar/clinvar.eff.dbnsfp.vcf'
+#     shell:  """{JAVA} -Xmx32g -Xms16g -jar SnpSift dbnsfp -v \
+#                -db {SIFT_DBNSFP} -f {DBNSFP_FIELDS} {input} > {output}"""
 
 # fix pfam
 # /mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/hg19.pfam.ucscgenes.enum.bed.gz
 # ann fixed pfam
 # parse genes
 rule vcfanno_clinvar:
-    input:   vcf = DATA + 'interim/clinvar/clinvar.eff.dbnsfp.vcf',
+    input:   vcf = DATA + 'interim/clinvar/clinvar.eff.vcf',
              conf = CONFIG + 'vcfanno.conf',
              lua = VCFANNO_LUA_FILE
     output:  DATA + 'interim/clinvar/clinvar.anno.vcf'
@@ -43,7 +43,7 @@ rule parse_clinvar_vcf:
    output: o = DATA + 'interim/clinvar/clinvar.dat'
    run:
        with open(input.i) as f, open(output.o, 'w') as fout:
-           print('chrom\tpos\tref\talt\tpfam\teff\tclinSig\taf_1kg_all\tgene\tmpc\tmtr\tProtein_Change\tconfidence\trevel\tccr', file=fout)
+           print('chrom\tpos\tref\talt\tpfam\teff\tclinSig\taf_1kg_all\tgene\tmpc\tmtr\tnm\tProtein_Change\tconfidence\trevel\tccr', file=fout)
            for line in f:
                if line[0] != '#':
                    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
@@ -77,12 +77,12 @@ rule parse_clinvar_vcf:
                    clin_sig = info.split('CLNSIG=')[1].split(';')[0]
                    confidence = info.split('CLNREVSTAT=')[1].split(';')[0]
                    
-                   protein_change_pre = info.split('EFF=')[1].split(';')[0].split('(')[1].split('|')[3].split('/')[0]
+                   protein_change_pre = info.split('ANN=')[1].split(';')[0].split('|')[10]
                    protein_change = convert_protein_change(protein_change_pre)
-
-                   eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
-                   gene = info.split('EFF=')[1].split(';')[0].split(',')[0].split('|')[-6]
-                   ls = (chrom, pos, ref, alt, pfam, eff, clin_sig, onekg, gene, mpc, mtr, protein_change, confidence, revel, ccr)
+                   nm = info.split('ANN=')[1].split('|')[6]
+                   eff = info.split('ANN=')[1].split(';')[0].split('|')[1]
+                   gene = info.split('ANN=')[1].split(';')[0].split('|')[3]
+                   ls = (chrom, pos, ref, alt, pfam, eff, clin_sig, onekg, gene, mpc, mtr, nm, protein_change, confidence, revel, ccr)
                    print('\t'.join(ls), file=fout)
 
 def calc_final_sig_clinvar(row):
