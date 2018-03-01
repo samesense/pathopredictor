@@ -105,6 +105,13 @@ rule ahmad_percent_wrong:
                        axis=1)
         m[crit].to_csv(output.o, index=False, sep='\t')
 
+def color_bar(row):
+    if row['st'] in ('paper_mpc', 'paper_revel', 'paper_ccr'):
+        return 'Baseline'
+    if 'paper' in row['st']:
+        return 'Combined baseline'
+    return 'Trained'
+
 rule concat_extra:
     input:  expand( WORK + 'global.{cols}.eval_panel.eval.percentWrong', cols=COMBO_FEATS)
     output: o = WORK + 'cc'
@@ -112,8 +119,15 @@ rule concat_extra:
         m = pd.concat([pd.read_csv(afile, sep='\t') for afile in list(input)]).drop_duplicates(subset=['color', 'disease', 'score_type', 'st', 'dis', 'var_class'])
         #print( m[['dis', 'percent_wrong']].groupby('dis').apply(min) )
         min_df = m[['dis', 'percent_wrong']].groupby('dis').apply(min).rename(columns={'dis':'dis_junk', 'percent_wrong':'min'}).reset_index()
-        d = pd.merge(m, min_df, on='dis', how='left')
-        d.loc[:, 'min_color'] = d.apply(lambda row: row['percent_wrong']==row['min'], axis=1)
+        dp = pd.merge(m, min_df, on='dis', how='left')
+        diseases = {'Rasopathies':'Rasopathies',
+                    'genedx-epi':'Epilepsy',
+                    'Cardiomyopathy':'Cardiomyopathy'}
+        crit = dp.apply(lambda row: row['dis'] in diseases, axis=1)
+        d = dp[crit]
+        d.loc[:, 'dis'] = d.apply(lambda row: diseases[row['dis']], axis=1)
+        d.loc[:, 'classifier_color'] = d.apply(color_bar, axis=1)
+        d.loc[:, 'is_best'] = d.apply(lambda row: row['percent_wrong']==row['min'], axis=1)
         d.to_csv(output.o, sep='\t', index=False)
 
 rule concat_extra_gene:
@@ -121,30 +135,29 @@ rule concat_extra_gene:
     output: o = WORK + 'cc.gene'
     run:
         m = pd.concat([pd.read_csv(afile, sep='\t') for afile in list(input)]).drop_duplicates(subset=['color', 'disease', 'score_type', 'st', 'dis', 'var_class'])
-        #print( m[['dis', 'percent_wrong']].groupby('dis').apply(min) )
         min_df = m[['dis', 'percent_wrong']].groupby('dis').apply(min).rename(columns={'dis':'dis_junk', 'percent_wrong':'min'}).reset_index()
         d = pd.merge(m, min_df, on='dis', how='left')
         d.loc[:, 'min_color'] = d.apply(lambda row: row['percent_wrong']==row['min'], axis=1)
         d.to_csv(output.o, sep='\t', index=False)
-#theme(legend.position="none") 
+
 rule plot_ahmad:
     input:  WORK + 'cc'
-    output: DOCS + 'plot/global.byDisease.byVarClass{byVarClass}.png'
+    output: DOCS + 'paper_plts/global.byDisease.byVarClass{byVarClass}.pdf'
     run:
         if wildcards.byVarClass == 'True':
-            plot_cmd = 'geom_col(aes(y=percent_wrong, x=reorder(st, percent_wrong), fill=var_class), position="dodge")'
+            plot_cmd = 'geom_col(aes(y=percent_wrong, x=reorder(st, percent_wrong), colour=is_best, fill=classifier_color), position="dodge")'
         else:
-            plot_cmd = 'geom_col(aes(y=percent_wrong, x=reorder(st, percent_wrong)), position="dodge")'
+            plot_cmd = 'geom_col(aes(fill=classifier_color, y=percent_wrong, x=reorder(st, percent_wrong)), position="dodge")'
         R("""
           require(ggplot2)
           d = read.delim("{input}", sep='\t', header=TRUE)
           p = ggplot(data=d) + {plot_cmd} +
               facet_grid(dis~.) + theme_bw() +
               theme(axis.text.x = element_text(angle=90, hjust=1, size=8)) +
-              ylab('Wrong prediction fraction') +
+              ylab('Wrong prediction fraction') + theme(legend.position="bottom") +
               xlab('') + coord_flip() + theme(axis.text.y = element_text(size=6))
           ggsave("{output}", p, height=20)
           """)
 
 rule ahmad_prediction_plots:
-    input: expand( DOCS + 'plot/global.byDisease.byVarClass{byVarClass}.png', byVarClass=('True', 'False') )
+    input: expand( DOCS + 'paper_plts/global.byDisease.byVarClass{byVarClass}.pdf', byVarClass=('False',) )
