@@ -5,9 +5,10 @@ rule count_plot_data:
            clinvar = WORK + 'roc_df_clinvar/mpc'
     output: o = WORK + 'paper_plot_data/count_plot'
     run:
-        diseases = {'Rasopathies':'Rasopathies',
-                        'genedx-epi':'Epilepsy',
-                        'Cardiomyopathy':'Cardiomyopathy'}
+        diseases = {'genedx-epi-limitGene':'Epilepsy (dominant genes)',
+                    'Rasopathies':'Rasopathies',
+                    'genedx-epi':'Epilepsy',
+                    'Cardiomyopathy':'Cardiomyopathy'}
         clin_labels = {'single':'ClinVar w/ Evidence',
                        'tot': 'Total ClinVar'}
         df_panel = pd.read_csv(input.panel, sep='\t')
