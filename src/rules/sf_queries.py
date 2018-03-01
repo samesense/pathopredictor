@@ -17,7 +17,7 @@ rule mk_oneoff_vcf:
 rule snpeff_oneoff:
     input:  DATA + 'raw/imterim/queries/q.vcf'
     output: DATA + 'raw/imterim/queries/q.eff.vcf'
-    shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff \
+    shell:  """{JAVA} -Xmx32g -Xms16g -jar snpEff eff \
                -strict -noStats hg19 -c {EFF_CONFIG} \
                {input} > {output}"""
 
@@ -26,7 +26,7 @@ DBNSFP_FIELDS = 'Interpro_domain,SIFT_score,Polyphen2_HVAR_pred,RadialSVM_pred,L
 rule annotateDbnsfp_oneoff:
     input:  DATA + 'raw/imterim/queries/q.eff.vcf'
     output: DATA + 'raw/imterim/queries/q.eff.dbnsfp.vcf'
-    shell:  """{JAVA} -Xmx32g -Xms16g -jar {SIFT} dbnsfp -v \
+    shell:  """{JAVA} -Xmx32g -Xms16g -jar SnpSift dbnsfp -v \
                -db {SIFT_DBNSFP} -f {DBNSFP_FIELDS} {input} > {output}"""
 
 # fix pfam

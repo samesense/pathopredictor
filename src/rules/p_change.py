@@ -28,7 +28,14 @@ def convert_protein_change(protein_change):
             c2 = ''
             protein_pos = protein_change.split('.')[1][3:-1]
             c1 = IUPACData.protein_letters_3to1[p1]
-        else:    
+        elif 'dup' == protein_change[-3:]:
+            c1 = IUPACData.protein_letters_3to1[p1]
+            c2 = 'dup'
+            protein_pos = protein_change.split('.')[1][3:-3]
+        elif 'p.34' == protein_change:
+            return protein_change
+        else:
+            print(protein_change)
             p2 = protein_change.split('.')[1][-3:]
             protein_pos = protein_change.split('.')[1][3:-3]
             c1 = IUPACData.protein_letters_3to1[p1]

@@ -126,8 +126,9 @@ rule concat_extra:
         crit = dp.apply(lambda row: row['dis'] in diseases, axis=1)
         d = dp[crit]
         d.loc[:, 'dis'] = d.apply(lambda row: diseases[row['dis']], axis=1)
-        d.loc[:, 'classifier_color'] = d.apply(color_bar, axis=1)
+        d.loc[:, 'Classifier'] = d.apply(color_bar, axis=1)
         d.loc[:, 'is_best'] = d.apply(lambda row: row['percent_wrong']==row['min'], axis=1)
+        d.loc[:, 'st'] = d.apply(lambda row: row['st'].replace('panel-trained_','TRAINED_').replace('paper_','BASE_'), axis=1)
         d.to_csv(output.o, sep='\t', index=False)
 
 rule concat_extra_gene:
@@ -138,8 +139,9 @@ rule concat_extra_gene:
         min_df = m[['dis', 'percent_wrong']].groupby('dis').apply(min).rename(columns={'dis':'dis_junk', 'percent_wrong':'min'}).reset_index()
         d = pd.merge(m, min_df, on='dis', how='left')
         d.loc[:, 'min_color'] = d.apply(lambda row: row['percent_wrong']==row['min'], axis=1)
+        d.loc[:, 'st'] = d.apply(lambda row: row['st'].replace('panel-trained_','').replace('paper_',''), axis=1)
         d.to_csv(output.o, sep='\t', index=False)
-
+#geom_point(data=dbest, aes(x=st, y=percent_wrong))'
 rule plot_ahmad:
     input:  WORK + 'cc'
     output: DOCS + 'paper_plts/global.byDisease.byVarClass{byVarClass}.pdf'
@@ -147,16 +149,18 @@ rule plot_ahmad:
         if wildcards.byVarClass == 'True':
             plot_cmd = 'geom_col(aes(y=percent_wrong, x=reorder(st, percent_wrong), colour=is_best, fill=classifier_color), position="dodge")'
         else:
-            plot_cmd = 'geom_col(aes(fill=classifier_color, y=percent_wrong, x=reorder(st, percent_wrong)), position="dodge")'
+            plot_cmd = 'geom_col(aes(fill=Classifier, y=percent_wrong, x=st, position="dodge"))'
         R("""
           require(ggplot2)
           d = read.delim("{input}", sep='\t', header=TRUE)
+          dbest = d[d$is_best=="True",]
+          head(dbest)
           p = ggplot(data=d) + {plot_cmd} +
-              facet_grid(dis~.) + theme_bw() +
+              facet_grid(.~dis) + theme_bw() +
               theme(axis.text.x = element_text(angle=90, hjust=1, size=8)) +
-              ylab('Wrong prediction fraction') + theme(legend.position="bottom") +
+              ylab('Incorrect prediction fraction') + theme(legend.position="bottom") +
               xlab('') + coord_flip() + theme(axis.text.y = element_text(size=6))
-          ggsave("{output}", p, height=20)
+          ggsave("{output}", p, width=20)
           """)
 
 rule ahmad_prediction_plots:

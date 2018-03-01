@@ -40,22 +40,22 @@ rule bgzipVcf_other:
 rule snpeff_other:
     input:  DATA + 'interim/other/{lab}.vcf.gz'
     output: DATA + 'interim/other/{lab}.eff.vcf'
-    shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff \
+    shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff -dataDir {DATA}/raw/snpeff/data/ \
                -strict -noStats hg19 -c {EFF_CONFIG} \
                {input} > {output}"""
 
-rule annotateDbnsfp_other:
-    input:  DATA + 'interim/other/{lab}.eff.vcf'
-    output: DATA + 'interim/other/{lab}.eff.dbnsfp.vcf'
-    shell:  """{JAVA} -Xmx32g -Xms16g -jar {SIFT} dbnsfp -v \
-               -db {SIFT_DBNSFP} -f {DBNSFP_FIELDS} {input} > {output}"""
+# rule annotateDbnsfp_other:
+#     input:  DATA + 'interim/other/{lab}.eff.vcf'
+#     output: DATA + 'interim/other/{lab}.eff.dbnsfp.vcf'
+#     shell:  """{JAVA} -Xmx32g -Xms16g -jar SnpSift dbnsfp -v \
+#                -db {SIFT_DBNSFP} -f {DBNSFP_FIELDS} {input} > {output}"""
 
 # fix pfam
 # /mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/hg19.pfam.ucscgenes.enum.bed.gz
 # ann fixed pfam
 # parse genes
 rule vcfanno_other:
-    input:   vcf = DATA + 'interim/other/{lab}.eff.dbnsfp.vcf',
+    input:   vcf = DATA + 'interim/other/{lab}.eff.vcf',
              conf = CONFIG + 'vcfanno.conf',
              lua = VCFANNO_LUA_FILE
     output:  DATA + 'interim/other/{lab}.eff.dbnsfp.anno.vcf'
@@ -82,7 +82,7 @@ rule parse_vcf_other:
            o2 = DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.splitPfam.dat'
    run:
        with open(input.i) as f, open(output.o, 'w') as fout, open(output.o2, 'w') as fout_split_pfam:
-           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tgene\tmpc\tmtr\trevel\texac_af\texac_ac\texac_an\texac_cov_frac\tkaviar_af\tProtein_Change\tHugo_Symbol\tccr', file=fout)
+           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tgene\tmpc\tmtr\trevel\texac_af\texac_ac\texac_an\texac_cov_frac\tkaviar_af\tnm\tProtein_Change\tHugo_Symbol\tccr', file=fout)
            print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tgene\tmpc\tmtr\trevel\tccr',
                  file=fout_split_pfam)
            for line in f:
@@ -133,23 +133,20 @@ rule parse_vcf_other:
                        onekg = info.split('af_1kg_all=')[1].split(';')[0]
                    else:
                        onekg = '0'
+                   if ref != alt:
+                       eff = info.split('ANN=')[1].split(';')[0].split('|')[1]
+                       protein_change_pre = info.split('ANN=')[1].split(';')[0].split('|')[10]
+                       protein_change = convert_protein_change(protein_change_pre)
+                       nm = info.split('ANN=')[1].split('|')[6]
+                       gene = info.split('ANN=')[1].split(';')[0].split('|')[3]
+                       ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff,
+                             gene, mpc, mtr, revel, exac_af, exac_ac, exac_an,
+                             exac_cov_frac, kv_af, nm, protein_change, gene, ccr)
+                       print('\t'.join(ls), file=fout)
 
-                   eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
-                   # (MODERATE|MISSENSE|Ata/Gta|p.Ile199Val/
-                   #protein_change = 'NA'
-                   #if eff == 'missense_variant':
-                   protein_change_pre = info.split('EFF=')[1].split(';')[0].split('(')[1].split('|')[3].split('/')[0]
-                   protein_change = convert_protein_change(protein_change_pre)
-
-                   gene = info.split('EFF=')[1].split(';')[0].split(',')[0].split('|')[-6]
-                   ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff,
-                         gene, mpc, mtr, revel, exac_af, exac_ac, exac_an,
-                         exac_cov_frac, kv_af, protein_change, gene, ccr)
-                   print('\t'.join(ls), file=fout)
-
-                   for p in pfam.split(','):
-                       ls = (chrom, pos, ref, alt, clin, p, onekg, eff, gene, mpc, mtr, revel, ccr)
-                       print('\t'.join(ls), file=fout_split_pfam)
+                       for p in pfam.split(','):
+                           ls = (chrom, pos, ref, alt, clin, p, onekg, eff, gene, mpc, mtr, revel, ccr)
+                           print('\t'.join(ls), file=fout_split_pfam)
 
 def mk_class_other(row):
     cc = str(row['clin_class'])

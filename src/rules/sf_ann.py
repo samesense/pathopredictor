@@ -78,22 +78,22 @@ rule bgzipVcf_epi:
 rule snpeff_epi:
     input:  DATA + 'interim/epi/{lab}.vcf.gz'
     output: DATA + 'interim/epi/{lab}.eff.vcf'
-    shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff \
+    shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff -dataDir {DATA}raw/snpeff/data/ \
                -strict -noStats hg19 -c {EFF_CONFIG} \
                {input} > {output}"""
 
-rule annotateDbnsfp_epi:
-    input:  DATA + 'interim/epi/{lab}.eff.vcf'
-    output: DATA + 'interim/epi/{lab}.eff.dbnsfp.vcf'
-    shell:  """{JAVA} -Xmx32g -Xms16g -jar {SIFT} dbnsfp -v \
-               -db {SIFT_DBNSFP} -f {DBNSFP_FIELDS} {input} > {output}"""
+# rule annotateDbnsfp_epi:
+#     input:  DATA + 'interim/epi/{lab}.eff.vcf'
+#     output: DATA + 'interim/epi/{lab}.eff.dbnsfp.vcf'
+#     shell:  """{JAVA} -Xmx32g -Xms16g -jar SnpSift dbnsfp -v \
+#                -db {SIFT_DBNSFP} -f {DBNSFP_FIELDS} {input} > {output}"""
 
 # fix pfam
 # /mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/hg19.pfam.ucscgenes.enum.bed.gz
 # ann fixed pfam
 # parse genes
 rule vcfanno_epi:
-    input:   vcf = DATA + 'interim/epi/{lab}.eff.dbnsfp.vcf',
+    input:   vcf = DATA + 'interim/epi/{lab}.eff.vcf',
              conf = CONFIG + 'vcfanno.conf',
              lua = VCFANNO_LUA_FILE
     output:  DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.vcf'
@@ -120,7 +120,7 @@ rule parse_vcf_epi:
            o2 = DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.hHack.splitPfam.dat'
    run:
        with open(input.i) as f, open(output.o, 'w') as fout, open(output.o2, 'w') as fout_split_pfam:
-           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tpos_fam\tneg_fam\tgene\tmpc\tmtr\trevel\texac_af\texac_ac\texac_an\texac_cov_frac\tkaviar_af\tc.\tProtein_Change\tHugo_Symbol\tccr', file=fout)
+           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tpos_fam\tneg_fam\tgene\tmpc\tmtr\trevel\texac_af\texac_ac\texac_an\texac_cov_frac\tkaviar_af\tc.\tnm\tProtein_Change\tHugo_Symbol\tccr', file=fout)
            print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tpos_fam\tneg_fam\tgene\tmpc\tmtr\trevel\tccr',
                  file=fout_split_pfam)
            for line in f:
@@ -178,23 +178,20 @@ rule parse_vcf_epi:
                        onekg = info.split('af_1kg_all=')[1].split(';')[0]
                    else:
                        onekg = '0'
+                   if ref != alt:
+                       eff = info.split('ANN=')[1].split(';')[0].split('|')[1]
+                       protein_change_pre = info.split('ANN=')[1].split(';')[0].split('|')[10]
+                       protein_change = convert_protein_change(protein_change_pre)
+                       nm = info.split('ANN=')[1].split('|')[6]
+                       gene = info.split('ANN=')[1].split(';')[0].split('|')[3]
+                       ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff, pos_fam,
+                             neg_fam, gene, mpc, mtr, revel, exac_af, exac_ac, exac_an,
+                             exac_cov_frac, kv_af, c_dot, nm, protein_change, gene, ccr)
+                       print('\t'.join(ls), file=fout)
 
-                   eff = info.split('EFF=')[1].split(';')[0].split('(')[0]
-                   # (MODERATE|MISSENSE|Ata/Gta|p.Ile199Val/
-                   #protein_change = 'NA'
-                   #if eff == 'missense_variant':
-                   protein_change_pre = info.split('EFF=')[1].split(';')[0].split('(')[1].split('|')[3].split('/')[0]
-                   protein_change = convert_protein_change(protein_change_pre)
-
-                   gene = info.split('EFF=')[1].split(';')[0].split(',')[0].split('|')[-6]
-                   ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff, pos_fam,
-                         neg_fam, gene, mpc, mtr, revel, exac_af, exac_ac, exac_an,
-                         exac_cov_frac, kv_af, c_dot, protein_change, gene, ccr)
-                   print('\t'.join(ls), file=fout)
-
-                   for p in pfam.split(','):
-                       ls = (chrom, pos, ref, alt, clin, p, onekg, eff, pos_fam, neg_fam, gene, mpc, mtr, revel, ccr)
-                       print('\t'.join(ls), file=fout_split_pfam)
+                       for p in pfam.split(','):
+                           ls = (chrom, pos, ref, alt, clin, p, onekg, eff, pos_fam, neg_fam, gene, mpc, mtr, revel, ccr)
+                           print('\t'.join(ls), file=fout_split_pfam)
 
 def mk_class_epi(row):
     if row['clin_class'] in ('Benign', 'BENIGN', 'LIKELY BENIGN', 'likely benign', 'benign', 'LIKELY_BENIGN', 'likely_benign'):

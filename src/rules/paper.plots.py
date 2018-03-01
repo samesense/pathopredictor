@@ -47,7 +47,7 @@ rule count_plot:
           p = ggplot(data=d) +
               geom_bar(stat="identity", aes(x=Disease, y=count, fill=fct_reorder(y,count))) +
               facet_grid(count_type~eval_type, scale="free_y") + theme_bw(base_size=18) +
-              ylab('Count') + labs(fill= "") +theme(legend.position="bottom") +
+              ylab('Count') + labs(fill= "") + theme(legend.position="bottom") +
               theme(axis.text.x = element_text(angle=45, hjust=1), axis.title.x=element_blank())
           ggsave("{output}", p, width=10)
           """)
