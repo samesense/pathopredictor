@@ -46,6 +46,7 @@ rule combine_features_by_gene_clinvar_plot:
         df.loc[:, 'dd'] = df.apply(lambda row: diseases[row['dd']], axis=1)
         df.loc[:, 'clinvar_type'] = df.apply(lambda row: clinvar_names[row['clinvar_type']], axis=1)
         df.loc[:, 'Classifier'] = df.apply(color_clinvar_bar, axis=1)
+        df.loc[:, 'combo'] = df.apply(lambda row: row['combo'].replace('clinvar.', 'TRAINED_'), axis=1)
         df.to_csv(output.o, index=False, sep='\t')
 
 rule plot_clinvar_eval_paper:
