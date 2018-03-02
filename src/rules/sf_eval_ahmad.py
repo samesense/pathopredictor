@@ -139,8 +139,7 @@ rule concat_extra:
         crit = dp.apply(lambda row: row['dis'] in diseases, axis=1)
         d = dp[crit]
         d.loc[:, 'dis_order'] = d.apply(lambda row: disease_order[row['dis']], axis=1)
-        d.loc[:, 'dis'] = d.apply(lambda row: diseases[row['dis']] + ' {n=%d}'
-                                  % (row['tot_vars']), axis=1)
+        d.loc[:, 'dis'] = d.apply(lambda row: diseases[row['dis']], axis=1)
         d.loc[:, 'Classifier'] = d.apply(color_bar, axis=1)
         d.loc[:, 'is_best'] = d.apply(lambda row: row['percent_wrong']==row['min'], axis=1)
         d.loc[:, 'st'] = d.apply(lambda row: row['st'].replace('panel-trained_','TRAINED_').replace('paper_','BASE_'), axis=1)
@@ -158,17 +157,25 @@ rule concat_extra_gene:
         d.to_csv(output.o, sep='\t', index=False)
 
 rule plot_ahmad:
-    input:  WORK + 'cc'
+    input:  i = WORK + 'cc'
     output: DOCS + 'paper_plts/fig3_panelEval.byVarClass{byVarClass}.pdf'
     run:
         if wildcards.byVarClass == 'True':
             plot_cmd = 'geom_col(aes(y=percent_wrong, x=reorder(st, percent_wrong), colour=is_best, fill=classifier_color), position="dodge")'
         else:
-            plot_cmd = 'geom_col(aes(fill=Classifier, y=percent_wrong, x=reorder(st, percent_wrong))) + geom_point(data=dbest, aes(x=st,y=percent_wrong))'
+            plot_cmd = """geom_col(aes(fill=Classifier, y=percent_wrong, x=reorder(st, percent_wrong))) +
+                          geom_point(data=dbest, aes(x=st,y=percent_wrong)) +
+                          geom_text(data=label_df, aes(x=x,y=y,label=label))"""
+        df = pd.read_csv(input.i, sep='\t')[['dis','tot_vars']].drop_duplicates()
+        df.loc[:, 'label'] = df.apply(lambda row: 'n=%d' % (row['tot_vars']), axis=1) 
+        df['y'] = 0.5
+        df['x'] = 'TRAINED_mpc-revel-ccr-is_domain'
+        df.to_csv('tmp.labels', index=False, sep='\t')
         R("""
           require(ggplot2)
           # The palette with grey: http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/#a-colorblind-friendly-palette
           cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+          label_df = read.csv('tmp.labels', sep='\t')
           d = read.delim("{input}", sep='\t', header=TRUE)
           d$dis = factor(d$dis, levels=unique( d[order(d$dis_order),]$dis ))
           dbest = d[d$is_best=="True",]
@@ -180,6 +187,7 @@ rule plot_ahmad:
               xlab('') + coord_flip() + theme(axis.text.y = element_text(size=10)) + scale_fill_manual(values=cbPalette)
           ggsave("{output}", p, width=20)
           """)
+        shell('rm tmp.labels')
 
 rule ahmad_prediction_plots:
     input: expand( DOCS + 'paper_plts/fig3_panelEval.byVarClass{byVarClass}.pdf', byVarClass=('False',) )
