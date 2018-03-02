@@ -25,8 +25,18 @@ def color_clinvar_bar(row):
         return 'Combined baseline'
     return 'Trained'
 
+def calc_clinvar_best_label(row):
+    if row['panel_best'] and not row['is_best_clinvar']:
+        return 'Best panel'
+    if row['is_best_clinvar'] and not row['panel_best']:
+        return 'Best ClinVar'
+    if row['is_best_clinvar'] and row['panel_best']:
+        return 'Best both'
+    return 'NA'
+
 rule combine_features_by_gene_clinvar_plot:
-    input:  expand(DATA + 'interim/pred_clinvar_eval/{{eval_source}}.{feature}', feature=COMBO_FEATS)
+    input:  clinvar_data = expand(DATA + 'interim/pred_clinvar_eval/{{eval_source}}.{feature}', feature=COMBO_FEATS),
+            panel_data = WORK + 'cc'
     output: o=DATA + 'interim/{eval_source}.by_gene_feat_combo.predictFullClinvar'
     run:
         disease_order = {'genedx-epi-limitGene':3,
@@ -40,35 +50,44 @@ rule combine_features_by_gene_clinvar_plot:
                     'Cardiomyopathy':'Cardiomyopathy'}
         clinvar_names  = {'tot': 'Total ClinVar',
                           'single': 'ClinVar w/ Evidence'}
-        dfp = pd.concat([read_gene_df(afile) for afile in list(input)])
+        dfp = pd.concat([read_gene_df(afile) for afile in list(input.clinvar_data)])
+        panel_cols = ['disease', 'st', 'is_best']
+        panel_df = pd.read_csv(input.panel_data, sep='\t')[panel_cols].drop_duplicates().rename(columns={'disease':'dd', 'st':'combo','is_best':'panel_best'})
         crit = dfp.apply(lambda row: row['clinvar_type'] in clinvar_names, axis=1)
         df2 = dfp[crit]
         min_df = (df2[['clinvar_type', 'dd', 'wrongFrac']]
                   .groupby(['clinvar_type', 'dd'])
                   .apply(min).rename(columns={'dd':'dd_junk', 'clinvar_type':'clinvar_type_junk', 'wrongFrac':'min'})
                   .reset_index() )
-        df = pd.merge(df2, min_df, on=['clinvar_type', 'dd'], how='left')
+        df3 = pd.merge(df2, min_df, on=['clinvar_type', 'dd'], how='left')
+        df3.loc[:, 'combo'] = df3.apply(lambda row: row['combo'].replace('clinvar.', 'TRAINED_'), axis=1)
+        print(df3.head())
+        print('wft')
+        print(panel_df.head())
+        df = pd.merge(df3, panel_df, on=['dd','combo'], how='left') 
         df.loc[:, 'dd'] = df.apply(lambda row: diseases[row['dd']], axis=1)
         df.loc[:, 'clinvar_type'] = df.apply(lambda row: clinvar_names[row['clinvar_type']], axis=1)
         df.loc[:, 'Classifier'] = df.apply(color_clinvar_bar, axis=1)
-        df.loc[:, 'combo'] = df.apply(lambda row: row['combo'].replace('clinvar.', 'TRAINED_'), axis=1)
-        df.loc[:, 'is_best'] = df.apply(lambda row: row['wrongFrac']==row['min'], axis=1)
+        df.loc[:, 'is_best_clinvar'] = df.apply(lambda row: row['wrongFrac']==row['min'], axis=1)
+        df.loc[:, 'is_best'] = df.apply(lambda row: row['panel_best'] or row['is_best_clinvar'], axis=1)
+        df.loc[:, 'best_label'] = df.apply(calc_clinvar_best_label, axis=1)
         df.to_csv(output.o, index=False, sep='\t')
 
 rule plot_clinvar_eval_paper:
     input:  DATA + 'interim/clinvar.by_gene_feat_combo.predictFullClinvar'
     output: DOCS + 'paper_plts/fig4_eval_clinvar.pdf'
     run:
-        plot_cmd = 'geom_col( fill="#56B4E9", aes(y=wrongFrac, x=reorder(combo, predictorWrongFracTot)) ) + geom_point(data=dbest, aes(x=combo,y=wrongFrac))'
+        plot_cmd = 'geom_col( fill="#56B4E9", aes(y=wrongFrac, x=reorder(combo, predictorWrongFracTot)) ) + geom_point(data=dbest, aes(colour=best_label, x=combo,y=wrongFrac))'
         R("""
           require(ggplot2)
+          cbbPalette <- c("#D55E00", "#009E73", "#000000")
           d = read.delim("{input}", sep='\t', header=TRUE)
           dbest = d[d$is_best=="True",]
           d$clinvar_type = factor(d$clinvar_type, levels=c("Total ClinVar", "ClinVar w/ Evidence"))
           p = ggplot(data=d) + {plot_cmd} +
-              ylab('Incorrect prediction fraction') + xlab('') + theme_bw() + facet_grid(clinvar_type~dd) +
-              coord_flip() +
-              theme(axis.text.y = element_text(size=10))
+              ylab('Incorrect prediction fraction') + xlab('') + theme_bw(base_size=18) + facet_grid(clinvar_type~dd) +
+              coord_flip() + labs(colour="") +
+              theme(legend.position="bottom", axis.text.y = element_text(size=10)) + scale_colour_manual(values=cbbPalette)
           ggsave("{output}", p, height=10, width=20)
           """)
 

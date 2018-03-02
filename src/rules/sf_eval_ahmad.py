@@ -174,7 +174,7 @@ rule plot_ahmad:
           dbest = d[d$is_best=="True",]
           head(dbest)
           p = ggplot(data=d) + {plot_cmd} +
-              facet_grid(.~dis) + theme_bw() +
+              facet_grid(.~dis) + theme_bw(base_size=18) +
               theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12)) +
               ylab('Incorrect prediction fraction') + theme(legend.position="bottom") +
               xlab('') + coord_flip() + theme(axis.text.y = element_text(size=10)) + scale_fill_manual(values=cbPalette)

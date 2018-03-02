@@ -52,3 +52,7 @@ rule count_plot:
               theme(axis.text.x = element_text(angle=45, hjust=1), axis.title.x=element_blank())
           ggsave("{output}", p, width=10)
           """)
+
+FIGS = ('fig1_count_plot', 'fig4_eval_clinvar', 'fig3_panelEval.byVarClassFalse')
+rule all_paper_plots:
+    input: expand(DOCS + 'paper_plts/{fig}.pdf', fig=FIGS)
