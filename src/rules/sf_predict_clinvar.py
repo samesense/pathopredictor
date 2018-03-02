@@ -42,21 +42,28 @@ rule combine_features_by_gene_clinvar_plot:
                           'single': 'ClinVar w/ Evidence'}
         dfp = pd.concat([read_gene_df(afile) for afile in list(input)])
         crit = dfp.apply(lambda row: row['clinvar_type'] in clinvar_names, axis=1)
-        df = dfp[crit]
+        df2 = dfp[crit]
+        min_df = (df2[['clinvar_type', 'dd', 'wrongFrac']]
+                  .groupby(['clinvar_type', 'dd'])
+                  .apply(min).rename(columns={'dd':'dd_junk', 'clinvar_type':'clinvar_type_junk', 'wrongFrac':'min'})
+                  .reset_index() )
+        df = pd.merge(df2, min_df, on=['clinvar_type', 'dd'], how='left')
         df.loc[:, 'dd'] = df.apply(lambda row: diseases[row['dd']], axis=1)
         df.loc[:, 'clinvar_type'] = df.apply(lambda row: clinvar_names[row['clinvar_type']], axis=1)
         df.loc[:, 'Classifier'] = df.apply(color_clinvar_bar, axis=1)
         df.loc[:, 'combo'] = df.apply(lambda row: row['combo'].replace('clinvar.', 'TRAINED_'), axis=1)
+        df.loc[:, 'is_best'] = df.apply(lambda row: row['wrongFrac']==row['min'], axis=1)
         df.to_csv(output.o, index=False, sep='\t')
 
 rule plot_clinvar_eval_paper:
     input:  DATA + 'interim/clinvar.by_gene_feat_combo.predictFullClinvar'
     output: DOCS + 'paper_plts/fig4_eval_clinvar.pdf'
     run:
-        plot_cmd = 'geom_col( fill="#56B4E9", aes(y=wrongFrac, x=reorder(combo, predictorWrongFracTot)) )'
+        plot_cmd = 'geom_col( fill="#56B4E9", aes(y=wrongFrac, x=reorder(combo, predictorWrongFracTot)) ) + geom_point(data=dbest, aes(x=combo,y=wrongFrac))'
         R("""
           require(ggplot2)
           d = read.delim("{input}", sep='\t', header=TRUE)
+          dbest = d[d$is_best=="True",]
           d$clinvar_type = factor(d$clinvar_type, levels=c("Total ClinVar", "ClinVar w/ Evidence"))
           p = ggplot(data=d) + {plot_cmd} +
               ylab('Incorrect prediction fraction') + xlab('') + theme_bw() + facet_grid(clinvar_type~dd) +
