@@ -74,22 +74,32 @@ rule combine_features_by_gene_clinvar_plot:
         df.to_csv(output.o, index=False, sep='\t')
 
 rule plot_clinvar_eval_paper:
-    input:  DATA + 'interim/clinvar.by_gene_feat_combo.predictFullClinvar'
+    input:  i = DATA + 'interim/clinvar.by_gene_feat_combo.predictFullClinvar'
     output: DOCS + 'paper_plts/fig4_eval_clinvar.pdf'
     run:
-        plot_cmd = 'geom_col( fill="#56B4E9", aes(y=wrongFrac, x=reorder(combo, predictorWrongFracTot)) ) + geom_point(data=dbest, aes(colour=best_label, x=combo,y=wrongFrac))'
+        plot_cmd = """geom_col( fill="#56B4E9", aes(y=wrongFrac, x=reorder(combo, predictorWrongFracTot)) ) +
+                      geom_point(data=dbest, aes(colour=best_label, x=combo,y=wrongFrac)) +
+                      geom_text(data=label_df, aes(x=x,y=y,label=label))"""
+        df = pd.read_csv(input.i, sep='\t')[['clinvar_type','dd','size']].drop_duplicates()
+        df.loc[:, 'label'] = df.apply(lambda row: 'n=%d' % (row['size']), axis=1)
+        df['y'] = 0.35
+        df['x'] = 'TRAINED_mpc-revel'
+        df.to_csv('tmp.clinvar.labels', index=False, sep='\t')
+
         R("""
           require(ggplot2)
           cbbPalette <- c("#D55E00", "#009E73", "#000000")
           d = read.delim("{input}", sep='\t', header=TRUE)
+          label_df = read.delim("tmp.clinvar.labels", sep="\t", header=TRUE)
           dbest = d[d$is_best=="True",]
           d$clinvar_type = factor(d$clinvar_type, levels=c("Total ClinVar", "ClinVar w/ Evidence"))
           p = ggplot(data=d) + {plot_cmd} +
               ylab('Incorrect prediction fraction') + xlab('') + theme_bw(base_size=18) + facet_grid(clinvar_type~dd) +
               coord_flip() + labs(colour="") +
               theme(legend.position="bottom", axis.text.y = element_text(size=10)) + scale_colour_manual(values=cbbPalette)
-          ggsave("{output}", p, height=10, width=20)
+          ggsave("{output}", p, height=8, width=20)
           """)
+        shell('rm tmp.clinvar.labels')
 
 rule plot_clinvar_eval:
     input:  DATA + 'interim/{eval_source}.by_gene_feat_combo.predictFullClinvar'
