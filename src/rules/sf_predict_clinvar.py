@@ -18,6 +18,13 @@ rule eval_by_gene_clinvar:
         m.loc[:, 'dd'] = m.apply(lambda row: row['Disease'].split(':')[0], axis=1)
         pd.merge(m, tot_wrong_df, on='Disease', how='left')[['Disease', 'dd', 'clinvar_type', 'size', 'predictorWrongFracTot', 'wrongFrac']].to_csv(output.o, index=False, sep='\t')
 
+def color_clinvar_bar(row):
+    if row['combo'] in ('paper_mpc', 'paper_revel', 'paper_ccr'):
+        return 'Baseline'
+    if 'paper' in row['combo']:
+        return 'Combined baseline'
+    return 'Trained'
+
 rule combine_features_by_gene_clinvar_plot:
     input:  expand(DATA + 'interim/pred_clinvar_eval/{{eval_source}}.{feature}', feature=COMBO_FEATS)
     output: o=DATA + 'interim/{eval_source}.by_gene_feat_combo.predictFullClinvar'
@@ -38,20 +45,22 @@ rule combine_features_by_gene_clinvar_plot:
         df = dfp[crit]
         df.loc[:, 'dd'] = df.apply(lambda row: diseases[row['dd']], axis=1)
         df.loc[:, 'clinvar_type'] = df.apply(lambda row: clinvar_names[row['clinvar_type']], axis=1)
+        df.loc[:, 'Classifier'] = df.apply(color_clinvar_bar, axis=1)
         df.to_csv(output.o, index=False, sep='\t')
 
 rule plot_clinvar_eval_paper:
     input:  DATA + 'interim/clinvar.by_gene_feat_combo.predictFullClinvar'
     output: DOCS + 'paper_plts/fig4_eval_clinvar.pdf'
     run:
-        plot_cmd = 'geom_col(aes(y=wrongFrac, x=reorder(combo, predictorWrongFracTot)), position="dodge")'
+        plot_cmd = 'geom_col( fill="#56B4E9", aes(y=wrongFrac, x=reorder(combo, predictorWrongFracTot)) )'
         R("""
           require(ggplot2)
           d = read.delim("{input}", sep='\t', header=TRUE)
+          d$clinvar_type = factor(d$clinvar_type, levels=c("Total ClinVar", "ClinVar w/ Evidence"))
           p = ggplot(data=d) + {plot_cmd} +
               ylab('Incorrect prediction fraction') + xlab('') + theme_bw() + facet_grid(clinvar_type~dd) +
-              labs(fill="Variant class") + coord_flip() +
-              theme(axis.text.y = element_text(size=10), legend.position="bottom")
+              coord_flip() +
+              theme(axis.text.y = element_text(size=10))
           ggsave("{output}", p, height=10, width=20)
           """)
 

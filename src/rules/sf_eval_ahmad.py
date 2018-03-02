@@ -167,6 +167,8 @@ rule plot_ahmad:
             plot_cmd = 'geom_col(aes(fill=Classifier, y=percent_wrong, x=reorder(st, percent_wrong))) + geom_point(data=dbest, aes(x=st,y=percent_wrong))'
         R("""
           require(ggplot2)
+          # The palette with grey: http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/#a-colorblind-friendly-palette
+          cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
           d = read.delim("{input}", sep='\t', header=TRUE)
           d$dis = factor(d$dis, levels=unique( d[order(d$dis_order),]$dis ))
           dbest = d[d$is_best=="True",]
@@ -175,7 +177,7 @@ rule plot_ahmad:
               facet_grid(.~dis) + theme_bw() +
               theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12)) +
               ylab('Incorrect prediction fraction') + theme(legend.position="bottom") +
-              xlab('') + coord_flip() + theme(axis.text.y = element_text(size=10))
+              xlab('') + coord_flip() + theme(axis.text.y = element_text(size=10)) + scale_fill_manual(values=cbPalette)
           ggsave("{output}", p, width=20)
           """)
 
