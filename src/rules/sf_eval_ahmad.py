@@ -117,7 +117,7 @@ rule ahmad_percent_wrong:
         m[crit].to_csv(output.o, index=False, sep='\t')
 
 def color_bar(row):
-    if row['st'] in ('paper_mpc', 'paper_revel', 'paper_ccr'):
+    if row['st'] in ('paper_mpc', 'paper_revel', 'paper_ccr', 'paper_domain'):
         return 'Baseline'
     if 'paper' in row['st']:
         return 'Combined baseline'

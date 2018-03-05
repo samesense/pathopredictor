@@ -44,7 +44,7 @@ rule eval_by_gene_clinvar:
                                                              'size', 'predictorWrongFracTot', 'wrongFrac']].to_csv(output.o, index=False, sep='\t')
 
 def color_clinvar_bar(row):
-    if row['combo'] in ('clinvar_base.mpc', 'clinvar_base.revel', 'clinvar_base.ccr'):
+    if row['combo'] in ('clinvar_base.mpc', 'clinvar_base.revel', 'clinvar_base.ccr', 'clinvar_base.is_domain'):
         return 'Baseline'
     if 'base' in row['combo']:
         return 'Combined baseline'
@@ -104,8 +104,8 @@ rule plot_clinvar_eval_paper:
                       geom_text(data=label_df, aes(x=x,y=y,label=label))"""
         df = pd.read_csv(input.i, sep='\t')[['clinvar_type','dd','size']].drop_duplicates()
         df.loc[:, 'label'] = df.apply(lambda row: 'n=%d' % (row['size']), axis=1)
-        df['y'] = 0.55
-        df['x'] = 'TRAINED_mpc-revel'
+        df['y'] = 0.45
+        df['x'] = 'TRAINED_mpc-revel-ccr'
         df.to_csv('tmp.clinvar.labels', index=False, sep='\t')
 
         R("""
