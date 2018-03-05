@@ -8,11 +8,6 @@ rule ahmad_percent_wrong:
             tot_preds = sum(rows[rows.eval_type != 'TotWrong']['var_count'])
             return tot_preds
 
-        def calc_wrong_percent(rows):
-            tot_wrong = list(rows[rows.eval_type == 'TotWrong']['var_count'].values)[0]
-            tot_preds = sum(rows[rows.eval_type != 'TotWrong']['var_count'])
-            return tot_wrong/tot_preds
-
         def calc_wrong_percent_benign(rows):
             tot_preds = sum(rows[ (rows.eval_type=='WrongBenign') | (rows.eval_type=='CorrectBenign')]['var_count'].values)
             ls = list(rows[rows.eval_type == 'WrongBenign']['var_count'].values)
@@ -77,11 +72,20 @@ rule ahmad_percent_wrong:
                          .reset_index()
                          .rename(columns={0:'tot_vars'}) )
 
-        panel_wrong_df = (pd.read_csv(input.panel, sep='\t')
-                          .groupby(('disease', 'score_type'))
-                          .apply(calc_wrong_percent)
-                          .reset_index()
-                          .rename(columns={0:'percent_wrong'}) )
+        panel_wrong_path_df = (pd.read_csv(input.panel, sep='\t')
+                               .groupby(('disease', 'score_type'))
+                               .apply(calc_wrong_percent_path)
+                               .reset_index()
+                               .rename(columns={0:'percent_wrong_path'}) )
+        panel_wrong_benign_df = (pd.read_csv(input.panel, sep='\t')
+                                 .groupby(('disease', 'score_type'))
+                                 .apply(calc_wrong_percent_benign)
+                                 .reset_index()
+                                 .rename(columns={0:'percent_wrong_benign'}) )
+        panel_wrong_df = pd.merge(panel_wrong_path_df, panel_wrong_benign_df, on=('disease', 'score_type'), how='outer')
+        panel_wrong_df['percent_wrong'] = (panel_wrong_df['percent_wrong_path'] +
+                                           panel_wrong_df['percent_wrong_benign'])/2
+
         panel_df = pd.merge(panel_wrong_df, panel_size_df, on=['disease', 'score_type'])
 
         # panel_df_benign = (pd.read_csv(input.panel, sep='\t')
@@ -169,7 +173,7 @@ rule plot_ahmad:
         df = pd.read_csv(input.i, sep='\t')[['dis','tot_vars']].drop_duplicates()
         df.loc[:, 'label'] = df.apply(lambda row: 'n=%d' % (row['tot_vars']), axis=1) 
         df['y'] = 0.5
-        df['x'] = 'TRAINED_mpc-revel-ccr-is_domain'
+        df['x'] = 'TRAINED_mpc-revel-ccr'
         df.to_csv('tmp.labels', index=False, sep='\t')
         R("""
           require(ggplot2)

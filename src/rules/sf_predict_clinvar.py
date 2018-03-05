@@ -104,7 +104,7 @@ rule plot_clinvar_eval_paper:
                       geom_text(data=label_df, aes(x=x,y=y,label=label))"""
         df = pd.read_csv(input.i, sep='\t')[['clinvar_type','dd','size']].drop_duplicates()
         df.loc[:, 'label'] = df.apply(lambda row: 'n=%d' % (row['size']), axis=1)
-        df['y'] = 0.6
+        df['y'] = 0.55
         df['x'] = 'TRAINED_mpc-revel'
         df.to_csv('tmp.clinvar.labels', index=False, sep='\t')
 
