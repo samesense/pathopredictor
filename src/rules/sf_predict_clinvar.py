@@ -2,6 +2,11 @@
    evaluate on clinvar
 """
 
+def calc_wrong_baseline(rows):
+    tot = len(rows)
+    crit = rows.apply(lambda row: 'Wrong' in row['PredictionStatusBaseline'], axis=1)
+    return len(rows[crit])/tot
+
 rule eval_by_gene_clinvar:
     input:  i = WORK + 'roc_df_{eval_source}/{features}'
     output: o = DATA + 'interim/pred_clinvar_eval/{eval_source}.{features}'
@@ -10,18 +15,28 @@ rule eval_by_gene_clinvar:
         df_pre = pd.read_csv(input.i, sep='\t')
         crit = df_pre.apply(lambda row: not 'uc' in row['Disease'] and not 'issue' in row['Disease'] and not 'earing' in row['Disease'], axis=1)
         df = df_pre[crit]
+
+        # baseline
+        wrong_baseline_df = df.groupby(keys).apply(calc_wrong_baseline).reset_index().rename(columns={0:'wrongFrac'})
+        wrong_baseline_df['combo'] = 'clinvar_base.' + wildcards.features
+
         wrong_df= df.groupby(keys).apply(calc_wrong).reset_index().rename(columns={0:'wrongFrac'})
+        wrong_df['combo'] = 'clinvar.' + wildcards.features
+
         tot_wrong_df = df.groupby(['Disease']).apply(calc_wrong).reset_index().rename(columns={0:'predictorWrongFracTot'})
         size_df = df.groupby(keys).size().reset_index().rename(columns={0:'size'})
-        m = pd.merge(wrong_df, size_df, on=keys)
+
+        m0 = pd.concat([wrong_df, wrong_baseline_df])
+        m = pd.merge(m0, size_df, on=keys)
         m.loc[:, 'clinvar_type'] = m.apply(lambda row: row['Disease'].split(':')[1], axis=1)
         m.loc[:, 'dd'] = m.apply(lambda row: row['Disease'].split(':')[0], axis=1)
-        pd.merge(m, tot_wrong_df, on='Disease', how='left')[['Disease', 'dd', 'clinvar_type', 'size', 'predictorWrongFracTot', 'wrongFrac']].to_csv(output.o, index=False, sep='\t')
+        pd.merge(m, tot_wrong_df, on='Disease', how='left')[['Disease', 'dd', 'clinvar_type', 'combo',
+                                                             'size', 'predictorWrongFracTot', 'wrongFrac']].to_csv(output.o, index=False, sep='\t')
 
 def color_clinvar_bar(row):
-    if row['combo'] in ('paper_mpc', 'paper_revel', 'paper_ccr'):
+    if row['combo'] in ('clinvar_base.mpc', 'clinvar_base.revel', 'clinvar_base.ccr'):
         return 'Baseline'
-    if 'paper' in row['combo']:
+    if 'base' in row['combo']:
         return 'Combined baseline'
     return 'Trained'
 
@@ -50,7 +65,7 @@ rule combine_features_by_gene_clinvar_plot:
                     'Cardiomyopathy':'Cardiomyopathy'}
         clinvar_names  = {'tot': 'Total ClinVar',
                           'single': 'ClinVar w/ Evidence'}
-        dfp = pd.concat([read_gene_df(afile) for afile in list(input.clinvar_data)])
+        dfp = pd.concat([pd.read_csv(afile, sep='\t') for afile in list(input.clinvar_data)])
         panel_cols = ['disease', 'st', 'is_best']
         panel_df = pd.read_csv(input.panel_data, sep='\t')[panel_cols].drop_duplicates().rename(columns={'disease':'dd', 'st':'combo','is_best':'panel_best'})
         crit = dfp.apply(lambda row: row['clinvar_type'] in clinvar_names, axis=1)
@@ -60,14 +75,11 @@ rule combine_features_by_gene_clinvar_plot:
                   .apply(min).rename(columns={'dd':'dd_junk', 'clinvar_type':'clinvar_type_junk', 'wrongFrac':'min'})
                   .reset_index() )
         df3 = pd.merge(df2, min_df, on=['clinvar_type', 'dd'], how='left')
-        df3.loc[:, 'combo'] = df3.apply(lambda row: row['combo'].replace('clinvar.', 'TRAINED_'), axis=1)
-        print(df3.head())
-        print('wft')
-        print(panel_df.head())
-        df = pd.merge(df3, panel_df, on=['dd','combo'], how='left') 
+        df3.loc[:, 'Classifier'] = df3.apply(color_clinvar_bar, axis=1)
+        df3.loc[:, 'combo'] = df3.apply(lambda row: row['combo'].replace('clinvar.', 'TRAINED_').replace('clinvar_base.', 'BASE_'), axis=1)
+        df = pd.merge(df3, panel_df, on=['dd','combo'], how='left')
         df.loc[:, 'dd'] = df.apply(lambda row: diseases[row['dd']], axis=1)
         df.loc[:, 'clinvar_type'] = df.apply(lambda row: clinvar_names[row['clinvar_type']], axis=1)
-        df.loc[:, 'Classifier'] = df.apply(color_clinvar_bar, axis=1)
         df.loc[:, 'is_best_clinvar'] = df.apply(lambda row: row['wrongFrac']==row['min'], axis=1)
         df.loc[:, 'is_best'] = df.apply(lambda row: row['panel_best'] or row['is_best_clinvar'], axis=1)
         df.loc[:, 'best_label'] = df.apply(calc_clinvar_best_label, axis=1)
@@ -77,27 +89,28 @@ rule plot_clinvar_eval_paper:
     input:  i = DATA + 'interim/clinvar.by_gene_feat_combo.predictFullClinvar'
     output: DOCS + 'paper_plts/fig4_eval_clinvar.pdf'
     run:
-        plot_cmd = """geom_col( fill="#56B4E9", aes(y=wrongFrac, x=reorder(combo, predictorWrongFracTot)) ) +
+        plot_cmd = """geom_col( aes(fill=Classifier, y=wrongFrac, x=reorder(combo, wrongFrac)) ) +
                       geom_point(data=dbest, aes(colour=best_label, x=combo,y=wrongFrac)) +
                       geom_text(data=label_df, aes(x=x,y=y,label=label))"""
         df = pd.read_csv(input.i, sep='\t')[['clinvar_type','dd','size']].drop_duplicates()
         df.loc[:, 'label'] = df.apply(lambda row: 'n=%d' % (row['size']), axis=1)
-        df['y'] = 0.35
+        df['y'] = 0.6
         df['x'] = 'TRAINED_mpc-revel'
         df.to_csv('tmp.clinvar.labels', index=False, sep='\t')
 
         R("""
           require(ggplot2)
+          cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
           cbbPalette <- c("#D55E00", "#009E73", "#000000")
           d = read.delim("{input}", sep='\t', header=TRUE)
           label_df = read.delim("tmp.clinvar.labels", sep="\t", header=TRUE)
           dbest = d[d$is_best=="True",]
           d$clinvar_type = factor(d$clinvar_type, levels=c("Total ClinVar", "ClinVar w/ Evidence"))
-          p = ggplot(data=d) + {plot_cmd} +
+          p = ggplot(data=d) + {plot_cmd} + scale_fill_manual(values=cbPalette) +
               ylab('Incorrect prediction fraction') + xlab('') + theme_bw(base_size=18) + facet_grid(clinvar_type~dd) +
               coord_flip() + labs(colour="") +
               theme(legend.position="bottom", axis.text.y = element_text(size=10)) + scale_colour_manual(values=cbbPalette)
-          ggsave("{output}", p, height=8, width=20)
+          ggsave("{output}", p, height=9, width=20)
           """)
         shell('rm tmp.clinvar.labels')
 

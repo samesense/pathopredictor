@@ -156,6 +156,7 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, 
                     clinvar_df['_'.join(cols) + '_pred_lm'] = lm_preds
                 clinvar_df['mpc_pred'] = clinvar_preds
                 clinvar_df.loc[:, 'PredictionStatusMPC'] = clinvar_df.apply(lambda row: eval_pred(row, 'mpc_pred'), axis=1)
+                clinvar_df.loc[:, 'PredictionStatusBaseline'] = clinvar_df.apply(lambda x: eval_mpc_raw(x, cols), axis=1)
                 clinvar_acc.append(clinvar_df)
 
     test_df = pd.concat(acc_df_ls)

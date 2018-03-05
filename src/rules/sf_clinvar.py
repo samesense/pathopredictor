@@ -68,7 +68,7 @@ rule parse_clinvar_vcf:
                        pfam = info.split('pfam_domain=')[1].split(';')[0]
                    else:
                        pfam = 'fuck'
-                       
+
                    if 'af_1kg_all=' in info:
                        onekg = info.split('af_1kg_all=')[1].split(';')[0]
                    else:
@@ -76,7 +76,7 @@ rule parse_clinvar_vcf:
 
                    clin_sig = info.split('CLNSIG=')[1].split(';')[0]
                    confidence = info.split('CLNREVSTAT=')[1].split(';')[0]
-                   
+
                    protein_change_pre = info.split('ANN=')[1].split(';')[0].split('|')[10]
                    protein_change = convert_protein_change(protein_change_pre)
                    nm = info.split('ANN=')[1].split('|')[6]
