@@ -89,9 +89,19 @@ rule plot:
           """)
 
 def calc_wrong(rows):
-    tot = len(rows)
-    crit = rows.apply(lambda row: 'Wrong' in row['PredictionStatusMPC'], axis=1)
-    return len(rows[crit])/tot
+    # tot = len(rows)
+    # crit = rows.apply(lambda row: 'Wrong' in row['PredictionStatusMPC'], axis=1)
+    # return len(rows[crit])/tot
+
+    benign_tot = len(rows[rows.y==0])
+    path_tot = len(rows[rows.y==1])
+
+    if not benign_tot or not path_tot:
+        return 'NA'
+
+    benign_wrong_frac = len(rows[rows.PredictionStatusMPC=='WrongBenign'])/benign_tot
+    path_wrong_frac = len(rows[rows.PredictionStatusMPC=='WrongPath'])/path_tot
+    return (path_wrong_frac + benign_wrong_frac)/2
 
 rule eval_by_gene:
     input:  i = WORK + 'roc_df_{eval_source}/{features}'

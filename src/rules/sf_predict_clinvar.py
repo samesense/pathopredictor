@@ -3,9 +3,19 @@
 """
 
 def calc_wrong_baseline(rows):
-    tot = len(rows)
-    crit = rows.apply(lambda row: 'Wrong' in row['PredictionStatusBaseline'], axis=1)
-    return len(rows[crit])/tot
+    # tot = len(rows)
+    # crit = rows.apply(lambda row: 'Wrong' in row['PredictionStatusBaseline'], axis=1)
+    # uneq_weight_wrong_frac = len(rows[crit])/tot
+
+    benign_tot = len(rows[rows.y==0])
+    path_tot = len(rows[rows.y==1])
+
+    if not benign_tot or not path_tot:
+        return 'NA'
+
+    benign_wrong_frac = len(rows[rows.PredictionStatusBaseline=='WrongBenign'])/benign_tot
+    path_wrong_frac = len(rows[rows.PredictionStatusBaseline=='WrongPath'])/path_tot
+    return (path_wrong_frac + benign_wrong_frac)/2
 
 rule eval_by_gene_clinvar:
     input:  i = WORK + 'roc_df_{eval_source}/{features}'
