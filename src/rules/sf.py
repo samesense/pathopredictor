@@ -3,6 +3,7 @@ import pandas as pd
 from functools import reduce
 from itertools import combinations, chain
 from snakemake.utils import R
+from collections import defaultdict
 
 include: "const.py"
 include: "sf_ann.py"
@@ -15,6 +16,8 @@ include: "sf_coords.py"
 include: "sf_eval_ahmad.py" # plot_ahmad
 include: "paper.plots.py"
 include: "sf_predict_clinvar.py"
+
+include: "sf.rank.eval.py"
 
 include: "sf.webtool.py"
 

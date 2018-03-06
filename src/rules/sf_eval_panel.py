@@ -28,8 +28,8 @@ rule eval_panel_single_gene:
     shell:  'python {SCRIPTS}score_panel_single_gene_model.py {input} {output}'
 
 rule plot_gene_heatmap:
-    input:  DATA + 'interim/{eval_source}.by_gene_feat_combo'
-    output: DOCS + 'plot/gene_heatmap/{eval_source}.{disease}.heatmap.png'
+    input:  DATA + 'interim/{eval_source}.by_gene_feat_combo.{var_cutoff}'
+    output: DOCS + 'plot/gene_heatmap/{eval_source}.{disease}.evidence{var_cutoff}.heatmap.png'
     run:
         R("""
           require(ggplot2)
@@ -44,8 +44,8 @@ rule plot_gene_heatmap:
           """)
 
 rule size_bar_plot:
-    input:  DATA + 'interim/{eval_source}.by_gene_feat_combo'
-    output: DOCS + 'plot/gene_var_count/{eval_source}.{disease}.varCount.png'
+    input:  DATA + 'interim/{eval_source}.by_gene_feat_combo.{var_cutoff}'
+    output: DOCS + 'plot/gene_var_count/{eval_source}.{disease}.evidence{var_cutoff}.varCount.png'
     run:
         shell("head -1 {input} | cut -f 1,2,3,4 | sed 's/Hugo_Symbol/gene/g' > {output}.tmp")
         shell('tail -n +2 {input} | cut -f 1,2,3,4 | sort -u >> {output}.tmp')
@@ -61,11 +61,12 @@ rule size_bar_plot:
         shell('rm {output}.tmp')
 
 DD = ('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy', 'Rasopathies')
+vc = (5, 10)
 rule heatmaps:
-    input: expand(DOCS + 'plot/gene_heatmap/{eval_source}.{disease}.heatmap.png', eval_source=('panel',), disease=DD), \
-           expand(DOCS + 'plot/gene_var_count/{eval_source}.{disease}.varCount.png', eval_source=('panel',), disease=DD), \
-           expand(DOCS + 'plot/gene_heatmap/{eval_source}.{disease}:{d2}.heatmap.png', eval_source=('clinvar',), d2=('tot', 'single', 'mult', 'exp'), disease=DD), \
-           expand(DOCS + 'plot/gene_var_count/{eval_source}.{disease}:{d2}.varCount.png', eval_source=('clinvar',), d2=('tot', 'single', 'mult', 'exp'), disease=DD)
+    input: expand(DOCS + 'plot/gene_heatmap/{eval_source}.{disease}.evidence{vc}.heatmap.png', eval_source=('panel',), disease=DD, vc=vc), \
+           expand(DOCS + 'plot/gene_var_count/{eval_source}.{disease}.evidence{vc}.varCount.png', eval_source=('panel',), disease=DD, vc=vc), \
+           expand(DOCS + 'plot/gene_heatmap/{eval_source}.{disease}:{d2}.evidence{vc}.heatmap.png', eval_source=('clinvar',), d2=('tot', 'single', ), disease=DD, vc=vc), \
+           expand(DOCS + 'plot/gene_var_count/{eval_source}.{disease}:{d2}.evidence{vc}.varCount.png', eval_source=('clinvar',), d2=('tot', 'single', ), disease=DD, vc=vc)
 
 rule limit_for_plot:
     input:  WORK + '{method}.eval_panel.{cols}.eval'
@@ -88,7 +89,22 @@ rule plot:
           ggsave("{output}", p)
           """)
 
-def calc_wrong(rows):
+# def calc_wrong_path(rows):
+#     # only evaluate if more than 10 benign and 10 path
+#     # tot = len(rows)
+#     # crit = rows.apply(lambda row: 'Wrong' in row['PredictionStatusMPC'], axis=1)
+#     # return len(rows[crit])/tot
+
+#     path_tot = len(rows[rows.y==1])
+
+#     if path_tot < 5:
+#         return 'NA'
+
+#     path_wrong_frac = len(rows[rows.PredictionStatusMPC=='WrongPath'])/path_tot
+#     return path_wrong_frac 
+
+def calc_wrong(rows, var_cutoff):
+    # only evaluate if more than 10 benign and 10 path
     # tot = len(rows)
     # crit = rows.apply(lambda row: 'Wrong' in row['PredictionStatusMPC'], axis=1)
     # return len(rows[crit])/tot
@@ -96,7 +112,7 @@ def calc_wrong(rows):
     benign_tot = len(rows[rows.y==0])
     path_tot = len(rows[rows.y==1])
 
-    if not benign_tot or not path_tot:
+    if benign_tot < int(var_cutoff) or path_tot < int(var_cutoff):
         return 'NA'
 
     benign_wrong_frac = len(rows[rows.PredictionStatusMPC=='WrongBenign'])/benign_tot
@@ -105,16 +121,17 @@ def calc_wrong(rows):
 
 rule eval_by_gene:
     input:  i = WORK + 'roc_df_{eval_source}/{features}'
-    output: o = DATA + 'interim/by_gene_eval/{eval_source}.{features}'
+    output: o = DATA + 'interim/by_gene_eval/{eval_source}.{features}.{var_cutoff}'
     run:
         keys = ['Disease', 'gene',]
         df_pre = pd.read_csv(input.i, sep='\t')
         crit = df_pre.apply(lambda row: not 'issue' in row['Disease'] and not 'earing' in row['Disease'], axis=1)
         df = df_pre[crit]
-        wrong_df = df.groupby(keys).apply(calc_wrong).reset_index().rename(columns={0:'wrongFrac'})
-        tot_wrong_df = df.groupby(['Disease']).apply(calc_wrong).reset_index().rename(columns={0:'predictorWrongFracTot'})
+        wrong_df = df.groupby(keys).apply(lambda row: calc_wrong(row, wildcards.var_cutoff)).reset_index().rename(columns={0:'wrongFrac'})
+        tot_wrong_df = df.groupby(['Disease']).apply(lambda row: calc_wrong(row, wildcards.var_cutoff)).reset_index().rename(columns={0:'predictorWrongFracTot'})
         size_df = df.groupby(keys).size().reset_index().rename(columns={0:'size'})
-        m = pd.merge(wrong_df, size_df, on=keys)
+        crit = wrong_df.apply(lambda row: str(row['wrongFrac']) != 'NA', axis=1)
+        m = pd.merge(wrong_df[crit], size_df, on=keys)
         #m.loc[:, 'var_class'] = m.apply(lambda row: 'pathogenic' if row['y'] == 1 else 'benign', axis=1)
         pd.merge(m, tot_wrong_df, on='Disease', how='left')[['Disease', 'gene', 'size', 'predictorWrongFracTot', 'wrongFrac']].to_csv(output.o, index=False, sep='\t')
 
@@ -125,8 +142,8 @@ def read_gene_df(afile):
     return df
 
 rule combine_features_by_gene:
-    input:  expand(DATA + 'interim/by_gene_eval/{{eval_source}}.{feature}', feature=COMBO_FEATS)
-    output: o=DATA + 'interim/{eval_source}.by_gene_feat_combo'
+    input:  expand(DATA + 'interim/by_gene_eval/{{eval_source}}.{feature}.{{var_cutoff}}', feature=COMBO_FEATS)
+    output: o=DATA + 'interim/{eval_source}.by_gene_feat_combo.{var_cutoff}'
     run:
         pd.concat([read_gene_df(afile) for afile in list(input)]).to_csv(output.o, index=False, sep='\t')
 
