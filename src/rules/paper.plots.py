@@ -85,17 +85,23 @@ rule combine_heatmap_clinvar_and_panel:
         panel_final = panel_df[crit][['disease', 'combo', 'gene', 'wrongFrac']]
         panel_final['panel_or_clinvar'] = 'Panel'
         panel_final.loc[:, 'gene'] = panel_final.apply(lambda row: row['gene'] + ' Panel', axis=1)
-
+        min_df = panel_final[['disease', 'gene', 'wrongFrac']].groupby(['disease', 'gene']).apply(min).rename(columns={'gene':'gene_junk', 'disease':'dis_junk', 'wrongFrac':'min'}).reset_index()
+        pm = pd.merge(panel_final, min_df, on=['disease', 'gene'])
+        pm.loc[:, 'is_best'] = pm.apply(lambda row: row['wrongFrac'] == row['min'], axis=1)
+    
         crit = clinvar_df.apply(lambda row: row['disease'] + ':' + row['gene']
                                 in disease_gene_keep, axis=1)
         clinvar_final = clinvar_df[crit][['disease', 'combo', 'gene', 'wrongFrac']]
         clinvar_final['panel_or_clinvar'] = 'Total ClinVar'
         clinvar_final.loc[:, 'gene'] = clinvar_final.apply(lambda row: row['gene'] + ' Total ClinVar', axis=1)
+        min_df = clinvar_final[['disease', 'gene', 'wrongFrac']].groupby(['disease', 'gene']).apply(min).rename(columns={'gene':'gene_junk', 'disease':'dis_junk', 'wrongFrac':'min'}).reset_index()
+        pc = pd.merge(clinvar_final, min_df, on=['disease', 'gene'])
+        pc.loc[:, 'is_best'] = pc.apply(lambda row: row['wrongFrac'] == row['min'], axis=1)
 
-        df_final = pd.concat([clinvar_final, panel_final])
+        df_final = pd.concat([pc, pm])
         df_final.loc[:, 'combo'] = df_final.apply(lambda row: row['combo'].replace('_base.', 'BASE ').replace('_trained.','TRAINED '), axis=1)
         df_final.to_csv(output.o, index=False, sep='\t')
-
+#
 rule paper_heatmap:
     input: WORK + 'paper_plot_data/heatmap'
     output: DOCS + 'paper_plts/fig5_heatmap.pdf'
@@ -103,8 +109,10 @@ rule paper_heatmap:
         R("""
           require(ggplot2)
           d = read.delim("{input}", sep='\t', header=TRUE)
+          best_d = d[d$is_best=="True",]
           p = ggplot(data=d) +
               geom_raster(aes(y=gene, x=reorder(combo, wrongFrac, mean), fill=wrongFrac)) +
+              geom_point(data=best_d, aes(y=gene, x=combo)) +
               ylab('') + xlab('') + theme_bw(base_size=18) +
               scale_fill_gradient(low="yellow", high="blue") +
               labs(fill="Incorrect prediction fraction") +
