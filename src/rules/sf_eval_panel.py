@@ -124,16 +124,25 @@ rule eval_by_gene:
     output: o = DATA + 'interim/by_gene_eval/{eval_source}.{features}.{var_cutoff}'
     run:
         keys = ['Disease', 'gene',]
-        df_pre = pd.read_csv(input.i, sep='\t')
+        df_pre = pd.read_csv(input.i, sep='\t').rename(columns={'PredictionStatusMPC>2':'PredictionStatusBaseline'})
         crit = df_pre.apply(lambda row: not 'issue' in row['Disease'] and not 'earing' in row['Disease'], axis=1)
         df = df_pre[crit]
+
+        # baseline
+        wrong_baseline_df = df.groupby(keys).apply(lambda row: calc_wrong_baseline(row, wildcards.var_cutoff)).reset_index().rename(columns={0:'wrongFrac'})
+        wrong_baseline_df['combo'] = '_base.' + wildcards.features
+
         wrong_df = df.groupby(keys).apply(lambda row: calc_wrong(row, wildcards.var_cutoff)).reset_index().rename(columns={0:'wrongFrac'})
+        wrong_df['combo'] = '_trained.' + wildcards.features
+
         tot_wrong_df = df.groupby(['Disease']).apply(lambda row: calc_wrong(row, wildcards.var_cutoff)).reset_index().rename(columns={0:'predictorWrongFracTot'})
         size_df = df.groupby(keys).size().reset_index().rename(columns={0:'size'})
         crit = wrong_df.apply(lambda row: str(row['wrongFrac']) != 'NA', axis=1)
-        m = pd.merge(wrong_df[crit], size_df, on=keys)
+        base_crit = wrong_baseline_df.apply(lambda row: str(row['wrongFrac']) != 'NA', axis=1)
+        m0 = pd.concat([wrong_df[crit], wrong_baseline_df[base_crit]])
+        m = pd.merge(m0, size_df, on=keys)
         #m.loc[:, 'var_class'] = m.apply(lambda row: 'pathogenic' if row['y'] == 1 else 'benign', axis=1)
-        pd.merge(m, tot_wrong_df, on='Disease', how='left')[['Disease', 'gene', 'size', 'predictorWrongFracTot', 'wrongFrac']].to_csv(output.o, index=False, sep='\t')
+        pd.merge(m, tot_wrong_df, on='Disease', how='left')[['Disease', 'combo', 'gene', 'size', 'predictorWrongFracTot', 'wrongFrac']].to_csv(output.o, index=False, sep='\t')
 
 def read_gene_df(afile):
     feats = afile.split('/')[-1]
@@ -145,7 +154,7 @@ rule combine_features_by_gene:
     input:  expand(DATA + 'interim/by_gene_eval/{{eval_source}}.{feature}.{{var_cutoff}}', feature=COMBO_FEATS)
     output: o=DATA + 'interim/{eval_source}.by_gene_feat_combo.{var_cutoff}'
     run:
-        pd.concat([read_gene_df(afile) for afile in list(input)]).to_csv(output.o, index=False, sep='\t')
+        pd.concat([pd.read_csv(afile, sep='\t') for afile in list(input)]).to_csv(output.o, index=False, sep='\t')
 
 rule plot_gene_eval:
     input:  DATA + 'interim/by_gene_eval/{eval_source}.{features}'

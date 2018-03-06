@@ -53,6 +53,66 @@ rule count_plot:
           ggsave("{output}", p, width=10)
           """)
 
-FIGS = ('fig1_count_plot', 'fig4_eval_clinvar', 'fig3_panelEval.byVarClassFalse')
+rule combine_heatmap_clinvar_and_panel:
+    input:  clinvar = DATA + 'interim/clinvar.by_gene_feat_combo.5',
+            panel = DATA + 'interim/panel.by_gene_feat_combo.5'
+    output: o = WORK + 'paper_plot_data/heatmap'
+    run:
+        diseases = {'genedx-epi-limitGene':'Epilepsy (dominant genes)',
+                    'Rasopathies':'Rasopathies',
+                    'genedx-epi':'Epilepsy',
+                    'Cardiomyopathy':'Cardiomyopathy'}
+        panel_df_pre = pd.read_csv(input.panel, sep='\t')
+        clinvar_df_pre = pd.read_csv(input.clinvar, sep='\t')
+        crit = panel_df_pre.apply(lambda row: row['Disease'] in diseases, axis=1)
+        panel_df = panel_df_pre[crit]
+        panel_df.loc[:, 'disease'] = panel_df.apply(lambda row: diseases[row['Disease']],
+                                                    axis=1)
+        crit = clinvar_df_pre.apply(lambda row: row['Disease'].split(':')[0]
+                                    in diseases, axis=1)
+        clinvar_df = clinvar_df_pre[crit]
+        clinvar_df.loc[:, 'disease'] = clinvar_df.apply(lambda row:
+                                                        diseases[row['Disease'].split(':')[0]], axis=1)
+        df = ( pd.concat([clinvar_df[['disease','gene']].drop_duplicates(),
+                          panel_df[['disease','gene']].drop_duplicates()])
+                 .groupby(['disease', 'gene']).size().reset_index()
+                 .rename(columns={0:'size'})
+             )
+        disease_gene_keep = {row['disease'] + ':' + row['gene']
+                             for _, row in df[df['size']==2].iterrows()}
+        crit = panel_df.apply(lambda row: row['disease'] + ':' + row['gene']
+                              in disease_gene_keep, axis=1)
+        panel_final = panel_df[crit][['disease', 'combo', 'gene', 'wrongFrac']]
+        panel_final['panel_or_clinvar'] = 'Panel'
+        panel_final.loc[:, 'gene'] = panel_final.apply(lambda row: row['gene'] + ' Panel', axis=1)
+
+        crit = clinvar_df.apply(lambda row: row['disease'] + ':' + row['gene']
+                                in disease_gene_keep, axis=1)
+        clinvar_final = clinvar_df[crit][['disease', 'combo', 'gene', 'wrongFrac']]
+        clinvar_final['panel_or_clinvar'] = 'Total ClinVar'
+        clinvar_final.loc[:, 'gene'] = clinvar_final.apply(lambda row: row['gene'] + ' Total ClinVar', axis=1)
+
+        df_final = pd.concat([clinvar_final, panel_final])
+        df_final.loc[:, 'combo'] = df_final.apply(lambda row: row['combo'].replace('_base.', 'BASE ').replace('_trained.','TRAINED '), axis=1)
+        df_final.to_csv(output.o, index=False, sep='\t')
+
+rule paper_heatmap:
+    input: WORK + 'paper_plot_data/heatmap'
+    output: DOCS + 'paper_plts/fig5_heatmap.pdf'
+    run:
+        R("""
+          require(ggplot2)
+          d = read.delim("{input}", sep='\t', header=TRUE)
+          p = ggplot(data=d) +
+              geom_raster(aes(y=gene, x=reorder(combo, wrongFrac, mean), fill=wrongFrac)) +
+              ylab('') + xlab('') + theme_bw(base_size=18) +
+              scale_fill_gradient(low="yellow", high="blue") +
+              labs(fill="Incorrect prediction fraction") +
+              facet_grid(disease~., scale="free") +
+              theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5))
+          ggsave("{output}", p, width=15, height=9)
+          """)
+
+FIGS = ('fig1_count_plot', 'fig4_eval_clinvar', 'fig3_panelEval.byVarClassFalse', 'fig5_heatmap')
 rule all_paper_plots:
     input: expand(DOCS + 'paper_plts/{fig}.pdf', fig=FIGS)

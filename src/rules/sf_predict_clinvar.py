@@ -2,7 +2,7 @@
    evaluate on clinvar
 """
 
-def calc_wrong_baseline(rows):
+def calc_wrong_baseline(rows, var_cutoff):
     # tot = len(rows)
     # crit = rows.apply(lambda row: 'Wrong' in row['PredictionStatusBaseline'], axis=1)
     # uneq_weight_wrong_frac = len(rows[crit])/tot
@@ -10,7 +10,7 @@ def calc_wrong_baseline(rows):
     benign_tot = len(rows[rows.y==0])
     path_tot = len(rows[rows.y==1])
 
-    if not benign_tot or not path_tot:
+    if benign_tot < int(var_cutoff) or path_tot < int(var_cutoff):
         return 'NA'
 
     benign_wrong_frac = len(rows[rows.PredictionStatusBaseline=='WrongBenign'])/benign_tot
