@@ -82,16 +82,19 @@ rule combine_heatmap_clinvar_and_panel:
                              for _, row in df[df['size']==2].iterrows()}
         crit = panel_df.apply(lambda row: row['disease'] + ':' + row['gene']
                               in disease_gene_keep, axis=1)
-        panel_final = panel_df[crit][['disease', 'combo', 'gene', 'wrongFrac']]
+        panel_final = panel_df[crit][['disease', 'combo', 'gene', 'wrongFrac', 'var_path_count', 'var_benign_count']]
         panel_final['panel_or_clinvar'] = 'Panel'
         panel_final.loc[:, 'gene'] = panel_final.apply(lambda row: row['gene'] + ' Panel', axis=1)
-        min_df = panel_final[['disease', 'gene', 'wrongFrac']].groupby(['disease', 'gene']).apply(min).rename(columns={'gene':'gene_junk', 'disease':'dis_junk', 'wrongFrac':'min'}).reset_index()
+        min_df = (panel_final[['disease', 'gene', 'wrongFrac']]
+                  .groupby(['disease', 'gene']).apply(min)
+                  .rename(columns={'gene':'gene_junk', 'disease':'dis_junk', 'wrongFrac':'min'})
+                  .reset_index())
         pm = pd.merge(panel_final, min_df, on=['disease', 'gene'])
         pm.loc[:, 'is_best'] = pm.apply(lambda row: row['wrongFrac'] == row['min'], axis=1)
-    
+
         crit = clinvar_df.apply(lambda row: row['disease'] + ':' + row['gene']
                                 in disease_gene_keep, axis=1)
-        clinvar_final = clinvar_df[crit][['disease', 'combo', 'gene', 'wrongFrac']]
+        clinvar_final = clinvar_df[crit][['disease', 'combo', 'gene', 'wrongFrac', 'var_path_count', 'var_benign_count']]
         clinvar_final['panel_or_clinvar'] = 'Total ClinVar'
         clinvar_final.loc[:, 'gene'] = clinvar_final.apply(lambda row: row['gene'] + ' Total ClinVar', axis=1)
         min_df = clinvar_final[['disease', 'gene', 'wrongFrac']].groupby(['disease', 'gene']).apply(min).rename(columns={'gene':'gene_junk', 'disease':'dis_junk', 'wrongFrac':'min'}).reset_index()
@@ -101,7 +104,7 @@ rule combine_heatmap_clinvar_and_panel:
         df_final = pd.concat([pc, pm])
         df_final.loc[:, 'combo'] = df_final.apply(lambda row: row['combo'].replace('_base.', 'BASE ').replace('_trained.','TRAINED '), axis=1)
         df_final.to_csv(output.o, index=False, sep='\t')
-#
+
 rule paper_heatmap:
     input: WORK + 'paper_plot_data/heatmap'
     output: DOCS + 'paper_plts/fig5_heatmap.pdf'
@@ -120,6 +123,38 @@ rule paper_heatmap:
               theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5))
           ggsave("{output}", p, width=15, height=9)
           """)
+
+rule mk_size_plot_data:
+    input:  i = WORK + 'paper_plot_data/heatmap'
+    output: o = WORK + 'paper_plot_data/size'
+    run:
+        df = pd.read_csv(input.i, sep='\t')
+        cols = set(df.columns.values)
+        path_cols = list(cols - set(('var_benign_count')))
+        benign_cols = list(cols - set(('var_path_count')))
+        path_df = df[path_cols].rename(columns={'var_path_count':'var_count'})
+        path_df['VariantType'] = 'Pathogenic'
+
+        benign_df = df[benign_cols].rename(columns={'var_benign_count':'var_count'})
+        benign_df['VariantType'] = 'Benign'
+
+        df = pd.concat([path_df, benign_df])
+        df[['VariantType', 'gene', 'disease', 'var_count']].drop_duplicates().to_csv(output.o, index=False, sep='\t')
+
+rule size_bar_paper_plot:
+    input:  WORK + 'paper_plot_data/size'
+    output: DOCS + 'paper_plts/fig5b.varCount.pdf'
+    run:
+        R("""
+          require(ggplot2)
+          d = read.delim("{input}", sep='\t', header=TRUE)
+          p = ggplot(data=d) +
+              geom_col(aes(fill=VariantType, x=gene, y=var_count), stat="identity") +
+              coord_flip() + xlab('') + ylab('Variant count') + theme_bw(base_size=18) + labs(fill='')
+          ggsave("{output}", p)
+          """)
+
+
 
 FIGS = ('fig1_count_plot', 'fig4_eval_clinvar', 'fig3_panelEval.byVarClassFalse', 'fig5_heatmap')
 rule all_paper_plots:

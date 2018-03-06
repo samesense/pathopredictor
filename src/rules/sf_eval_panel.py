@@ -136,13 +136,16 @@ rule eval_by_gene:
         wrong_df['combo'] = '_trained.' + wildcards.features
 
         tot_wrong_df = df.groupby(['Disease']).apply(lambda row: calc_wrong(row, wildcards.var_cutoff)).reset_index().rename(columns={0:'predictorWrongFracTot'})
-        size_df = df.groupby(keys).size().reset_index().rename(columns={0:'size'})
+        size_path_df = df[df.y==1].groupby(keys).size().reset_index().rename(columns={0:'var_path_count'})
+        size_benign_df = df[df.y==0].groupby(keys).size().reset_index().rename(columns={0:'var_benign_count'})
+        size_df = pd.merge(size_path_df, size_benign_df, on=keys, how='outer')
         crit = wrong_df.apply(lambda row: str(row['wrongFrac']) != 'NA', axis=1)
         base_crit = wrong_baseline_df.apply(lambda row: str(row['wrongFrac']) != 'NA', axis=1)
         m0 = pd.concat([wrong_df[crit], wrong_baseline_df[base_crit]])
         m = pd.merge(m0, size_df, on=keys)
         #m.loc[:, 'var_class'] = m.apply(lambda row: 'pathogenic' if row['y'] == 1 else 'benign', axis=1)
-        pd.merge(m, tot_wrong_df, on='Disease', how='left')[['Disease', 'combo', 'gene', 'size', 'predictorWrongFracTot', 'wrongFrac']].to_csv(output.o, index=False, sep='\t')
+        pd.merge(m, tot_wrong_df, on='Disease', how='left')[['Disease', 'combo', 'gene', 'var_path_count',
+                                                             'var_benign_count', 'predictorWrongFracTot', 'wrongFrac']].to_csv(output.o, index=False, sep='\t')
 
 def read_gene_df(afile):
     feats = afile.split('/')[-1]
