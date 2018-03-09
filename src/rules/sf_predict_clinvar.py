@@ -2,46 +2,35 @@
    evaluate on clinvar
 """
 
-def calc_wrong_baseline(rows, var_cutoff):
-    # tot = len(rows)
-    # crit = rows.apply(lambda row: 'Wrong' in row['PredictionStatusBaseline'], axis=1)
-    # uneq_weight_wrong_frac = len(rows[crit])/tot
-
-    benign_tot = len(rows[rows.y==0])
-    path_tot = len(rows[rows.y==1])
-
-    if benign_tot < int(var_cutoff) or path_tot < int(var_cutoff):
-        return 'NA'
-
-    benign_wrong_frac = len(rows[rows.PredictionStatusBaseline=='WrongBenign'])/benign_tot
-    path_wrong_frac = len(rows[rows.PredictionStatusBaseline=='WrongPath'])/path_tot
-    return (path_wrong_frac + benign_wrong_frac)/2
-
 rule eval_by_gene_clinvar:
     input:  i = WORK + 'roc_df_{eval_source}/{features}'
-    output: o = DATA + 'interim/pred_clinvar_eval/{eval_source}.{features}'
+    output: o = DATA + 'interim/pred_clinvar_eval/{eval_source}.{features}.{evidenceCutoff}.{varTypes}'
     run:
         keys = ['Disease']
         df_pre = pd.read_csv(input.i, sep='\t')
         crit = df_pre.apply(lambda row: not 'uc' in row['Disease'] and not 'issue' in row['Disease'] and not 'earing' in row['Disease'], axis=1)
         df = df_pre[crit]
 
+        apply_calc_wrong_baseline = mk_calc_wrong_func(int(wildcards.evidenceCutoff), 'PredictionStatusBaseline', wildcards.varTypes)
+        apply_calc_wrong= mk_calc_wrong_func(int(wildcards.evidenceCutoff), 'PredictionStatusMPC', wildcards.varTypes)
+
         # baseline
-        wrong_baseline_df = df.groupby(keys).apply(calc_wrong_baseline).reset_index().rename(columns={0:'wrongFrac'})
+        wrong_baseline_df = df.groupby(keys).apply(apply_calc_wrong_baseline).reset_index().rename(columns={0:'wrongFrac'})
         wrong_baseline_df['combo'] = 'clinvar_base.' + wildcards.features
 
-        wrong_df= df.groupby(keys).apply(calc_wrong).reset_index().rename(columns={0:'wrongFrac'})
+        wrong_df= df.groupby(keys).apply(apply_calc_wrong).reset_index().rename(columns={0:'wrongFrac'})
         wrong_df['combo'] = 'clinvar.' + wildcards.features
 
-        tot_wrong_df = df.groupby(['Disease']).apply(calc_wrong).reset_index().rename(columns={0:'predictorWrongFracTot'})
+        tot_wrong_df = df.groupby(['Disease']).apply(apply_calc_wrong).reset_index().rename(columns={0:'predictorWrongFracTot'})
         size_df = df.groupby(keys).size().reset_index().rename(columns={0:'size'})
 
         m0 = pd.concat([wrong_df, wrong_baseline_df])
         m = pd.merge(m0, size_df, on=keys)
         m.loc[:, 'clinvar_type'] = m.apply(lambda row: row['Disease'].split(':')[1], axis=1)
         m.loc[:, 'dd'] = m.apply(lambda row: row['Disease'].split(':')[0], axis=1)
-        pd.merge(m, tot_wrong_df, on='Disease', how='left')[['Disease', 'dd', 'clinvar_type', 'combo',
-                                                             'size', 'predictorWrongFracTot', 'wrongFrac']].to_csv(output.o, index=False, sep='\t')
+        final_cols = ['Disease', 'dd', 'clinvar_type', 'combo',
+                      'size', 'predictorWrongFracTot', 'wrongFrac']
+        pd.merge(m, tot_wrong_df, on='Disease', how='left')[final_cols].to_csv(output.o, index=False, sep='\t')
 
 def color_clinvar_bar(row):
     if row['combo'] in ('clinvar_base.mpc', 'clinvar_base.revel', 'clinvar_base.ccr', 'clinvar_base.is_domain'):

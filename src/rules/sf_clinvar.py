@@ -159,7 +159,7 @@ benign_color = '00bfc4'
 rule clinvar_lolly:
     input:  i = DATA + 'interim/clinvar/clinvar.limit.dat'
     output: DOCS + 'plots/clinvar/{gene}.clinvar.lolly.svg'
-    run:  
+    run:
         df_pre = pd.read_csv(input.i, sep='\t')
         df = df_pre[ (df_pre.gene==wildcards.gene) ]
         s = set(df[df.clin_class==0]['Protein_Change'].values)

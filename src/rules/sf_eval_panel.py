@@ -89,53 +89,29 @@ rule plot:
           ggsave("{output}", p)
           """)
 
-# def calc_wrong_path(rows):
-#     # only evaluate if more than 10 benign and 10 path
-#     # tot = len(rows)
-#     # crit = rows.apply(lambda row: 'Wrong' in row['PredictionStatusMPC'], axis=1)
-#     # return len(rows[crit])/tot
-
-#     path_tot = len(rows[rows.y==1])
-
-#     if path_tot < 5:
-#         return 'NA'
-
-#     path_wrong_frac = len(rows[rows.PredictionStatusMPC=='WrongPath'])/path_tot
-#     return path_wrong_frac 
-
-def calc_wrong(rows, var_cutoff):
-    # only evaluate if more than 10 benign and 10 path
-    # tot = len(rows)
-    # crit = rows.apply(lambda row: 'Wrong' in row['PredictionStatusMPC'], axis=1)
-    # return len(rows[crit])/tot
-
-    benign_tot = len(rows[rows.y==0])
-    path_tot = len(rows[rows.y==1])
-
-    if benign_tot < int(var_cutoff) or path_tot < int(var_cutoff):
-        return 'NA'
-
-    benign_wrong_frac = len(rows[rows.PredictionStatusMPC=='WrongBenign'])/benign_tot
-    path_wrong_frac = len(rows[rows.PredictionStatusMPC=='WrongPath'])/path_tot
-    return (path_wrong_frac + benign_wrong_frac)/2
-
 rule eval_by_gene:
     input:  i = WORK + 'roc_df_{eval_source}/{features}'
-    output: o = DATA + 'interim/by_gene_eval/{eval_source}.{features}.{var_cutoff}'
+    output: o = DATA + 'interim/by_gene_eval/{eval_source}.{features}.{evidenceCutoff}.{varTypes}'
     run:
+        apply_calc_wrong_baseline = mk_calc_wrong_func(int(wildcards.evidenceCutoff), 'PredictionStatusBaseline', wildcards.varTypes)
+        apply_calc_wrong= mk_calc_wrong_func(int(wildcards.evidenceCutoff), 'PredictionStatusMPC', wildcards.varTypes)
+
         keys = ['Disease', 'gene',]
         df_pre = pd.read_csv(input.i, sep='\t').rename(columns={'PredictionStatusMPC>2':'PredictionStatusBaseline'})
         crit = df_pre.apply(lambda row: not 'issue' in row['Disease'] and not 'earing' in row['Disease'], axis=1)
         df = df_pre[crit]
 
         # baseline
-        wrong_baseline_df = df.groupby(keys).apply(lambda row: calc_wrong_baseline(row, wildcards.var_cutoff)).reset_index().rename(columns={0:'wrongFrac'})
+        wrong_baseline_df = ( df.groupby(keys)
+                              .apply(apply_calc_wrong_baseline)
+                              .reset_index().rename(columns={0:'wrongFrac'}) )
         wrong_baseline_df['combo'] = '_base.' + wildcards.features
 
-        wrong_df = df.groupby(keys).apply(lambda row: calc_wrong(row, wildcards.var_cutoff)).reset_index().rename(columns={0:'wrongFrac'})
+        wrong_df = ( df.groupby(keys)
+                     .apply(apply_calc_wrong)
+                     .reset_index().rename(columns={0:'wrongFrac'}) )
         wrong_df['combo'] = '_trained.' + wildcards.features
 
-        tot_wrong_df = df.groupby(['Disease']).apply(lambda row: calc_wrong(row, wildcards.var_cutoff)).reset_index().rename(columns={0:'predictorWrongFracTot'})
         size_path_df = df[df.y==1].groupby(keys).size().reset_index().rename(columns={0:'var_path_count'})
         size_benign_df = df[df.y==0].groupby(keys).size().reset_index().rename(columns={0:'var_benign_count'})
         size_df = pd.merge(size_path_df, size_benign_df, on=keys, how='outer')
@@ -143,9 +119,9 @@ rule eval_by_gene:
         base_crit = wrong_baseline_df.apply(lambda row: str(row['wrongFrac']) != 'NA', axis=1)
         m0 = pd.concat([wrong_df[crit], wrong_baseline_df[base_crit]])
         m = pd.merge(m0, size_df, on=keys)
-        #m.loc[:, 'var_class'] = m.apply(lambda row: 'pathogenic' if row['y'] == 1 else 'benign', axis=1)
-        pd.merge(m, tot_wrong_df, on='Disease', how='left')[['Disease', 'combo', 'gene', 'var_path_count',
-                                                             'var_benign_count', 'predictorWrongFracTot', 'wrongFrac']].to_csv(output.o, index=False, sep='\t')
+        final_cols = ['Disease', 'combo', 'gene', 'var_path_count',
+                      'var_benign_count', 'wrongFrac']
+        m[final_cols].to_csv(output.o, index=False, sep='\t')
 
 def read_gene_df(afile):
     feats = afile.split('/')[-1]
@@ -154,8 +130,8 @@ def read_gene_df(afile):
     return df
 
 rule combine_features_by_gene:
-    input:  expand(DATA + 'interim/by_gene_eval/{{eval_source}}.{feature}.{{var_cutoff}}', feature=COMBO_FEATS)
-    output: o=DATA + 'interim/{eval_source}.by_gene_feat_combo.{var_cutoff}'
+    input:  expand(DATA + 'interim/by_gene_eval/{{eval_source}}.{feature}.{{evidenceCutoff}}.{{varTypes}}', feature=COMBO_FEATS)
+    output: o=DATA + 'interim/{eval_source}.by_gene_feat_combo.{evidenceCutoff}.{varTypes}'
     run:
         pd.concat([pd.read_csv(afile, sep='\t') for afile in list(input)]).to_csv(output.o, index=False, sep='\t')
 

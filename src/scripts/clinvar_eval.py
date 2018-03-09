@@ -114,7 +114,7 @@ def frac_tree(df_x, clinvar_df):
     preds = tree_clf.predict(X_clin)
     fpr_tree_nm, tpr_tree_nm, _ = metrics.roc_curve(y_clin, preds, pos_label=1)
     tree_auc_nm = metrics.auc(fpr_tree_nm, tpr_tree_nm)
-    
+
     return fpr_tree_nm, tpr_tree_nm, tree_auc_nm
 
 def write(roc_dat, roc_png, roc_auc_out, plot_data_out):
@@ -142,12 +142,12 @@ def write(roc_dat, roc_png, roc_auc_out, plot_data_out):
 def main(args):
     df_x, domain_info = load_fg(args.fg_var_file)
     clinvar_df = load_clinvar(args.clinvar_file, domain_info)
-    
+
     roc_dat = {}
     roc_dat['MPC+PathFrac'] = mpc_frac_tree(df_x, clinvar_df)
     roc_dat['MPC'] = score_mpc(clinvar_df)
     roc_dat['PathFrac'] = frac_tree(df_x, clinvar_df)
-    
+
     write(roc_dat, args.roc_out, args.auc_out, args.plot_data_out)
 
     clinvar_df['dataset'] = 'ClinVar'

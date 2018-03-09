@@ -54,9 +54,9 @@ rule count_plot:
           """)
 
 rule combine_heatmap_clinvar_and_panel:
-    input:  clinvar = DATA + 'interim/clinvar.by_gene_feat_combo.5',
-            panel = DATA + 'interim/panel.by_gene_feat_combo.5'
-    output: o = WORK + 'paper_plot_data/heatmap'
+    input:  clinvar = DATA + 'interim/clinvar.by_gene_feat_combo.{evidenceCutoff}.{varTypes}',
+            panel = DATA + 'interim/panel.by_gene_feat_combo.{evidenceCutoff}.{varTypes}'
+    output: o = WORK + 'paper_plot_data/heatmap.{evidenceCutoff}.{varTypes}'
     run:
         diseases = {'genedx-epi-limitGene':'Epilepsy (dominant genes)',
                     'Rasopathies':'Rasopathies',
@@ -97,7 +97,10 @@ rule combine_heatmap_clinvar_and_panel:
         clinvar_final = clinvar_df[crit][['disease', 'combo', 'gene', 'wrongFrac', 'var_path_count', 'var_benign_count']]
         clinvar_final['panel_or_clinvar'] = 'Total ClinVar'
         clinvar_final.loc[:, 'gene'] = clinvar_final.apply(lambda row: row['gene'] + ' Total ClinVar', axis=1)
-        min_df = clinvar_final[['disease', 'gene', 'wrongFrac']].groupby(['disease', 'gene']).apply(min).rename(columns={'gene':'gene_junk', 'disease':'dis_junk', 'wrongFrac':'min'}).reset_index()
+        min_df = ( clinvar_final[['disease', 'gene', 'wrongFrac']]
+                   .groupby(['disease', 'gene']).apply(min)
+                   .rename(columns={'gene':'gene_junk', 'disease':'dis_junk', 'wrongFrac':'min'})
+                   .reset_index() )
         pc = pd.merge(clinvar_final, min_df, on=['disease', 'gene'])
         pc.loc[:, 'is_best'] = pc.apply(lambda row: row['wrongFrac'] == row['min'], axis=1)
 
@@ -106,8 +109,8 @@ rule combine_heatmap_clinvar_and_panel:
         df_final.to_csv(output.o, index=False, sep='\t')
 
 rule paper_heatmap:
-    input: WORK + 'paper_plot_data/heatmap'
-    output: DOCS + 'paper_plts/fig5_heatmap.pdf'
+    input:  WORK + 'paper_plot_data/heatmap.{evidenceCutoff}.{varTypes}'
+    output: DOCS + 'paper_plts/fig5_heatmap.{evidenceCutoff}.{varTypes}.pdf'
     run:
         R("""
           require(ggplot2)
@@ -121,7 +124,7 @@ rule paper_heatmap:
               labs(fill="Incorrect prediction fraction") +
               facet_grid(disease~., scale="free") +
               theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5))
-          ggsave("{output}", p, width=15, height=9)
+          ggsave("{output}", p, width=20, height=20)
           """)
 
 rule mk_size_plot_data:
@@ -151,11 +154,10 @@ rule size_bar_paper_plot:
           p = ggplot(data=d) +
               geom_col(aes(fill=VariantType, x=gene, y=var_count), stat="identity") +
               coord_flip() + xlab('') + ylab('Variant count') + theme_bw(base_size=18) + labs(fill='')
-          ggsave("{output}", p)
+          ggsave("{output}", p, height=20)
           """)
 
-
-
-FIGS = ('fig1_count_plot', 'fig4_eval_clinvar', 'fig3_panelEval.byVarClassFalse', 'fig5_heatmap')
+FIGS = ('fig1_count_plot', 'fig4_eval_clinvar', 'fig3_panelEval.byVarClassFalse',)
 rule all_paper_plots:
-    input: expand(DOCS + 'paper_plts/{fig}.pdf', fig=FIGS)
+    input: expand(DOCS + 'paper_plts/{fig}.pdf', fig=FIGS),
+           expand(DOCS + 'paper_plts/fig5_heatmap.{evidenceCutoff}.{varTypes}.pdf', varTypes=('pathogenic', 'benign', 'both'), evidenceCutoff=(4,5,10))
