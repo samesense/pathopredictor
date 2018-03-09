@@ -1,8 +1,9 @@
 from Bio.Data import IUPACData
 
 def convert_protein_change(protein_change):
+    #print(protein_change)
     # can't handle termination yet
-    if 'p.' in protein_change and not 'Ter' in protein_change:
+    if ('p.' in protein_change and not 'Ter' in protein_change) and protein_change != 'p.0?':
         # p.Ile199Val
         # p.Arg151*
         # p.Val276fs
@@ -35,11 +36,15 @@ def convert_protein_change(protein_change):
         elif 'p.34' == protein_change:
             return protein_change
         else:
-            print(protein_change)
-            p2 = protein_change.split('.')[1][-3:]
-            protein_pos = protein_change.split('.')[1][3:-3]
-            c1 = IUPACData.protein_letters_3to1[p1]
-            c2 = IUPACData.protein_letters_3to1[p2]
+            try:
+                p2 = protein_change.split('.')[1][-3:]
+                protein_pos = protein_change.split('.')[1][3:-3]
+                c1 = IUPACData.protein_letters_3to1[p1]
+                c2 = IUPACData.protein_letters_3to1[p2]
+            except:
+                c1 = protein_change
+                protein_pos =''
+                c2 = ''
         return c1 + protein_pos + c2
     else:
         return 'NA'

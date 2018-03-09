@@ -49,7 +49,7 @@ def calc_clinvar_best_label(row):
     return 'NA'
 
 rule combine_features_by_gene_clinvar_plot:
-    input:  clinvar_data = expand(DATA + 'interim/pred_clinvar_eval/{{eval_source}}.{feature}', feature=COMBO_FEATS),
+    input:  clinvar_data = expand(DATA + 'interim/pred_clinvar_eval/{{eval_source}}.{feature}.10.both', feature=COMBO_FEATS),
             panel_data = WORK + 'cc'
     output: o=DATA + 'interim/{eval_source}.by_gene_feat_combo.predictFullClinvar'
     run:
@@ -133,7 +133,7 @@ rule plot_clinvar_eval:
           """)
 
 rule tmp_c:
-    input: DOCS + 'plot/eval_clinvar/clinvar.genedx-epi:tot.predictFullClinvar.byVarClassTrue.png',
+    input: 
            DOCS + 'plot/eval_clinvar/clinvar.genedx-epi:tot.predictFullClinvar.byVarClassFalse.png'
 
 rule all_clinvar_eval:

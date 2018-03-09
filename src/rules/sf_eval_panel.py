@@ -1,11 +1,4 @@
 """Predict status for gene panel vars"""
-import pandas as pd
-from functools import reduce
-from itertools import combinations, chain
-
-include: "const.py"
-
-from snakemake.utils import R
 
 rule eval_panel_global:
     input:  expand(DATA + 'interim/{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo')),

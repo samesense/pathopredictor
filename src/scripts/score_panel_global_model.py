@@ -82,7 +82,7 @@ def eval_clinvar(label, cols, clinvar_df, disease_df):
         tree_clf_clinvar.fit(X, y)
 
         X_test = disease_df[cols]
-        print(X_test)
+        #print(X_test)
         preds = tree_clf_clinvar.predict(X_test)
 
         disease_df['mpc_pred_clinvar_' + label] = preds

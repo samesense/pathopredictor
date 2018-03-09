@@ -6,7 +6,12 @@ rule ahmad_percent_wrong:
     run:
         def calc_tot_vars(rows):
             tot_preds = sum(rows[rows.eval_type != 'TotWrong']['var_count'])
-            return tot_preds
+            counts = {row['eval_type']:row['var_count']
+                      for _, row in rows.iterrows()
+                      if row['eval_type'] != 'TotWrong'}
+            counts['tot_vars'] = tot_preds
+            s = pd.Series(counts)
+            return s
 
         def calc_wrong_percent_benign(rows):
             tot_preds = sum(rows[ (rows.eval_type=='WrongBenign') | (rows.eval_type=='CorrectBenign')]['var_count'].values)
@@ -69,8 +74,7 @@ rule ahmad_percent_wrong:
         panel_size_df = (pd.read_csv(input.panel, sep='\t')
                          .groupby(('disease', 'score_type'))
                          .apply(calc_tot_vars)
-                         .reset_index()
-                         .rename(columns={0:'tot_vars'}) )
+                         .reset_index() )
 
         panel_wrong_path_df = (pd.read_csv(input.panel, sep='\t')
                                .groupby(('disease', 'score_type'))
@@ -88,20 +92,6 @@ rule ahmad_percent_wrong:
 
         panel_df = pd.merge(panel_wrong_df, panel_size_df, on=['disease', 'score_type'])
 
-        # panel_df_benign = (pd.read_csv(input.panel, sep='\t')
-        #                    .groupby(('disease', 'score_type'))
-        #                    .apply(calc_wrong_percent_benign)
-        #                    .reset_index()
-        #                    .rename(columns={0:'percent_wrong'}) )
-        # panel_df_benign['var_class'] = 'benign'
-        # panel_df_path= (pd.read_csv(input.panel, sep='\t')
-        #                 .groupby(('disease','score_type'))
-        #                 .apply(calc_wrong_percent_path)
-        #                 .reset_index()
-        #                 .rename(columns={0:'percent_wrong'}) )
-        # panel_df_path['var_class'] = 'pathogenic'
-
-        #panel_df = pd.concat([panel_df_path, panel_df_benign])
         panel_df['color'] = 'predict_panel'
         m = panel_df
         m.loc[:, 'st'] = m.apply(lambda row: rename_score(row['score_type']), axis=1)
@@ -160,6 +150,19 @@ rule concat_extra_gene:
         d.loc[:, 'st'] = d.apply(lambda row: row['st'].replace('panel-trained_','').replace('paper_',''), axis=1)
         d.to_csv(output.o, sep='\t', index=False)
 
+def calc_worst_base_pval(row, base_df):
+    pass
+
+rule panel_pvals:
+    """Test each trained against baseline w/ fishers test"""
+    input: i = WORK + 'cc'
+    output: o = WORK + 'cc.pvals'
+    run:
+        df = pd.read_csv(input.i, sep='\t')
+        base_crit = df.apply(lambda row: 'BASE' in row['st'] and not '-' in row['st'], axis=1)
+        base_df = df[base_crit]
+        df.loc[:, 'worst_base_pval'] = df.apply(lambda row: calc_worst_base_pval(row, base_df), axis=1)
+
 rule plot_ahmad:
     input:  i = WORK + 'cc'
     output: DOCS + 'paper_plts/fig3_panelEval.byVarClass{byVarClass}.pdf'
@@ -167,11 +170,13 @@ rule plot_ahmad:
         if wildcards.byVarClass == 'True':
             plot_cmd = 'geom_col(aes(y=percent_wrong, x=reorder(st, percent_wrong), colour=is_best, fill=classifier_color), position="dodge")'
         else:
-            plot_cmd = """geom_col(aes(fill=Classifier, y=percent_wrong, x=reorder(st, percent_wrong))) +
+            plot_cmd = """geom_col(aes(colour=is_best, fill=Classifier, y=percent_wrong, x=reorder(st, percent_wrong))) +
                           geom_point(data=dbest, aes(x=st,y=percent_wrong)) +
                           geom_text(data=label_df, aes(x=x,y=y,label=label))"""
-        df = pd.read_csv(input.i, sep='\t')[['dis','tot_vars']].drop_duplicates()
-        df.loc[:, 'label'] = df.apply(lambda row: 'n=%d' % (row['tot_vars']), axis=1) 
+        #df = pd.read_csv(input.i, sep='\t')[['dis','tot_vars']].drop_duplicates()
+        df = pd.read_csv(input.i, sep='\t').drop_duplicates()
+        df['tot_vars'] = 1
+        df.loc[:, 'label'] = df.apply(lambda row: 'n=%d' % (row['tot_vars']), axis=1)
         df['y'] = 0.5
         df['x'] = 'TRAINED_mpc-revel-ccr'
         df.to_csv('tmp.labels', index=False, sep='\t')
