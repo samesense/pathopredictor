@@ -74,21 +74,23 @@ rule parse_clinvar_vcf:
                    else:
                        onekg = '0'
 
-                   clin_sig = info.split('CLNSIG=')[1].split(';')[0]
-                   confidence = info.split('CLNREVSTAT=')[1].split(';')[0]
+                   if 'CLNSIG=' in info and 'ANN=' in info:
+                       clin_sig = info.split('CLNSIG=')[1].split(';')[0]
+                       confidence = info.split('CLNREVSTAT=')[1].split(';')[0]
 
-                   protein_change_pre = info.split('ANN=')[1].split(';')[0].split('|')[10]
-                   protein_change = convert_protein_change(protein_change_pre)
-                   nm = info.split('ANN=')[1].split('|')[6]
-                   eff = info.split('ANN=')[1].split(';')[0].split('|')[1]
-                   gene = info.split('ANN=')[1].split(';')[0].split('|')[3]
-                   ls = (chrom, pos, ref, alt, pfam, eff, clin_sig, onekg, gene, mpc, mtr, nm, protein_change, confidence, revel, ccr)
-                   print('\t'.join(ls), file=fout)
+                       #print(info.split('ANN=')[1].split(';')[0])
+                       protein_change_pre = info.split('ANN=')[1].split(';')[0].split('|')[10]
+                       protein_change = convert_protein_change(protein_change_pre)
+                       nm = info.split('ANN=')[1].split('|')[6]
+                       eff = info.split('ANN=')[1].split(';')[0].split('|')[1]
+                       gene = info.split('ANN=')[1].split(';')[0].split('|')[3]
+                       ls = (chrom, pos, ref, alt, pfam, eff, clin_sig, onekg, gene, mpc, mtr, nm, protein_change, confidence, revel, ccr)
+                       print('\t'.join(ls), file=fout)
 
 def calc_final_sig_clinvar(row):
-    sig_set = set(str(row['clinSig'].split('|')))
-    has_benign = '2' in sig_set or '3' in sig_set
-    has_path = '4' in sig_set or '5' in sig_set
+    #sig_set = set(str(row['clinSig'].split(',')))
+    has_benign = 'enign' in row['clinSig'] 
+    has_path = 'athogenic' in row['clinSig'] and not 'flict' in row['clinSig']
     if has_path and not has_benign:
         return 1
     if not has_path and has_benign:
@@ -136,17 +138,11 @@ rule limit_clinvar_by_conf:
     run:
         df = pd.read_csv(input.i, sep='\t')
         if wildcards.conf=='exp':
-            crit = df.apply(lambda row: len(set(row['confidence'].split('|'))) == 1
-                            and list(set(row['confidence'].split('|')))[0]==wildcards.conf, axis=1)
+            crit = df.apply(lambda row: 'expert' in row['confidence'], axis=1)
         elif wildcards.conf=='mult':
-            crit = df.apply(lambda row: len(set(row['confidence'].split('|'))) == 1
-                            and (list(set(row['confidence'].split('|')))[0]==wildcards.conf
-                                 or list(set(row['confidence'].split('|')))[0]=='exp'), axis=1)
+            crit = df.apply(lambda row: 'mult' in row['confidence'] or 'expert' in row['confidence'], axis=1)
         elif wildcards.conf=='single':
-            crit = df.apply(lambda row: len(set(row['confidence'].split('|'))) == 1
-                            and (list(set(row['confidence'].split('|')))[0]==wildcards.conf
-                                 or list(set(row['confidence'].split('|')))[0]=='exp'
-                                 or list(set(row['confidence'].split('|')))[0]=='mult'), axis=1)
+            crit = df.apply(lambda row: 'single' in row['confidence'] or 'mult' in row['confidence'] or 'expert' in row['confidence'], axis=1)
         else:
             i = 1/0
         df[crit].to_csv(output.o, index=False, sep='\t')
