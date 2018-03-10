@@ -4,15 +4,6 @@ rule ahmad_percent_wrong:
     input:  panel = WORK + '{method}.eval_panel.{cols}.eval'
     output: o = WORK + '{method}.{cols}.eval_panel.eval.percentWrong'
     run:
-        def calc_tot_vars(rows):
-            tot_preds = sum(rows[rows.eval_type != 'TotWrong']['var_count'])
-            counts = {row['eval_type']:row['var_count']
-                      for _, row in rows.iterrows()
-                      if row['eval_type'] != 'TotWrong'}
-            counts['tot_vars'] = tot_preds
-            s = pd.Series(counts)
-            return s
-
         def calc_wrong_percent_benign(rows):
             tot_preds = sum(rows[ (rows.eval_type=='WrongBenign') | (rows.eval_type=='CorrectBenign')]['var_count'].values)
             ls = list(rows[rows.eval_type == 'WrongBenign']['var_count'].values)
@@ -170,15 +161,16 @@ rule plot_ahmad:
         if wildcards.byVarClass == 'True':
             plot_cmd = 'geom_col(aes(y=percent_wrong, x=reorder(st, percent_wrong), colour=is_best, fill=classifier_color), position="dodge")'
         else:
-            plot_cmd = """geom_col(aes(colour=is_best, fill=Classifier, y=percent_wrong, x=reorder(st, percent_wrong))) +
+            plot_cmd = """geom_col(aes(colour=is_best, fill=Classifier, y=percent_wrong, x=reorder(st, percent_wrong, median))) +
                           geom_point(data=dbest, aes(x=st,y=percent_wrong)) +
-                          geom_text(data=label_df, aes(x=x,y=y,label=label))"""
-        #df = pd.read_csv(input.i, sep='\t')[['dis','tot_vars']].drop_duplicates()
-        df = pd.read_csv(input.i, sep='\t').drop_duplicates()
-        df['tot_vars'] = 1
-        df.loc[:, 'label'] = df.apply(lambda row: 'n=%d' % (row['tot_vars']), axis=1)
-        df['y'] = 0.5
-        df['x'] = 'TRAINED_mpc-revel-ccr'
+                          geom_text(data=label_df, aes(x=x1,y=y,label=label_path), hjust=0) +
+                          geom_text(data=label_df, aes(x=x2,y=y,label=label_benign), hjust=0)"""
+        df = pd.read_csv(input.i, sep='\t')[['dis','tot_vars','CorrectPath','WrongPath','CorrectBenign','WrongBenign']].drop_duplicates()
+        df.loc[:, 'label_path'] = df.apply(lambda row: 'pathogenic=%d' % (row['CorrectPath'] + row['WrongPath']), axis=1)
+        df.loc[:, 'label_benign'] = df.apply(lambda row: 'benign=%d' % (row['CorrectBenign'] + row['WrongBenign']), axis=1)
+        df['y'] = 0.4
+        df['x1'] = 'TRAINED_revel-is_domain'
+        df['x2'] = 'TRAINED_revel'
         df.to_csv('tmp.labels', index=False, sep='\t')
         R("""
           require(ggplot2)

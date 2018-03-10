@@ -11,6 +11,7 @@ include: "sf_other_disease.py"
 include: "sf_clinvar.py"
 include: "sf_denovo.py"
 
+include: "counting_funcs.py"
 include: "calc_wrong_funcs.py"
 include: "sf_eval_panel.py"
 include: "sf_coords.py"
