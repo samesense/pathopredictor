@@ -23,6 +23,10 @@ include: "sf.rank.eval.py"
 
 include: "sf.webtool.py"
 
+rule shit2:
+    input: DATA + 'interim/for_improveProba/is_domain.ccr-is_domain'
+#WORK + 'roc_df_panel/is_domain'
+
 rule all_dat:
     input: DATA + 'interim/denovo/denovo.limit3.dat', \
            DATA + 'interim/clinvar/clinvar.limit3.dat', \

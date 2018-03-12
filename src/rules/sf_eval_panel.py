@@ -11,6 +11,16 @@ rule eval_panel_global:
             WORK + 'roc_df_clinvar/{cols}'
     shell:  'python {SCRIPTS}score_panel_global_model.py {wildcards.cols} {input} {output}'
 
+rule join_for_improveProb:
+    input: base = WORK + 'roc_df_panel/{base_feature}',
+           combo = WORK + 'roc_df_panel/{combo_features}'
+    output: o = DATA + 'interim/for_improveProba/{base_feature}.{combo_features}'
+    run:
+        keys = ['Disease', 'chrom', 'pos', 'ref', 'alt', 'y']
+        base_df = pd.read_csv(input.base, sep='\t')[keys + [wildcards.base_feature + '_probaPred']]
+        combo_df = pd.read_csv(input.combo, sep='\t')[keys + [wildcards.combo_features + '_probaPred']]
+        pd.merge(base_df, combo_df, on=keys, how='left').to_csv(output.o, index=False, sep='\t')
+
 rule eval_panel_single_gene:
     input:  expand(DATA + 'interim/clinvar{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo')),
             DATA + 'interim/epi/EPIv6.eff.dbnsfp.anno.hHack.dat.limit.xls',

@@ -1,5 +1,10 @@
 """Combine evaluations by disease."""
 
+rule auc_roc_and_avg_pre_anova:
+    input:  i = WORK + 'roc_df_{data}/{features}'
+    output: o = WORK + 'eval_featuers_{data}/{features}'
+    shell:  'python {SCRIPTS}score_features.py {input} {output}'
+
 rule ahmad_percent_wrong:
     input:  panel = WORK + '{method}.eval_panel.{cols}.eval'
     output: o = WORK + '{method}.{cols}.eval_panel.eval.percentWrong'

@@ -125,23 +125,29 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, 
 
     for test_gene in genes:
         sub_train_df = disease_df[disease_df.gene != test_gene]
+        print(disease, 'disease vars', len(sub_train_df[sub_train_df.gene != test_gene]))
+        print('gene vars', len(disease_df[disease_df.gene == test_gene]))
         tree_clf_sub = tree.DecisionTreeClassifier( max_depth=len(cols) )
         X, y = sub_train_df[cols], sub_train_df['y']
         tree_clf_sub.fit(X, y)
 
         #regression for multiple scores
-        if len(cols)>1:
-            lm =  linear_model.LinearRegression(normalize=True, fit_intercept=True)
-            lm.fit(X, y)
+        #if len(cols)>1:
+        print( test_gene, 1, len([_ for _ in y if _==1]))
+        print( test_gene, 0, len([_ for _ in y if _==0]))
+        lm =  linear_model.LogisticRegression(fit_intercept=True)
+        lm.fit(X, y)
 
         test_df = disease_df[disease_df.gene == test_gene]
         X_test = test_df[cols]
         preds = tree_clf_sub.predict(X_test)
-        if len(cols)>1:
-            lm_preds = lm.predict(X_test)
-            test_df['-'.join(cols) + '_pred_lm'] = lm_preds
-        test_df['mpc_pred'] = preds
-        test_df.loc[:, 'PredictionStatusMPC'] = test_df.apply(lambda row: eval_pred(row, 'mpc_pred'), axis=1)
+        #if len(cols)>1:
+        lm_preds = lm.predict(X_test)
+        test_df.loc[:, '-'.join(cols) + '_pred_lm'] = lm_preds
+        lm_proba = [x[1] for x in lm.predict_proba(X_test) ]
+        test_df.loc[:, '-'.join(cols) + '_probaPred'] = lm_proba
+        test_df.insert(2, 'mpc_pred', preds)
+        test_df.insert(2, 'PredictionStatusMPC', test_df.apply(lambda row: eval_pred(row, 'mpc_pred'), axis=1) )
 
         acc_df_ls.append(test_df)
 
@@ -209,7 +215,7 @@ def main(args):
     with open(args.stats_out, 'w') as fout_stats, open(args.eval_out, 'w') as fout_eval:
         print('disease\tscore_type\teval_type\tvar_count', file=fout_eval)
         for disease in diseases:
-            if str(disease) != 'nan':
+            if str(disease) != 'nan' and not 'Connective' in disease:
                 eval_panel_df, eval_clinvar_df = eval_disease(disease, clinvar_df_pre_ls, disease_df[disease_df.Disease == disease],
                                                               fout_stats, fout_eval, clin_labels, score_cols)
                 eval_df_ls.append(eval_panel_df)
