@@ -2,8 +2,17 @@
 
 rule auc_roc_and_avg_pre_anova:
     input:  i = WORK + 'roc_df_{data}/{features}'
-    output: o = WORK + 'eval_featuers_{data}/{features}'
-    shell:  'python {SCRIPTS}score_features.py {input} {output}'
+    output: o = WORK + 'eval_features_{data}/{features}'
+    shell:  'python {SCRIPTS}score_features.py {wildcards.features} {input} {output}'
+
+rule combine_auc_avgPre_improveProb:
+    input: auc = WORK + 'eval_features_{data}/{features}',
+           ip = DATA + 'interim/improveProb_out_collapse/{features}'
+    output: o = DATA + 'interim/fig3_data_{data}/{features}'
+    run:
+        pd.merge(pd.read_csv(input.auc, sep='\t'),
+                 pd.read_csv(input.ip, sep='\t'),
+                 on=['Disease', 'combo'], how='left').to_csv(output.o, index=False, sep='\t')
 
 rule ahmad_percent_wrong:
     input:  panel = WORK + '{method}.eval_panel.{cols}.eval'

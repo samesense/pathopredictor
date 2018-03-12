@@ -21,6 +21,7 @@ rule join_for_improveProb:
         combo_df = pd.read_csv(input.combo, sep='\t')[keys + [wildcards.combo_features + '_probaPred']]
         pd.merge(base_df, combo_df, on=keys, how='left').to_csv(output.o, index=False, sep='\t')
 
+#https://www.rdocumentation.org/packages/Hmisc/versions/4.1-0/topics/rcorrp.cens
 rule improve_prob:
     input:  i = DATA + 'interim/for_improveProba/{base_feature}.{combo_features}'
     output: o = DATA + 'interim/improveProb_out/{base_feature}.{combo_features}'
@@ -30,30 +31,33 @@ rule improve_prob:
         diseases = set(df['Disease'])
         dat = []
         for disease in diseases:
+            df[df.Disease==disease].to_csv(output.o + '.df', index=False, sep='\t')
             R("""
             require(Hmisc)
             require(survival)
-            d = read.delim("{input}", head=TRUE, sep="\t")
-            sink("{output}.pre")
+            d = read.delim("{output}.df", head=TRUE, sep="\t")
+            sink("{output}.pre.{disease}")
             print( improveProb(d${wildcards.base_feature}_probaPred,
-            d${combo}, d$y) )
+            d${combo},d$y) )
             sink()
             """)
-            with open(output.o + '.pre') as fin:
+            with open(output.o + '.pre.' + disease) as fin:
                 for line in fin:
                     last_line = line.strip().split()
-                ls = {'disease':disease,
+                ls = {'Disease':disease,
                       'combo':wildcards.combo_features,
                       'base':wildcards.base_feature,
                       'pval.twoside':last_line[-3]}
                 dat.append(ls)
+            #shell('rm {output}.pre')
+            shell('rm {output}.df')
         pd.DataFrame(dat).to_csv(output.o, index=False, sep='\t')
 
 rule collapse_improve_prob:
     input:  expand(DATA + 'interim/improveProb_out/{base_feature}.{{combo_features}}', base_feature=('is_domain', 'ccr', 'mpc', 'revel'))
     output: o = DATA + 'interim/improveProb_out_collapse/{combo_features}'
     run:
-        df = pd.concat([pd.read_csv(afile, sep='\t')[['disease', 'combo', 'pval.twoside']] for afile in input]).groupby(['disease', 'combo']).agg(max).reset_index().rename(columns={'pval.twoside':'worst_pval'})
+        df = pd.concat([pd.read_csv(afile, sep='\t')[['Disease', 'combo', 'pval.twoside']] for afile in input]).groupby(['Disease', 'combo']).agg(max).reset_index().rename(columns={'pval.twoside':'worst_pval'})
         df.to_csv(output.o, index=False, sep='\t')
 
 rule eval_panel_single_gene:
