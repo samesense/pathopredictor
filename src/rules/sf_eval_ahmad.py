@@ -141,27 +141,20 @@ rule concat_extra_gene:
         d.loc[:, 'st'] = d.apply(lambda row: row['st'].replace('panel-trained_','').replace('paper_',''), axis=1)
         d.to_csv(output.o, sep='\t', index=False)
 
-def calc_worst_base_pval(row, base_df):
-    pass
-
 rule panel_pvals:
     """Test each trained against baseline w/ fishers test"""
-    input: i = WORK + 'cc'
+    input:  i = WORK + 'cc'
     output: o = WORK + 'cc.pvals'
-    run:
-        df = pd.read_csv(input.i, sep='\t')
-        base_crit = df.apply(lambda row: 'BASE' in row['st'] and not '-' in row['st'], axis=1)
-        base_df = df[base_crit]
-        df.loc[:, 'worst_base_pval'] = df.apply(lambda row: calc_worst_base_pval(row, base_df), axis=1)
+    shell:  'python {SCRIPTS}mk_panel_pvalues.py {input} {output}'
 
 rule plot_ahmad:
-    input:  i = WORK + 'cc'
+    input:  i = WORK + 'cc.pvals'
     output: DOCS + 'paper_plts/fig3_panelEval.byVarClass{byVarClass}.pdf'
     run:
         if wildcards.byVarClass == 'True':
             plot_cmd = 'geom_col(aes(y=percent_wrong, x=reorder(st, percent_wrong), colour=is_best, fill=classifier_color), position="dodge")'
         else:
-            plot_cmd = """geom_col(aes(colour=is_best, fill=Classifier, y=percent_wrong, x=reorder(st, percent_wrong, median))) +
+            plot_cmd = """geom_col(aes(colour=box, fill=Classifier, y=percent_wrong, x=reorder(st, percent_wrong, median))) +
                           geom_point(data=dbest, aes(x=st,y=percent_wrong)) +
                           geom_text(data=label_df, aes(x=x1,y=y,label=label_path), hjust=0) +
                           geom_text(data=label_df, aes(x=x2,y=y,label=label_benign), hjust=0)"""
