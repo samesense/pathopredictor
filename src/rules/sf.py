@@ -24,7 +24,7 @@ include: "sf.rank.eval.py"
 include: "sf.webtool.py"
 
 rule shit2:
-    input: DATA + 'interim/for_improveProba/is_domain.ccr-is_domain'
+    input: DATA + 'interim/improveProb_out/is_domain.ccr-is_domain'
 #WORK + 'roc_df_panel/is_domain'
 
 rule all_dat:

@@ -21,6 +21,27 @@ rule join_for_improveProb:
         combo_df = pd.read_csv(input.combo, sep='\t')[keys + [wildcards.combo_features + '_probaPred']]
         pd.merge(base_df, combo_df, on=keys, how='left').to_csv(output.o, index=False, sep='\t')
 
+rule improve_prob:
+    input:  DATA + 'interim/for_improveProba/{base_feature}.{combo_features}'
+    output: o = DATA + 'interim/improveProb_out/{base_feature}.{combo_features}'
+    run:
+        combo = wildcards.combo_features.replace('-','.')
+        R("""
+          require(Hmisc)
+          require(survival)
+          d = read.delim("{input}", head=TRUE, sep="\t")
+          sink("{output}.pre")
+          print( improveProb(d${wildcards.base_feature}_probaPred,
+                      d${combo}, d$y) )
+          sink()
+          """)
+        with open(output.o + '.pre') as fin, open(output.o, 'w') as fout:
+            print('combo\tbase\tpval.twoside', file=fout)
+            for line in fin:
+                last_line = line.strip().split()
+            ls = (wildcards.combo_features, wildcards.base_feature, last_line[-3])
+            print('\t'.join(ls), file=fout)
+            
 rule eval_panel_single_gene:
     input:  expand(DATA + 'interim/clinvar{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo')),
             DATA + 'interim/epi/EPIv6.eff.dbnsfp.anno.hHack.dat.limit.xls',
