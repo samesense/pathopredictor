@@ -22,26 +22,40 @@ rule join_for_improveProb:
         pd.merge(base_df, combo_df, on=keys, how='left').to_csv(output.o, index=False, sep='\t')
 
 rule improve_prob:
-    input:  DATA + 'interim/for_improveProba/{base_feature}.{combo_features}'
+    input:  i = DATA + 'interim/for_improveProba/{base_feature}.{combo_features}'
     output: o = DATA + 'interim/improveProb_out/{base_feature}.{combo_features}'
     run:
         combo = wildcards.combo_features.replace('-','.')
-        R("""
-          require(Hmisc)
-          require(survival)
-          d = read.delim("{input}", head=TRUE, sep="\t")
-          sink("{output}.pre")
-          print( improveProb(d${wildcards.base_feature}_probaPred,
-                      d${combo}, d$y) )
-          sink()
-          """)
-        with open(output.o + '.pre') as fin, open(output.o, 'w') as fout:
-            print('combo\tbase\tpval.twoside', file=fout)
-            for line in fin:
-                last_line = line.strip().split()
-            ls = (wildcards.combo_features, wildcards.base_feature, last_line[-3])
-            print('\t'.join(ls), file=fout)
-            
+        df = pd.read_csv(input.i, sep='\t')
+        diseases = set(df['Disease'])
+        dat = []
+        for disease in diseases:
+            R("""
+            require(Hmisc)
+            require(survival)
+            d = read.delim("{input}", head=TRUE, sep="\t")
+            sink("{output}.pre")
+            print( improveProb(d${wildcards.base_feature}_probaPred,
+            d${combo}, d$y) )
+            sink()
+            """)
+            with open(output.o + '.pre') as fin:
+                for line in fin:
+                    last_line = line.strip().split()
+                ls = {'disease':disease,
+                      'combo':wildcards.combo_features,
+                      'base':wildcards.base_feature,
+                      'pval.twoside':last_line[-3]}
+                dat.append(ls)
+        pd.DataFrame(dat).to_csv(output.o, index=False, sep='\t')
+
+rule collapse_improve_prob:
+    input:  expand(DATA + 'interim/improveProb_out/{base_feature}.{{combo_features}}', base_feature=('is_domain', 'ccr', 'mpc', 'revel'))
+    output: o = DATA + 'interim/improveProb_out_collapse/{combo_features}'
+    run:
+        df = pd.concat([pd.read_csv(afile, sep='\t')[['disease', 'combo', 'pval.twoside']] for afile in input]).groupby(['disease', 'combo']).agg(max).reset_index().rename(columns={'pval.twoside':'worst_pval'})
+        df.to_csv(output.o, index=False, sep='\t')
+
 rule eval_panel_single_gene:
     input:  expand(DATA + 'interim/clinvar{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo')),
             DATA + 'interim/epi/EPIv6.eff.dbnsfp.anno.hHack.dat.limit.xls',
