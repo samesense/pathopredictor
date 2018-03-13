@@ -17,8 +17,12 @@ rule join_for_improveProb:
     output: o = DATA + 'interim/for_improveProba/{base_feature}.{combo_features}'
     run:
         keys = ['Disease', 'chrom', 'pos', 'ref', 'alt', 'y']
-        base_df = pd.read_csv(input.base, sep='\t')[keys + [wildcards.base_feature + '_probaPred']]
-        combo_df = pd.read_csv(input.combo, sep='\t')[keys + [wildcards.combo_features + '_probaPred']]
+        c1 = wildcards.base_feature + '_probaPred'
+        base_df = pd.read_csv(input.base, sep='\t')[keys + [c1]]
+        #base_df.loc[:, c1] = base_df.apply(lambda row: .99 if row[c1] == 1 else .01, axis=1)
+        c1 = wildcards.combo_features + '_probaPred'
+        combo_df = pd.read_csv(input.combo, sep='\t')[keys + [c1]]
+        #combo_df.loc[:, c1] = combo_df.apply(lambda row: .99 if row[c1] == 1 else .01, axis=1)
         pd.merge(base_df, combo_df, on=keys, how='left').to_csv(output.o, index=False, sep='\t')
 
 #https://www.rdocumentation.org/packages/Hmisc/versions/4.1-0/topics/rcorrp.cens
@@ -38,7 +42,7 @@ rule improve_prob:
             d = read.delim("{output}.df", head=TRUE, sep="\t")
             sink("{output}.pre.{disease}")
             print( improveProb(d${wildcards.base_feature}_probaPred,
-            d${combo},d$y) )
+                   d${combo}, d$y) )
             sink()
             """)
             with open(output.o + '.pre.' + disease) as fin:
@@ -47,17 +51,25 @@ rule improve_prob:
                 ls = {'Disease':disease,
                       'combo':wildcards.combo_features,
                       'base':wildcards.base_feature,
+                      'idi':last_line[0],
                       'pval.twoside':last_line[-3]}
                 dat.append(ls)
             #shell('rm {output}.pre')
             shell('rm {output}.df')
         pd.DataFrame(dat).to_csv(output.o, index=False, sep='\t')
 
+def get_max_pval_row(rows):
+    s = rows.sort_values(by='pval.twoside', ascending=False)
+    return s.iloc[0][['idi', 'pval.twoside']]
+
 rule collapse_improve_prob:
     input:  expand(DATA + 'interim/improveProb_out/{base_feature}.{{combo_features}}', base_feature=('is_domain', 'ccr', 'mpc', 'revel'))
     output: o = DATA + 'interim/improveProb_out_collapse/{combo_features}'
     run:
-        df = pd.concat([pd.read_csv(afile, sep='\t')[['Disease', 'combo', 'pval.twoside']] for afile in input]).groupby(['Disease', 'combo']).agg(max).reset_index().rename(columns={'pval.twoside':'worst_pval'})
+        df = ( pd.concat([pd.read_csv(afile, sep='\t')[['Disease', 'combo', 'idi', 'pval.twoside']] for afile in input])
+               .groupby(['Disease', 'combo'])
+               .apply(get_max_pval_row).reset_index()
+               .rename(columns={'pval.twoside':'worst_pval'}) )
         df.to_csv(output.o, index=False, sep='\t')
 
 rule eval_panel_single_gene:
