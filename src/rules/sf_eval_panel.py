@@ -47,29 +47,40 @@ rule improve_prob:
             """)
             with open(output.o + '.pre.' + disease) as fin:
                 for line in fin:
+                    if 'NRI' in line and not 'events' in line:
+                        sp = line.strip().split()
+                        if len(sp)>7:
+                            nri = sp[2]
+                            nri_pval = sp[5]
                     last_line = line.strip().split()
+                if len(last_line)<6:
+                    i = 1/0
                 ls = {'Disease':disease,
                       'combo':wildcards.combo_features,
                       'base':wildcards.base_feature,
                       'idi':last_line[0],
-                      'pval.twoside':last_line[-3]}
+                      'idi_upper':last_line[-1],
+                      'idi_lower':last_line[-2],
+                      'idi.pval.twoside':last_line[-3],
+                      'nri':nri,
+                      'nri_pval':nri_pval}
                 dat.append(ls)
             #shell('rm {output}.pre')
             shell('rm {output}.df')
         pd.DataFrame(dat).to_csv(output.o, index=False, sep='\t')
 
 def get_max_pval_row(rows):
-    s = rows.dropna(axis=0, how='any').sort_values(by='pval.twoside', ascending=False)
-    return s.iloc[0][['idi', 'pval.twoside']]
+    s = rows.dropna(axis=0, how='any').sort_values(by='idi.pval.twoside', ascending=False)
+    return s.iloc[0][['idi', 'idi_upper', 'idi_lower', 'nri', 'nri_pval', 'idi.pval.twoside']]
 
 rule collapse_improve_prob:
     input:  expand(DATA + 'interim/improveProb_out/{base_feature}.{{combo_features}}', base_feature=('is_domain', 'ccr', 'mpc', 'revel'))
     output: o = DATA + 'interim/improveProb_out_collapse/{combo_features}'
     run:
-        df = ( pd.concat([pd.read_csv(afile, sep='\t')[['Disease', 'combo', 'idi', 'pval.twoside']] for afile in input])
+        df = ( pd.concat([pd.read_csv(afile, sep='\t')[['Disease', 'combo', 'idi', 'idi_upper', 'idi_lower', 'nri_pval', 'idi.pval.twoside']] for afile in input])
                .groupby(['Disease', 'combo'])
                .apply(get_max_pval_row).reset_index()
-               .rename(columns={'pval.twoside':'worst_pval'}) )
+               .rename(columns={'idi.pval.twoside':'worst_pval'}) )
         df.to_csv(output.o, index=False, sep='\t')
 
 rule eval_panel_single_gene:

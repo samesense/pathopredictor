@@ -212,7 +212,7 @@ rule plot_ahmad:
         shell('rm tmp.labels')
 
 rule plot_idi:
-    input: i = WORK + 'cc.pvals'
+    input:  i = WORK + 'cc.pvals'
     output: o = DOCS + 'paper_plts/fig4_idi.pdf'
     run:
         df = pd.read_csv(input.i, sep='\t')[['dis','tot_vars','CorrectPath','WrongPath','CorrectBenign','WrongBenign']].drop_duplicates()
@@ -229,7 +229,8 @@ rule plot_idi:
         tmp = output.o + '.tmp'
         df[crit].to_csv(tmp, index=False, sep='\t')
 
-        plot_cmd = """geom_col(fill="#56B4E9", aes(colour=box, y=idi, x=reorder(st, idi, median)))"""
+        plot_cmd = """geom_col(fill="#56B4E9", aes(alpha=box, y=idi, x=reorder(st, idi, median))) + scale_alpha_manual(values=c(.5, 1), guide="none") + geom_errorbar(aes(x=reorder(st, idi, median), ymin=idi_lower, ymax=idi_upper), width=.2, position=position_dodge(.9))"""
+        #plot_cmd = """geom_col(fill="#56B4E9", aes(colour=box, y=idi, x=reorder(st, idi, median)))"""
 
         R("""
           require(ggplot2)
@@ -240,11 +241,14 @@ rule plot_idi:
           d$dis = factor(d$dis, levels=unique( d[order(d$dis_order),]$dis ))
           p = ggplot(data=d) + {plot_cmd} +
               facet_grid(.~dis) + theme_bw(base_size=18) +
-              theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12)) +
+              theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=14)) +
               ylab('Integrated discrimination index') + theme(legend.position="none") +
-              xlab('') + coord_flip() + theme(axis.text.y = element_text(size=10)) + scale_colour_manual(values=box_colors)
+              xlab('') + coord_flip() + theme(axis.text.y = element_text(size=12)) + scale_colour_manual(values=box_colors)
           ggsave("{output}", p, width=20)
 
         """)
+        shell('rm {tmp_labels}')
+        shell('rm {tmp}')
+        
 rule ahmad_prediction_plots:
     input: expand( DOCS + 'paper_plts/fig3_panelEval.byVarClass{byVarClass}.pdf', byVarClass=('False',) )
