@@ -6,13 +6,19 @@ rule auc_roc_and_avg_pre_anova:
     shell:  'python {SCRIPTS}score_features.py {wildcards.features} {input} {output}'
 
 rule combine_auc_avgPre_improveProb:
-    input: auc = WORK + 'eval_features_{data}/{features}',
-           ip = DATA + 'interim/improveProb_out_collapse/{features}'
+    input:  auc = WORK + 'eval_features_{data}/{features}',
+            ip = DATA + 'interim/improveProb_out_collapse/{features}'
     output: o = DATA + 'interim/fig3_data_{data}/{features}'
     run:
         pd.merge(pd.read_csv(input.auc, sep='\t'),
                  pd.read_csv(input.ip, sep='\t'),
                  on=['Disease', 'combo'], how='left').to_csv(output.o, index=False, sep='\t')
+
+rule combine_improveProb_features:
+    input: expand(DATA + 'interim/fig3_data_panel/{feats}', feats=COMBO_FEATS)
+    output: o = DATA + 'interim/fig3_data_panel.improveProb'
+    run:
+        pd.concat([pd.read_csv(afile, sep='\t') for afile in input]).to_csv(output.o, index=False, sep='\t')
 
 rule ahmad_percent_wrong:
     input:  panel = WORK + '{method}.eval_panel.{cols}.eval'
@@ -118,11 +124,17 @@ def color_bar(row):
         return 'Combined baseline'
     return 'Trained'
 
+def read_it(afile):
+    combo = afile.split('/')[-1].split('.')[1]
+    df = pd.read_csv(afile, sep='\t')
+    df['combo'] = combo
+    return df
+
 rule concat_extra:
     input:  expand( WORK + 'global.{cols}.eval_panel.eval.percentWrong', cols=COMBO_FEATS)
     output: o = WORK + 'cc'
     run:
-        m = pd.concat([pd.read_csv(afile, sep='\t') for afile in list(input)]).drop_duplicates(subset=['color', 'disease', 'score_type', 'st', 'dis'])
+        m = pd.concat([read_it(afile) for afile in input]).drop_duplicates(subset=['color', 'disease', 'score_type', 'st', 'dis'])
         #print( m[['dis', 'percent_wrong']].groupby('dis').apply(min) )
         min_df = m[['dis', 'percent_wrong']].groupby('dis').apply(min).rename(columns={'dis':'dis_junk', 'percent_wrong':'min'}).reset_index()
         dp = pd.merge(m, min_df, on='dis', how='left')
@@ -157,7 +169,8 @@ rule concat_extra_gene:
 
 rule panel_pvals:
     """Test each trained against baseline w/ fishers test"""
-    input:  i = WORK + 'cc'
+    input:  WORK + 'cc',
+            DATA + 'interim/fig3_data_panel.improveProb'
     output: o = WORK + 'cc.pvals'
     shell:  'python {SCRIPTS}mk_panel_pvalues.py {input} {output}'
 
@@ -183,6 +196,7 @@ rule plot_ahmad:
           require(ggplot2)
           # The palette with grey: http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/#a-colorblind-friendly-palette
           cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+          box_colors = c('white', 'black')
           label_df = read.csv('tmp.labels', sep='\t')
           d = read.delim("{input}", sep='\t', header=TRUE)
           d$dis = factor(d$dis, levels=unique( d[order(d$dis_order),]$dis ))
@@ -192,7 +206,7 @@ rule plot_ahmad:
               facet_grid(.~dis) + theme_bw(base_size=18) +
               theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12)) +
               ylab('Incorrect prediction fraction') + theme(legend.position="bottom") +
-              xlab('') + coord_flip() + theme(axis.text.y = element_text(size=10)) + scale_fill_manual(values=cbPalette)
+              xlab('') + coord_flip() + theme(axis.text.y = element_text(size=10)) + scale_fill_manual(values=cbPalette) + scale_colour_manual(values=box_colors)
           ggsave("{output}", p, width=20)
           """)
         shell('rm tmp.labels')

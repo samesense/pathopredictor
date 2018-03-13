@@ -143,11 +143,12 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, 
         preds = tree_clf_sub.predict(X_test)
         #if len(cols)>1:
         lm_preds = lm.predict(X_test)
-        test_df.loc[:, '-'.join(cols) + '_pred_lm'] = lm_preds
+        pred_col = '-'.join(cols) + '_pred_lm'
+        test_df.loc[:, pred_col] = lm_preds
         lm_proba = [x[1] for x in lm.predict_proba(X_test) ]
         test_df.loc[:, '-'.join(cols) + '_probaPred'] = lm_proba
-        test_df.insert(2, 'mpc_pred', preds)
-        test_df.insert(2, 'PredictionStatusMPC', test_df.apply(lambda row: eval_pred(row, 'mpc_pred'), axis=1) )
+        #test_df.insert(2, 'mpc_pred', preds)
+        test_df.insert(2, 'PredictionStatusMPC', test_df.apply(lambda row: eval_pred(row, pred_col), axis=1) )
 
         acc_df_ls.append(test_df)
 
@@ -156,12 +157,11 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, 
             clinvar_df = clinvar_df_full[clinvar_df_full.gene==test_gene]
             X = clinvar_df[cols]
             if len(clinvar_df):
-                clinvar_preds = tree_clf_sub.predict(X)
-                if len(cols)>1:
-                    lm_preds = lm.predict(X)
-                    clinvar_df['_'.join(cols) + '_pred_lm'] = lm_preds
-                clinvar_df['mpc_pred'] = clinvar_preds
-                clinvar_df.loc[:, 'PredictionStatusMPC'] = clinvar_df.apply(lambda row: eval_pred(row, 'mpc_pred'), axis=1)
+                clinvar_preds = lm.predict(X) #tree_clf_sub.predict(X)
+                lm_preds = lm.predict(X)
+                clinvar_df.loc[:, pred_col] = lm_preds
+                #clinvar_df['mpc_pred'] = clinvar_preds
+                clinvar_df.loc[:, 'PredictionStatusMPC'] = clinvar_df.apply(lambda row: eval_pred(row, pred_col), axis=1)
                 clinvar_df.loc[:, 'PredictionStatusBaseline'] = clinvar_df.apply(lambda x: eval_mpc_raw(x, cols), axis=1)
                 clinvar_acc.append(clinvar_df)
 
