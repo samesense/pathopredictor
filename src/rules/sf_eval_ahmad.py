@@ -181,16 +181,15 @@ rule plot_ahmad:
         if wildcards.byVarClass == 'True':
             plot_cmd = 'geom_col(aes(y=percent_wrong, x=reorder(st, percent_wrong), colour=is_best, fill=classifier_color), position="dodge")'
         else:
-            plot_cmd = """geom_col(aes(colour=box, fill=Classifier, y=percent_wrong, x=reorder(st, percent_wrong, median))) +
-                          geom_point(data=dbest, aes(x=st,y=percent_wrong)) +
+            plot_cmd = """geom_col(aes(fill=Classifier, y=percent_wrong, x=reorder(st, percent_wrong, median))) +
                           geom_text(data=label_df, aes(x=x1,y=y,label=label_path), hjust=0) +
                           geom_text(data=label_df, aes(x=x2,y=y,label=label_benign), hjust=0)"""
         df = pd.read_csv(input.i, sep='\t')[['dis','tot_vars','CorrectPath','WrongPath','CorrectBenign','WrongBenign']].drop_duplicates()
         df.loc[:, 'label_path'] = df.apply(lambda row: 'pathogenic=%d' % (row['CorrectPath'] + row['WrongPath']), axis=1)
         df.loc[:, 'label_benign'] = df.apply(lambda row: 'benign=%d' % (row['CorrectBenign'] + row['WrongBenign']), axis=1)
         df['y'] = 0.4
-        df['x1'] = 'TRAINED_revel-is_domain'
-        df['x2'] = 'TRAINED_revel'
+        df['x1'] = 'TRAINED_mpc-revel-ccr'
+        df['x2'] = 'TRAINED_revel-ccr'
         df.to_csv('tmp.labels', index=False, sep='\t')
         R("""
           require(ggplot2)
@@ -206,7 +205,7 @@ rule plot_ahmad:
               facet_grid(.~dis) + theme_bw(base_size=18) +
               theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12)) +
               ylab('Incorrect prediction fraction') + theme(legend.position="bottom") +
-              xlab('') + coord_flip() + theme(axis.text.y = element_text(size=10)) + scale_fill_manual(values=cbPalette) + scale_colour_manual(values=box_colors)
+              xlab('') + coord_flip() + theme(axis.text.y = element_text(size=10)) + scale_fill_manual(values=cbPalette)
           ggsave("{output}", p, width=20)
           """)
         shell('rm tmp.labels')
