@@ -26,7 +26,7 @@ def calc_worst_base_pval(row, base_df):
 def mk_box(row):
     # only evaluate trained combinations b/c
     # pvalue compares to trained single features
-    if row['worst_base_pval'] < .05 and 'TRAIN' in row['st'] and '-' in row['st']:
+    if row['worst_base_pval'] < .05 and 'TRAIN' in row['st'] and '-' in row['st'] and row['idi']>0:
         return True
     return False
 

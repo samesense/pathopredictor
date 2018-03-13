@@ -59,7 +59,7 @@ rule improve_prob:
         pd.DataFrame(dat).to_csv(output.o, index=False, sep='\t')
 
 def get_max_pval_row(rows):
-    s = rows.sort_values(by='pval.twoside', ascending=False)
+    s = rows.dropna(axis=0, how='any').sort_values(by='pval.twoside', ascending=False)
     return s.iloc[0][['idi', 'pval.twoside']]
 
 rule collapse_improve_prob:

@@ -211,5 +211,40 @@ rule plot_ahmad:
           """)
         shell('rm tmp.labels')
 
+rule plot_idi:
+    input: i = WORK + 'cc.pvals'
+    output: o = DOCS + 'paper_plts/fig4_idi.pdf'
+    run:
+        df = pd.read_csv(input.i, sep='\t')[['dis','tot_vars','CorrectPath','WrongPath','CorrectBenign','WrongBenign']].drop_duplicates()
+        df.loc[:, 'label_path'] = df.apply(lambda row: 'pathogenic=%d' % (row['CorrectPath'] + row['WrongPath']), axis=1)
+        df.loc[:, 'label_benign'] = df.apply(lambda row: 'benign=%d' % (row['CorrectBenign'] + row['WrongBenign']), axis=1)
+        df['y'] = 0.2
+        df['x1'] = 'TRAINED_mpc-ccr'
+        df['x2'] = 'TRAINED_ccr-is_domain'
+        tmp_labels = output.o + 'tmplabels'
+        df.to_csv(tmp_labels, index=False, sep='\t')
+
+        df = pd.read_csv(input.i, sep='\t')
+        crit = df.apply(lambda row: not 'BASE' in row['st'] and '-' in row['st'], axis=1)
+        tmp = output.o + '.tmp'
+        df[crit].to_csv(tmp, index=False, sep='\t')
+
+        plot_cmd = """geom_col(fill="#56B4E9", aes(colour=box, y=idi, x=reorder(st, idi, median)))"""
+
+        R("""
+          require(ggplot2)
+          cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+          box_colors = c('white', 'black')
+          label_df = read.csv('{tmp_labels}', sep='\t')
+          d = read.delim("{tmp}", sep='\t', header=TRUE)
+          d$dis = factor(d$dis, levels=unique( d[order(d$dis_order),]$dis ))
+          p = ggplot(data=d) + {plot_cmd} +
+              facet_grid(.~dis) + theme_bw(base_size=18) +
+              theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12)) +
+              ylab('Integrated discrimination index') + theme(legend.position="none") +
+              xlab('') + coord_flip() + theme(axis.text.y = element_text(size=10)) + scale_colour_manual(values=box_colors)
+          ggsave("{output}", p, width=20)
+
+        """)
 rule ahmad_prediction_plots:
     input: expand( DOCS + 'paper_plts/fig3_panelEval.byVarClass{byVarClass}.pdf', byVarClass=('False',) )
