@@ -50,7 +50,7 @@ def calc_clinvar_best_label(row):
 
 rule combine_features_by_gene_clinvar_plot:
     input:  clinvar_data = expand(DATA + 'interim/pred_clinvar_eval/{{eval_source}}.{feature}.10.both', feature=COMBO_FEATS),
-            panel_data = WORK + 'cc'
+            panel_data = WORK + 'cc.pvals'
     output: o=DATA + 'interim/{eval_source}.by_gene_feat_combo.predictFullClinvar'
     run:
         disease_order = {'genedx-epi-limitGene':3,
@@ -65,8 +65,11 @@ rule combine_features_by_gene_clinvar_plot:
         clinvar_names  = {'tot': 'Total ClinVar',
                           'single': 'ClinVar w/ Evidence'}
         dfp = pd.concat([pd.read_csv(afile, sep='\t') for afile in list(input.clinvar_data)])
-        panel_cols = ['disease', 'st', 'is_best']
-        panel_df = pd.read_csv(input.panel_data, sep='\t')[panel_cols].drop_duplicates().rename(columns={'disease':'dd', 'st':'combo','is_best':'panel_best'})
+        panel_cols = ['disease', 'st', 'box']
+        panel_df_pre = pd.read_csv(input.panel_data, sep='\t')[panel_cols].drop_duplicates().rename(columns={'disease':'dd', 'st':'combo'})
+        crit = panel_df_pre.apply(lambda row: not 'BASE' in row['combo'] and '-' in row['combo'], axis=1)
+        panel_df = panel_df_pre[crit]
+
         crit = dfp.apply(lambda row: row['clinvar_type'] in clinvar_names, axis=1)
         df2 = dfp[crit]
         min_df = (df2[['clinvar_type', 'dd', 'wrongFrac']]
@@ -76,20 +79,20 @@ rule combine_features_by_gene_clinvar_plot:
         df3 = pd.merge(df2, min_df, on=['clinvar_type', 'dd'], how='left')
         df3.loc[:, 'Classifier'] = df3.apply(color_clinvar_bar, axis=1)
         df3.loc[:, 'combo'] = df3.apply(lambda row: row['combo'].replace('clinvar.', 'TRAINED_').replace('clinvar_base.', 'BASE_'), axis=1)
-        df = pd.merge(df3, panel_df, on=['dd','combo'], how='left')
+        df = pd.merge(df3, panel_df, on=['dd','combo'], how='left').fillna(False)
         df.loc[:, 'dd'] = df.apply(lambda row: diseases[row['dd']], axis=1)
         df.loc[:, 'clinvar_type'] = df.apply(lambda row: clinvar_names[row['clinvar_type']], axis=1)
         df.loc[:, 'is_best_clinvar'] = df.apply(lambda row: row['wrongFrac']==row['min'], axis=1)
-        df.loc[:, 'is_best'] = df.apply(lambda row: row['panel_best'] or row['is_best_clinvar'], axis=1)
-        df.loc[:, 'best_label'] = df.apply(calc_clinvar_best_label, axis=1)
+        #df.loc[:, 'is_best'] = df.apply(lambda row: row['panel_best'] or row['is_best_clinvar'], axis=1)
+        #df.loc[:, 'best_label'] = df.apply(calc_clinvar_best_label, axis=1)
         df.to_csv(output.o, index=False, sep='\t')
 
 rule plot_clinvar_eval_paper:
     input:  i = DATA + 'interim/clinvar.by_gene_feat_combo.predictFullClinvar'
     output: DOCS + 'paper_plts/fig4_eval_clinvar.pdf'
     run:
-        plot_cmd = """geom_col( aes(fill=Classifier, y=wrongFrac, x=reorder(combo, wrongFrac)) ) +
-                      geom_point(data=dbest, aes(colour=best_label, x=combo,y=wrongFrac)) +
+        plot_cmd = """geom_col( aes(alpha=box, fill=Classifier, y=wrongFrac, x=reorder(combo, wrongFrac)) ) +
+                      scale_alpha_manual(values=c(.5, 1)) +
                       geom_text(data=label_df, aes(x=x,y=y,label=label))"""
         df = pd.read_csv(input.i, sep='\t')[['clinvar_type','dd','size']].drop_duplicates()
         df.loc[:, 'label'] = df.apply(lambda row: 'n=%d' % (row['size']), axis=1)
@@ -131,14 +134,6 @@ rule plot_clinvar_eval:
               theme(axis.text.y = element_text(size=6))
           ggsave("{output}", p, height=20)
           """)
-
-rule tmp_c:
-    input: 
-           DOCS + 'plot/eval_clinvar/clinvar.genedx-epi:tot.predictFullClinvar.byVarClassFalse.png'
-
-rule all_clinvar_eval:
-    input:
-           expand(DOCS + 'plot/eval_clinvar/{eval_source}.{disease}:{d2}.predictFullClinvar.png', eval_source=('clinvar',), d2=('tot', ), disease=DD), \
 
 
 
