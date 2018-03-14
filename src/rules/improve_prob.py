@@ -117,7 +117,7 @@ def load_improve_df(afile):
     df = pd.read_csv(afile, sep='\t').rename(columns={'worst_pval':'worst_base_pval'})
     eval_source = afile.split('/')[-1].split('_')[2].split('.')[0]
     if eval_source == 'panel':
-        df['eval_source'] = eval_source
+        df['eval_source'] = 'Panel' 
     else:
         # split clinvar
         crit = df.apply(lambda row: row['Disease'].split(':')[1] in ('single', 'tot'), axis=1)
@@ -156,6 +156,7 @@ rule plot_idi:
           cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
           box_colors = c('white', 'black')
           d = read.delim("{input}", sep='\t', header=TRUE)
+          d$eval_source = factor(d$eval_source, levels=c("Panel", "Total ClinVar", "ClinVar w/ Evidence"))
           d$dis = factor(d$dis, levels=unique( d[order(d$dis_order),]$dis ))
           p = ggplot(data=d) + {plot_cmd} +
               facet_grid(.~dis) + theme_bw(base_size=18) +
