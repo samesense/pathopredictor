@@ -91,8 +91,7 @@ rule plot_clinvar_eval_paper:
     input:  i = DATA + 'interim/clinvar.by_gene_feat_combo.predictFullClinvar'
     output: DOCS + 'paper_plts/fig4_eval_clinvar.pdf'
     run:
-        plot_cmd = """geom_col( aes(alpha=box, fill=Classifier, y=wrongFrac, x=reorder(combo, wrongFrac)) ) +
-                      scale_alpha_manual(values=c(.5, 1)) +
+        plot_cmd = """geom_col( aes(fill=Classifier, y=wrongFrac, x=reorder(combo, wrongFrac)) ) +
                       geom_text(data=label_df, aes(x=x,y=y,label=label))"""
         df = pd.read_csv(input.i, sep='\t')[['clinvar_type','dd','size']].drop_duplicates()
         df.loc[:, 'label'] = df.apply(lambda row: 'n=%d' % (row['size']), axis=1)
