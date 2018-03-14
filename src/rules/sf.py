@@ -14,6 +14,7 @@ include: "sf_denovo.py"
 include: "counting_funcs.py"
 include: "calc_wrong_funcs.py"
 include: "sf_eval_panel.py"
+include: "improve_prob.py"
 include: "sf_coords.py"
 include: "sf_eval_ahmad.py" # plot_ahmad
 include: "paper.plots.py"
@@ -23,9 +24,7 @@ include: "sf.rank.eval.py"
 
 include: "sf.webtool.py"
 
-rule shit2:
-    input: expand(DATA + 'interim/fig3_data_panel/{feats}', feats=COMBO_FEATS)
-#WORK + 'roc_df_panel/is_domain'
+WORK + 'roc_df_panel/is_domain'
 
 rule all_dat:
     input: DATA + 'interim/denovo/denovo.limit3.dat', \

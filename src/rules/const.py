@@ -60,6 +60,7 @@ def powerset(iterable):
 
 feats = ('mpc', 'revel', 'ccr', 'is_domain')
 COMBO_FEATS = ['-'.join(x) for x in powerset(feats) if x]
+COMBO_FEATS_AT_LEAST_2 = ['-'.join(x) for x in powerset(feats) if x if len(x)>1]
 
 DBNSFP_FIELDS = 'Interpro_domain,SIFT_score,Polyphen2_HVAR_pred,RadialSVM_pred,LR_pred,Reliability_index,FATHMM_pred,MutationAssessor_pred,MutationTaster_pred,phyloP100way_vertebrate,phastCons100way_vertebrate'
 

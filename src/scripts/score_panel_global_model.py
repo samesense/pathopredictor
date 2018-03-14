@@ -133,8 +133,8 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, 
 
         #regression for multiple scores
         #if len(cols)>1:
-        print( test_gene, 1, len([_ for _ in y if _==1]))
-        print( test_gene, 0, len([_ for _ in y if _==0]))
+        #print( test_gene, 1, len([_ for _ in y if _==1]))
+        #print( test_gene, 0, len([_ for _ in y if _==0]))
         lm =  linear_model.LogisticRegression(fit_intercept=True)
         lm.fit(X, y)
 
@@ -160,6 +160,8 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, 
                 clinvar_preds = lm.predict(X) #tree_clf_sub.predict(X)
                 lm_preds = lm.predict(X)
                 clinvar_df.loc[:, pred_col] = lm_preds
+                lm_proba = [x[1] for x in lm.predict_proba(X) ]
+                clinvar_df.loc[:, '-'.join(cols) + '_probaPred'] = lm_proba
                 #clinvar_df['mpc_pred'] = clinvar_preds
                 clinvar_df.loc[:, 'PredictionStatusMPC'] = clinvar_df.apply(lambda row: eval_pred(row, pred_col), axis=1)
                 clinvar_df.loc[:, 'PredictionStatusBaseline'] = clinvar_df.apply(lambda x: eval_mpc_raw(x, cols), axis=1)

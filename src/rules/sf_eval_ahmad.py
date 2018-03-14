@@ -1,25 +1,5 @@
 """Combine evaluations by disease."""
 
-rule auc_roc_and_avg_pre_anova:
-    input:  i = WORK + 'roc_df_{data}/{features}'
-    output: o = WORK + 'eval_features_{data}/{features}'
-    shell:  'python {SCRIPTS}score_features.py {wildcards.features} {input} {output}'
-
-rule combine_auc_avgPre_improveProb:
-    input:  auc = WORK + 'eval_features_{data}/{features}',
-            ip = DATA + 'interim/improveProb_out_collapse/{features}'
-    output: o = DATA + 'interim/fig3_data_{data}/{features}'
-    run:
-        pd.merge(pd.read_csv(input.auc, sep='\t'),
-                 pd.read_csv(input.ip, sep='\t'),
-                 on=['Disease', 'combo'], how='left').to_csv(output.o, index=False, sep='\t')
-
-rule combine_improveProb_features:
-    input: expand(DATA + 'interim/fig3_data_panel/{feats}', feats=COMBO_FEATS)
-    output: o = DATA + 'interim/fig3_data_panel.improveProb'
-    run:
-        pd.concat([pd.read_csv(afile, sep='\t') for afile in input]).to_csv(output.o, index=False, sep='\t')
-
 rule ahmad_percent_wrong:
     input:  panel = WORK + '{method}.eval_panel.{cols}.eval'
     output: o = WORK + '{method}.{cols}.eval_panel.eval.percentWrong'
