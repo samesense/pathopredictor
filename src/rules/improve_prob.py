@@ -162,7 +162,7 @@ rule plot_idi:
               facet_grid(.~dis) + theme_bw(base_size=18) +
               theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=14)) +
               ylab('Integrated discrimination index') + theme(legend.position="bottom") +
-              xlab('') + coord_flip() + theme(axis.text.y = element_text(size=12)) + scale_colour_manual(values=box_colors)
+              labs(fill="") + xlab('') + coord_flip() + theme(axis.text.y = element_text(size=12)) + scale_colour_manual(values=box_colors)
           ggsave("{output}", p, width=20)
 
         """)
