@@ -95,5 +95,73 @@ rule combine_improveProb_features:
     run:
         pd.concat([pd.read_csv(afile, sep='\t') for afile in input]).to_csv(output.o, index=False, sep='\t')
 
+def mk_box(row):
+    # only evaluate trained combinations b/c
+    # pvalue compares to trained single features
+    if row['worst_base_pval'] < .05 and 'TRAIN' in row['st'] and '-' in row['st'] and row['idi']>0:
+        return True
+    return False
+
+
+def load_improve_df(afile):
+    diseases = {'genedx-epi-limitGene':'Epilepsy (dominant genes)',
+                    'Rasopathies':'Rasopathies',
+                    'genedx-epi':'Epilepsy',
+                    'Cardiomyopathy':'Cardiomyopathy'}
+    disease_order = {'genedx-epi-limitGene':3,
+                         'Rasopathies':4,
+                         'genedx-epi':2,
+                         'Cardiomyopathy':1}
+
+
+    df = pd.read_csv(afile, sep='\t').rename(columns={'worst_pval':'worst_base_pval'})
+    eval_source = afile.split('/')[-1].split('_')[2].split('.')[0]
+    if eval_source == 'panel':
+        df['eval_source'] = eval_source
+    else:
+        # split clinvar
+        crit = df.apply(lambda row: row['Disease'].split(':')[1] in ('single', 'tot'), axis=1)
+        dd = df[crit]
+        dd.loc[:, 'eval_source'] = dd.apply(lambda row: 'Total ClinVar' if 'tot' in row['Disease'] else 'ClinVar w/ Evidence', axis=1)
+        dd.loc[:, 'Disease'] = dd.apply(lambda row: row['Disease'].split(':')[0], axis=1)
+        df = dd
+
+    crit = df.apply(lambda row: row['Disease'] in diseases, axis=1)
+    df2 = df[crit]
+    df = df2
+    df.loc[:, 'dis'] = df.apply(lambda row: diseases[row['Disease']], axis=1)
+    df.loc[:, 'dis_order'] = df.apply(lambda row: disease_order[row['Disease']], axis=1)
+    df.loc[:, 'st'] = df.apply(lambda row: 'TRAINED_' + row['combo'], axis=1)
+    df.loc[:, 'box'] = df.apply(mk_box, axis=1)
+    return df
+
 rule combine_panel_clinvar_improveProb:
-    input: expand(DATA + 'interim/fig5_data_{eval_source}.improveProb', eval_source=('panel', 'clinvar'))
+    input:  expand(DATA + 'interim/fig5_data_{eval_source}.improveProb', eval_source=('panel', 'clinvar'))
+    output: o = DATA + 'interim/fig5_data_improveProb'
+    run:
+        dfs = [load_improve_df(afile) for afile in input]
+        pd.concat(dfs).to_csv(output.o, index=False, sep='\t')
+
+rule plot_idi:
+    input:  i = DATA + 'interim/fig5_data_improveProb'
+    output: o = DOCS + 'paper_plts/fig5_idi.pdf'
+    run:
+        plot_cmd = """geom_col(position="dodge", aes(group=eval_source, fill=eval_source, alpha=box, y=idi, x=reorder(st, idi, median))) +
+                      scale_alpha_manual(values=c(.4, 1), guide="none") +
+                      geom_errorbar(aes(group=eval_source, x=reorder(st, idi, median), ymin=idi_lower, ymax=idi_upper), width=.2, position=position_dodge(.9))"""
+        #plot_cmd = """geom_col(fill="#56B4E9", aes(colour=box, y=idi, x=reorder(st, idi, median)))"""
+
+        R("""
+          require(ggplot2)
+          cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+          box_colors = c('white', 'black')
+          d = read.delim("{input}", sep='\t', header=TRUE)
+          d$dis = factor(d$dis, levels=unique( d[order(d$dis_order),]$dis ))
+          p = ggplot(data=d) + {plot_cmd} +
+              facet_grid(.~dis) + theme_bw(base_size=18) +
+              theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=14)) +
+              ylab('Integrated discrimination index') + theme(legend.position="bottom") +
+              xlab('') + coord_flip() + theme(axis.text.y = element_text(size=12)) + scale_colour_manual(values=box_colors)
+          ggsave("{output}", p, width=20)
+
+        """)
