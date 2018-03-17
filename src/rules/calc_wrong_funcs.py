@@ -12,6 +12,10 @@ def check_evidence_skip_evaluation(evidence_cutoff, varTypes, benign_tot, path_t
     elif varTypes == 'benign':
         if benign_tot < evidence_cutoff:
             return True
+    elif varTypes == 'bothAhmad':
+        # just check pathogenic
+        if path_tot < evidence_cutoff:
+            return True
     return False
 
 def calc_wrong_fraction(rows, evidence_cutoff, col, varTypes):
@@ -24,9 +28,10 @@ def calc_wrong_fraction(rows, evidence_cutoff, col, varTypes):
     if check_evidence_skip_evaluation(evidence_cutoff, varTypes, benign_tot, path_tot):
         return 'NA'
 
-    if varTypes in ('both', 'benign'):
-        benign_wrong_frac = len(rows[rows[col]=='WrongBenign'])/benign_tot
-    if varTypes in ('both', 'pathogenic'):
+    if varTypes in ('both', 'benign', 'bothAhmad'):
+        if benign_tot > 0:
+            benign_wrong_frac = len(rows[rows[col]=='WrongBenign'])/benign_tot
+    if varTypes in ('both', 'pathogenic', 'bothAhmad'):
         path_wrong_frac = len(rows[rows[col]=='WrongPath'])/path_tot
     if varTypes == 'both':
         return (path_wrong_frac + benign_wrong_frac)/2
@@ -34,6 +39,11 @@ def calc_wrong_fraction(rows, evidence_cutoff, col, varTypes):
         return path_wrong_frac
     elif varTypes == 'benign':
         return benign_wrong_frac
+    elif varTypes == 'bothAhmad':
+        # equally weight p/b but put no cutoff on p
+        if benign_tot == 0:
+            return path_wrong_frac
+        return (path_wrong_frac + benign_wrong_frac)/2
     i = 1/0
 
 def mk_calc_wrong_func(evidence_cutoff, col, varTypes):
