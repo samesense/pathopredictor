@@ -62,11 +62,18 @@ rule improve_prob:
         pd.DataFrame(dat).to_csv(output.o, index=False, sep='\t')
 
 def get_max_pval_row(rows):
-    s = rows.dropna(axis=0, how='any').sort_values(by='idi.pval.twoside', ascending=False)
+    #s = rows.dropna(axis=0, how='any').sort_values(by='idi.pval.twoside', ascending=False)
+    s = rows.sort_values(by='idi.pval.twoside', ascending=False)
     return s.iloc[0][['idi', 'idi_upper', 'idi_lower', 'nri', 'nri_pval', 'idi.pval.twoside']]
 
+def mk_improve_prob_tests(wc):
+    """improveProb can only be used w/ nested models"""
+    feature_ls = wc.combo_features.split('-')
+    return [DATA + 'interim/improveProb_out_%s/%s.%s'
+            % (wc.eval_source, feature, wc.combo_features) for feature in feature_ls]
+
 rule collapse_improve_prob:
-    input:  expand(DATA + 'interim/improveProb_out_{{eval_source}}/{base_feature}.{{combo_features}}', base_feature=('is_domain', 'ccr', 'mpc', 'revel'))
+    input:  mk_improve_prob_tests
     output: o = DATA + 'interim/improveProb_out_collapse_{eval_source}/{combo_features}'
     run:
         df = ( pd.concat([pd.read_csv(afile, sep='\t')[['Disease', 'combo', 'idi', 'idi_upper', 'idi_lower', 'nri_pval', 'idi.pval.twoside']] for afile in input])
@@ -102,22 +109,20 @@ def mk_box(row):
         return True
     return False
 
-
 def load_improve_df(afile):
     diseases = {'genedx-epi-limitGene':'Epilepsy (dominant genes)',
                     'Rasopathies':'Rasopathies',
                     'genedx-epi':'Epilepsy',
                     'Cardiomyopathy':'Cardiomyopathy'}
     disease_order = {'genedx-epi-limitGene':3,
-                         'Rasopathies':4,
-                         'genedx-epi':2,
-                         'Cardiomyopathy':1}
-
+                     'Rasopathies':4,
+                     'genedx-epi':2,
+                     'Cardiomyopathy':1}
 
     df = pd.read_csv(afile, sep='\t').rename(columns={'worst_pval':'worst_base_pval'})
     eval_source = afile.split('/')[-1].split('_')[2].split('.')[0]
     if eval_source == 'panel':
-        df['eval_source'] = 'Panel' 
+        df['eval_source'] = 'Panel'
     else:
         # split clinvar
         crit = df.apply(lambda row: row['Disease'].split(':')[1] in ('single', 'tot'), axis=1)
