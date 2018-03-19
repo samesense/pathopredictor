@@ -128,8 +128,8 @@ rule paper_heatmap:
           """)
 
 rule mk_size_plot_data:
-    input:  i = WORK + 'paper_plot_data/heatmap'
-    output: o = WORK + 'paper_plot_data/size'
+    input:  i = WORK + 'paper_plot_data/heatmap.{evidenceCutoff}.{varTypes}'
+    output: o = WORK + 'paper_plot_data/size.{evidenceCutoff}.{varTypes}'
     run:
         df = pd.read_csv(input.i, sep='\t')
         cols = set(df.columns.values)
@@ -145,14 +145,14 @@ rule mk_size_plot_data:
         df[['VariantType', 'gene', 'disease', 'var_count']].drop_duplicates().to_csv(output.o, index=False, sep='\t')
 
 rule size_bar_paper_plot:
-    input:  WORK + 'paper_plot_data/size'
-    output: DOCS + 'paper_plts/fig5b.varCount.pdf'
+    input:  WORK + 'paper_plot_data/size.{evidenceCutoff}.{varTypes}'
+    output: DOCS + 'paper_plts/fig5b.varCount.{evidenceCutoff}.{varTypes}.pdf'
     run:
         R("""
           require(ggplot2)
           d = read.delim("{input}", sep='\t', header=TRUE)
           p = ggplot(data=d) +
-              geom_col(aes(fill=VariantType, x=gene, y=var_count), stat="identity") +
+              geom_col(aes(fill=VariantType, x=gene, y=var_count), stat="identity") + facet_grid(disease~., scale="free") +
               coord_flip() + xlab('') + ylab('Variant count') + theme_bw(base_size=18) + labs(fill='')
           ggsave("{output}", p, height=20)
           """)
@@ -160,4 +160,5 @@ rule size_bar_paper_plot:
 FIGS = ('fig1_count_plot', 'fig4_eval_clinvar', 'fig3_panelEval.byVarClassFalse',)
 rule all_paper_plots:
     input: expand(DOCS + 'paper_plts/{fig}.pdf', fig=FIGS),
-           expand(DOCS + 'paper_plts/fig5_heatmap.{evidenceCutoff}.{varTypes}.pdf', varTypes=('pathogenic', 'benign', 'both', 'bothAhmad'), evidenceCutoff=(4,5,10))
+           expand(DOCS + 'paper_plts/fig5_heatmap.{evidenceCutoff}.{varTypes}.pdf', varTypes=('pathogenic', 'benign', 'both', 'bothAhmad'), evidenceCutoff=(4,5,10)),
+           expand(DOCS + 'paper_plts/fig5b.varCount.{evidenceCutoff}.{varTypes}.pdf', varTypes=('pathogenic', 'benign', 'both', 'bothAhmad'), evidenceCutoff=(4,5,10))
