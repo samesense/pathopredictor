@@ -9,6 +9,7 @@ include: "const.py"
 include: "sf_ann.py"
 include: "sf_other_disease.py"
 include: "sf_clinvar.py"
+include: "sf_gnomad.py"
 include: "sf_denovo.py"
 
 include: "counting_funcs.py"

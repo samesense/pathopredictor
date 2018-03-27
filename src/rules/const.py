@@ -42,6 +42,7 @@ EFF = '/home/evansj/me/condas/miniconda3/envs/mahdi_epi/share/snpeff-4.3.1t-0/sn
 SIFT_DBNSFP = '/home/evansj/me/tools/snpEff/data/dbNSFP/dbNSFP2.4.txt.gz'
 EFF_CONFIG = '/home/evansj/me/condas/miniconda3/envs/mahdi_epi/share/snpeff-4.3.1t-0/snpEff.config'
 CLINVAR = '/mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/clinvar_20180225.tidy.vcf.gz'
+GNOMAD = '/home/evansj/me/projects/me/tidy-gnomad/data/raw/gnomad.exomes.r2.0.2.sites.tidy.vcf.gz'
 #CLINVAR = '/mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/clinvar_20160203_noUnicode.tidy.vcf.gz'
 HEADER_HCKR =  '/nas/is1/perry/projects/me/vcfHeaderHckr/vcfHeadrHckr.py'
 VCFANNO = '/mnt/isilon/cbmi/variome/bin/vcfanno/0.0.11/bin/vcfanno'
