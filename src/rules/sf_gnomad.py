@@ -39,7 +39,7 @@ rule gnomad_rare:
                    af = info.split('AF=')[1].split(';')[0]
                    if af != '.':
                        af = float(af)
-                       if af > 0.003 and af < .01:
+                       if af > 0.003 and af < .1:
                            ccr = '-1'
                            if 'ccr_pct' in info:
                                ccr = info.split('ccr_pct=')[1].split(';')[0]
@@ -76,19 +76,22 @@ rule gnomad_rare:
 
 def limit_gnomad(input, output, low, high):
     """limit allele freqs by high and low"""
+    print(output, low, high)
     df = pd.read_csv(input, sep='\t')
-    crit = df.apply(lambda row: row['af'] > low and row['af'] < high and 'missense_variant' in row['eff'] and row['ccr']>-1, axis=1)
+    crit = df.apply(lambda row: float(row['af']) > low and float(row['af']) < high and 'missense_variant' in row['eff'] and row['ccr']>-1, axis=1)
     df[crit].to_csv(output, index=False, sep='\t')
 
 rule gnomad_panel:
     input:  i = DATA + 'interim/gnomad/gnomad.rare.dat'
-    output: o = DATA + 'interim/gnomad/gnomad.rare.panel'
+    output: o = DATA + 'interim/gnomad/gnomad.rare.panel_{low}_{high}'
     run:
-        limit_gnomad(input.i, output.o, .005, .01)
+        limit_gnomad(input.i, output.o, float(wildcards.low), float(wildcards.high))
 
 rule gnomad_clinvar:
     input:  i = DATA + 'interim/gnomad/gnomad.rare.dat'
-    output: o = DATA + 'interim/gnomad/gnomad.rare.clinvar'
+    output: o = DATA + 'interim/gnomad/gnomad.rare.clinvar_{low}_{high}'
     run:
-        limit_gnomad(input.i, output.o, .003, .005)
+        limit_gnomad(input.i, output.o, float(wildcards.low), float(wildcards.high))
 
+rule shit:
+    input: DATA + 'interim/gnomad/gnomad.rare.clinvar_.05_.1'

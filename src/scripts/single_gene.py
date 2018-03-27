@@ -122,11 +122,12 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, clin_labels, cols, gnom
         benign_count = len(df[crit])
 
         gnomad_dfs = []
-        # if benign_count < path_count:
-        #     rows = len(gnomad_panel[gnomad_panel.gene==test_gene])
-        #     n = min([rows, path_count-benign_count])
-        #     dfg = gnomad_panel[gnomad_panel.gene==test_gene].sample(n=n, axis=1)
-        #     gnomad_dfs.append(dfg)
+        if benign_count < path_count:
+            rows = len(gnomad_panel[gnomad_panel.gene==test_gene])
+            n = min([rows, path_count-benign_count])
+            if rows:
+                dfg = gnomad_panel[gnomad_panel.gene==test_gene].sample(n)
+                gnomad_dfs.append(dfg)
         if path_count < 5:
             continue
 
