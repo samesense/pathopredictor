@@ -26,62 +26,69 @@ rule fixHeader_gnomad:
     output: DATA + 'interim/gnomad/gnomad.anno.hHack.vcf'
     shell:  'python {HEADER_HCKR} {input} {output} {HEADER_FIX}'
 
-# rule parse_clinvar_vcf:
-#    input:  i = DATA + 'interim/clinvar/clinvar.anno.hHack.vcf'
-#    output: o = DATA + 'interim/clinvar/clinvar.dat'
-#    run:
-#        with open(input.i) as f, open(output.o, 'w') as fout:
-#            print('chrom\tpos\tref\talt\tpfam\teff\tclinSig\taf_1kg_all\tgene\tmpc\tmtr\tnm\tProtein_Change\tconfidence\trevel\tccr', file=fout)
-#            for line in f:
-#                if line[0] != '#':
-#                    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
+rule gnomad_rare:
+    """Pull missense between .3 and 1% AF"""
+    input:  i = DATA + 'interim/gnomad/gnomad.anno.hHack.vcf'
+    output: o = DATA + 'interim/gnomad/gnomad.rare.dat'
+    run:
+        with open(input.i) as f, open(output.o, 'w') as fout:
+           print('chrom\tpos\tref\talt\taf\tpfam\teff\taf_1kg_all\tgene\tmpc\tmtr\tnm\tProtein_Change\trevel\tccr', file=fout)
+           for line in f:
+               if line[0] != '#':
+                   chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
+                   af = info.split('AF=')[1].split(';')[0]
+                   if af != '.':
+                       af = float(af)
+                       if af > 0.003 and af < .01:
+                           ccr = '-1'
+                           if 'ccr_pct' in info:
+                               ccr = info.split('ccr_pct=')[1].split(';')[0]
 
-#                    ccr = '-1'
-#                    if 'ccr_pct' in info:
-#                        ccr = info.split('ccr_pct=')[1].split(';')[0]
+                           mtr = '0'
+                           if 'mtr=' in info:
+                               mtr = info.split('mtr=')[1].split(';')[0]
 
-#                    mtr = '0'
-#                    if 'mtr=' in info:
-#                        mtr = info.split('mtr=')[1].split(';')[0]
+                           revel = '-1'
+                           if 'REVEL=' in info:
+                               revel = info.split('REVEL=')[1].split(';')[0]
 
-#                    revel = '-1'
-#                    if 'REVEL=' in info:
-#                        revel = info.split('REVEL=')[1].split(';')[0]
+                           mpc = '0'
+                           if 'mpc=' in info:
+                               mpc = info.split('mpc=')[1].split(';')[0]
 
-#                    mpc = '0'
-#                    if 'mpc=' in info:
-#                        mpc = info.split('mpc=')[1].split(';')[0]
+                           if 'pfam_domain' in info:
+                               pfam = info.split('pfam_domain=')[1].split(';')[0]
+                           else:
+                               pfam = 'fuck'
 
-#                    if 'pfam_domain' in info:
-#                        pfam = info.split('pfam_domain=')[1].split(';')[0]
-#                    else:
-#                        pfam = 'fuck'
+                           if 'af_1kg_all=' in info:
+                               onekg = info.split('af_1kg_all=')[1].split(';')[0]
+                           else:
+                               onekg = '0'
 
-#                    if 'af_1kg_all=' in info:
-#                        onekg = info.split('af_1kg_all=')[1].split(';')[0]
-#                    else:
-#                        onekg = '0'
+                           protein_change_pre = info.split('ANN=')[1].split(';')[0].split('|')[10]
+                           protein_change = convert_protein_change(protein_change_pre)
+                           nm = info.split('ANN=')[1].split('|')[6]
+                           eff = info.split('ANN=')[1].split(';')[0].split('|')[1]
+                           gene = info.split('ANN=')[1].split(';')[0].split('|')[3]
+                           ls = (chrom, pos, ref, alt, str(af), pfam, eff, onekg, gene, mpc, mtr, nm, protein_change, revel, ccr)
+                           print('\t'.join(ls), file=fout)
 
-#                    if 'CLNSIG=' in info and 'ANN=' in info:
-#                        clin_sig = info.split('CLNSIG=')[1].split(';')[0]
-#                        confidence = info.split('CLNREVSTAT=')[1].split(';')[0]
+def limit_gnomad(input, output, low, high):
+    """limit allele freqs by high and low"""
+    df = pd.read_csv(input, sep='\t')
+    crit = df.apply(lambda row: row['af'] > low and row['af'] < high and 'missense_variant' in row['eff'] and row['ccr']>-1, axis=1)
+    df[crit].to_csv(output, index=False, sep='\t')
 
-#                        #print(info.split('ANN=')[1].split(';')[0])
-#                        protein_change_pre = info.split('ANN=')[1].split(';')[0].split('|')[10]
-#                        protein_change = convert_protein_change(protein_change_pre)
-#                        nm = info.split('ANN=')[1].split('|')[6]
-#                        eff = info.split('ANN=')[1].split(';')[0].split('|')[1]
-#                        gene = info.split('ANN=')[1].split(';')[0].split('|')[3]
-#                        ls = (chrom, pos, ref, alt, pfam, eff, clin_sig, onekg, gene, mpc, mtr, nm, protein_change, confidence, revel, ccr)
-#                        print('\t'.join(ls), file=fout)
+rule gnomad_panel:
+    input:  i = DATA + 'interim/gnomad/gnomad.rare.dat'
+    output: o = DATA + 'interim/gnomad/gnomad.rare.panel'
+    run:
+        limit_gnomad(input.i, output.o, .005, .01)
 
-# # missense
-# rule limit_eval3_clinvar:
-#     input:  i = DATA + 'interim/clinvar/clinvar.dat'
-#     output: o = DATA + 'interim/clinvar/clinvar.limit3.dat'
-#     run:
-#         df = pd.read_csv(input.i, sep='\t')
-#         df.loc[:, 'clin_class'] = df.apply(calc_final_sig_clinvar, axis=1)
-#         crit = df.apply(lambda row: row['eff'] == 'missense_variant'and row['clin_class'] != -1 and row['ccr']>-1, axis=1)
-#         df[crit].to_csv(output.o, index=False, sep='\t')
+rule gnomad_clinvar:
+    input:  i = DATA + 'interim/gnomad/gnomad.rare.dat'
+    output: o = DATA + 'interim/gnomad/gnomad.rare.clinvar'
+    run:
+        limit_gnomad(input.i, output.o, .003, .005)
 
