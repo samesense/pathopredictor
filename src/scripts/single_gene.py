@@ -153,7 +153,6 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, clin_labels, cols, gnom
             # limit to gene
             clinvar_df = clinvar_df_full[clinvar_df_full.gene==test_gene]
             X = clinvar_df[cols]
-            print(X.head())
             if len(clinvar_df):
                 clinvar_preds = lm.predict(X) #tree_clf_sub.predict(X)
                 lm_preds = lm.predict(X)

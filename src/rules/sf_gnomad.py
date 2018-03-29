@@ -39,7 +39,7 @@ rule gnomad_rare:
                    af = info.split('AF=')[1].split(';')[0]
                    if af != '.':
                        af = float(af)
-                       if af > 0.003 and af < .1:
+                       if af > 0.003 and af < .75:
                            ccr = '-1'
                            if 'ccr_pct' in info:
                                ccr = info.split('ccr_pct=')[1].split(';')[0]
@@ -73,12 +73,12 @@ rule gnomad_rare:
                            gene = info.split('ANN=')[1].split(';')[0].split('|')[3]
                            ls = (chrom, pos, ref, alt, str(af), pfam, eff, onekg, gene, mpc, mtr, nm, protein_change, revel, ccr)
                            print('\t'.join(ls), file=fout)
-
+#and row['ccr']>-1,
 def limit_gnomad(input, output, low, high):
     """limit allele freqs by high and low"""
     print(output, low, high)
     df = pd.read_csv(input, sep='\t')
-    crit = df.apply(lambda row: float(row['af']) > low and float(row['af']) < high and 'missense_variant' in row['eff'] and row['ccr']>-1, axis=1)
+    crit = df.apply(lambda row: float(row['af']) > low and float(row['af']) < high and 'missense_variant' in row['eff'], axis=1)
     df[crit].to_csv(output, index=False, sep='\t')
 
 rule gnomad_panel:

@@ -23,6 +23,6 @@ rule all_singles:
         df[crit][cols].groupby(cols).size().reset_index().rename(columns={0:'size'}).sort_values(by=['Disease', 'gene', 'size']).to_csv(output.o, index=False, sep='\t')
 
 rule single:
-    input: WORK + 'single_.05_.1_.003_.05.txt', WORK + 'single_.003_.05_.05_.1.txt',
+    input: WORK + 'single_.35_.75_.003_.35.txt', WORK + 'single_.003_.35_.35_.75.txt',
 
 
