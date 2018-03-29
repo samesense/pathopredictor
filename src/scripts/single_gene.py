@@ -45,7 +45,7 @@ def eval_mpc_raw(row, score_cols):
         return 'WrongBenign'
     return 'CorrectBenign'
 
-def clinvar_stats(disease, clinvar_df_pre, disease_df, clinvar_label, gnomad_clinvar):
+def clinvar_stats(disease, clinvar_df_pre, disease_df, clinvar_label):
     """Remove disease panel testing data from clinvar"""
     key_cols = ['chrom', 'pos', 'ref', 'alt']
     test_keys = {':'.join([str(x) for x in v]):True for v in disease_df[key_cols].values}
@@ -58,31 +58,31 @@ def clinvar_stats(disease, clinvar_df_pre, disease_df, clinvar_label, gnomad_cli
     clinvar_df_limit_genes = clinvar_df[crit]
 
     # pad w/ benign from gnomad
-    genes = set(clinvar_df_limit_genes['gene'])
-    gnomad_dfs = []
-    for gene in genes:
-        crit = clinvar_df_limit_genes.apply(lambda row: row['gene'] == gene and row['y']==1, axis=1)
-        path_count = len(clinvar_df_limit_genes[crit])
+    # genes = set(clinvar_df_limit_genes['gene'])
+    # gnomad_dfs = []
+    # for gene in genes:
+    #     crit = clinvar_df_limit_genes.apply(lambda row: row['gene'] == gene and row['y']==1, axis=1)
+    #     path_count = len(clinvar_df_limit_genes[crit])
 
-        crit = clinvar_df_limit_genes.apply(lambda row: row['gene'] == gene and row['y']==0, axis=1)
-        benign_count = len(clinvar_df_limit_genes[crit])
+    #     crit = clinvar_df_limit_genes.apply(lambda row: row['gene'] == gene and row['y']==0, axis=1)
+    #     benign_count = len(clinvar_df_limit_genes[crit])
 
-        if benign_count < path_count:
-            rows = len(gnomad_clinvar[gnomad_clinvar.gene==gene])
-            n = min([rows, path_count-benign_count])
-            print(gene, n, path_count, benign_count)
-            if rows:
-                df = gnomad_clinvar[gnomad_clinvar.gene==gene].sample(n)
-                gnomad_dfs.append(df)
-    if gnomad_dfs:
-        l = pd.concat([clinvar_df_limit_genes] + gnomad_dfs)
-    else:
-        l = clinvar_df_limit_genes
+        # if benign_count < path_count:
+    #         rows = len(gnomad_clinvar[gnomad_clinvar.gene==gene])
+    #         n = min([rows, path_count-benign_count])
+    #         print(gene, n, path_count, benign_count)
+    #         if rows:
+    #             df = gnomad_clinvar[gnomad_clinvar.gene==gene].sample(n)
+    #             gnomad_dfs.append(df)
+    # if gnomad_dfs:
+    #     l = pd.concat([clinvar_df_limit_genes] + gnomad_dfs)
+    # else:
+    l = clinvar_df_limit_genes
     # clinvar_df not used
     return clinvar_df, l
 
-def print_data_stats(disease, clinvar_df_pre_ls, disease_df, clin_labels, gnomad_clinvar):
-    clin_dat = list(map(lambda x: clinvar_stats(disease, x[0], disease_df, x[1], gnomad_clinvar),
+def print_data_stats(disease, clinvar_df_pre_ls, disease_df, clin_labels):
+    clin_dat = list(map(lambda x: clinvar_stats(disease, x[0], disease_df, x[1]),
                         list(zip(clinvar_df_pre_ls, clin_labels))))
 
     return [x[0] for x in clin_dat], [x[1] for x in clin_dat]
@@ -100,8 +100,8 @@ def print_eval(disease, test_df, metric, fout):
         ls = (disease, 'global_' + metric, 'TotWrong', str(tot_bad))
         print('\t'.join(ls), file=fout)
 
-def eval_disease(disease, clinvar_df_pre_ls, disease_df, clin_labels, cols, gnomad_clinvar, gnomad_panel):
-    _, clinvar_df_limit_genes_ls = print_data_stats(disease, clinvar_df_pre_ls, disease_df, clin_labels, gnomad_clinvar)
+def eval_disease(disease, clinvar_df_pre_ls, disease_df, clin_labels, cols, gnomad_panel):
+    _, clinvar_df_limit_genes_ls = print_data_stats(disease, clinvar_df_pre_ls, disease_df, clin_labels)
     # keep track of clinvar results# keep track of clinvar results
     for label, df in zip(clin_labels, clinvar_df_limit_genes_ls):
         df['Disease'] = disease + ':' + label
@@ -110,7 +110,7 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, clin_labels, cols, gnom
     clinvar_acc = []
     genes = set(disease_df['gene'])
 
-    print(disease, 'one', disease_df.columns.values)
+    #print(disease, 'one', disease_df.columns.values)
     for test_gene in genes:
         # pad disease w/ benign
         df = disease_df[disease_df.gene==test_gene]
@@ -177,12 +177,12 @@ def main(args):
                    'SPTAN1', 'STXBP1', 'TSC1')
 
     # load clinvar benign padding
-    gnomad_clinvar = pd.read_csv(args.gnomad_clinvar, sep='\t')
-    gnomad_clinvar.loc[:, 'is_domain'] = gnomad_clinvar.apply(lambda row: 0 if 'none' in row else 1, axis=1)
-    gnomad_clinvar['y'] = 0
+    # gnomad_clinvar = pd.read_csv(args.gnomad_clinvar, sep='\t')
+    # gnomad_clinvar.loc[:, 'is_domain'] = gnomad_clinvar.apply(lambda row: 0 if 'none' in row else 1, axis=1)
+    # gnomad_clinvar['y'] = 0
 
     # load panel benign padding
-    gnomad_panel= pd.read_csv(args.gnomad_clinvar, sep='\t')
+    gnomad_panel= pd.read_csv(args.gnomad, sep='\t')
     gnomad_panel.loc[:, 'is_domain'] = gnomad_panel.apply(lambda row: 0 if 'none' in row else 1, axis=1)
     gnomad_panel['y'] = 0
 
@@ -222,9 +222,9 @@ def main(args):
 
     eval_df_clinvar_ls = []
     for disease in diseases:
-        if str(disease) != 'nan' and not 'Connective' in disease:
+        if str(disease) != 'nan' and not 'Connective' in disease and not 'Hear' in disease:
             eval_clinvar_df = eval_disease(disease, clinvar_df_pre_ls, disease_df[disease_df.Disease == disease],
-                                           clin_labels, score_cols, gnomad_clinvar, gnomad_panel)
+                                           clin_labels, score_cols, gnomad_panel)
             eval_df_clinvar_ls.append(eval_clinvar_df)
     pd.concat(eval_df_clinvar_ls).to_csv(args.out_df_clinvar_eval, index=False, sep='\t')
 
@@ -232,7 +232,7 @@ if __name__ == "__main__":
     desc = 'Eval combinations of features on panel and clinvar'
     parser = argparse.ArgumentParser(description=desc)
     argLs = ('score_cols', 'clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp',
-             'gene_dx', 'uc', 'other_disease', 'gnomad_panel', 'gnomad_clinvar', 'out_df_clinvar_eval')
+             'gene_dx', 'uc', 'other_disease', 'gnomad', 'out_df_clinvar_eval')
     for param in argLs:
         parser.add_argument(param)
     args = parser.parse_args()
