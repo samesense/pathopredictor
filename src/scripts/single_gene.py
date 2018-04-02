@@ -128,7 +128,7 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, clin_labels, cols, gnom
             if rows:
                 dfg = gnomad_panel[gnomad_panel.gene==test_gene].sample(n)
                 gnomad_dfs.append(dfg)
-        if path_count < 5:
+        if path_count < 4:
             continue
 
         if gnomad_dfs:
@@ -138,7 +138,7 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, clin_labels, cols, gnom
 
         crit = sub_train_df.apply(lambda row: row['y']==0, axis=1)
         benign_count = len(sub_train_df[crit])
-        if benign_count < 5:
+        if benign_count < 4:
             continue
 
         tree_clf_sub = tree.DecisionTreeClassifier( max_depth=len(cols) )

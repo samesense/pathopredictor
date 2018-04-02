@@ -5,7 +5,7 @@ rule snpeff_clinvar:
     input:  CLINVAR
     output: DATA + 'interim/clinvar/clinvar.eff.vcf'
     shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff -dataDir {DATA}raw/snpeff/data/ \
-               -strict -noStats hg19 -c {EFF_CONFIG} \
+               -strict -noStats GRCh37.75 -c {EFF_CONFIG} \
                {input} > {output}"""
 
 # rule limit_clinvar_genes:
@@ -37,6 +37,16 @@ rule fixHeader_clinvar:
     input:  DATA + 'interim/clinvar/clinvar.anno.vcf'
     output: DATA + 'interim/clinvar/clinvar.anno.hHack.vcf'
     shell:  'python {HEADER_HCKR} {input} {output} {HEADER_FIX}'
+
+def find_missense_cv_eff(pos, ann):
+    """return eff, gene, protein_change_pre, nm"""
+    for acc in (ann, ):
+        for a in acc.split(','):
+            ls = a.split('|')
+            if 'missense_variant' == ls[1]:
+                eff, gene, protein_change, nm = ls[1], ls[3], ls[10], ls[6]
+                return eff, gene, protein_change, nm
+    return ls[1], ls[3], ls[10], ls[6]
 
 rule parse_clinvar_vcf:
    input:  i = DATA + 'interim/clinvar/clinvar.anno.hHack.vcf'
@@ -78,18 +88,19 @@ rule parse_clinvar_vcf:
                        clin_sig = info.split('CLNSIG=')[1].split(';')[0]
                        confidence = info.split('CLNREVSTAT=')[1].split(';')[0]
 
-                       #print(info.split('ANN=')[1].split(';')[0])
-                       protein_change_pre = info.split('ANN=')[1].split(';')[0].split('|')[10]
-                       protein_change = convert_protein_change(protein_change_pre)
-                       nm = info.split('ANN=')[1].split('|')[6]
-                       eff = info.split('ANN=')[1].split(';')[0].split('|')[1]
-                       gene = info.split('ANN=')[1].split(';')[0].split('|')[3]
+                       ann = info.split('ANN=')[1].split(';')[0]
+                       eff, gene, protein_change_pre, nm = find_missense_cv_eff(pos, ann)
+                       try:
+                           protein_change = convert_protein_change(protein_change_pre)
+                       except:
+                           protein_change = 'WTF'
+
                        ls = (chrom, pos, ref, alt, pfam, eff, clin_sig, onekg, gene, mpc, mtr, nm, protein_change, confidence, revel, ccr)
                        print('\t'.join(ls), file=fout)
 
 def calc_final_sig_clinvar(row):
     #sig_set = set(str(row['clinSig'].split(',')))
-    has_benign = 'enign' in row['clinSig'] 
+    has_benign = 'enign' in row['clinSig']
     has_path = 'athogenic' in row['clinSig'] and not 'flict' in row['clinSig']
     if has_path and not has_benign:
         return 1

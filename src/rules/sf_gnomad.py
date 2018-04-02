@@ -5,7 +5,7 @@ rule snpeff_gnomad:
     input:  GNOMAD
     output: temp(DATA + 'interim/gnomad/gnomad.eff.vcf')
     shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff -dataDir {DATA}raw/snpeff/data/ \
-               -strict -noStats hg19 -c {EFF_CONFIG} \
+               -strict -noStats GRCh37.75 -c {EFF_CONFIG} \
                {input} > {output}"""
 
 # fix pfam

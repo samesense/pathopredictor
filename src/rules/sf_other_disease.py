@@ -41,14 +41,8 @@ rule snpeff_other:
     input:  DATA + 'interim/other/{lab}.vcf.gz'
     output: DATA + 'interim/other/{lab}.eff.vcf'
     shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff -dataDir {DATA}/raw/snpeff/data/ \
-               -strict -noStats hg19 -c {EFF_CONFIG} \
+               -strict -noStats GRCh37.75 -c {EFF_CONFIG} \
                {input} > {output}"""
-
-# rule annotateDbnsfp_other:
-#     input:  DATA + 'interim/other/{lab}.eff.vcf'
-#     output: DATA + 'interim/other/{lab}.eff.dbnsfp.vcf'
-#     shell:  """{JAVA} -Xmx32g -Xms16g -jar SnpSift dbnsfp -v \
-#                -db {SIFT_DBNSFP} -f {DBNSFP_FIELDS} {input} > {output}"""
 
 # fix pfam
 # /mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/hg19.pfam.ucscgenes.enum.bed.gz
@@ -134,11 +128,9 @@ rule parse_vcf_other:
                    else:
                        onekg = '0'
                    if ref != alt:
-                       eff = info.split('ANN=')[1].split(';')[0].split('|')[1]
-                       protein_change_pre = info.split('ANN=')[1].split(';')[0].split('|')[10]
+                       ann = info.split('ANN=')[1].split(';')[0]
+                       eff, gene, protein_change_pre, nm = find_missense_cv_eff(pos, ann)
                        protein_change = convert_protein_change(protein_change_pre)
-                       nm = info.split('ANN=')[1].split('|')[6]
-                       gene = info.split('ANN=')[1].split(';')[0].split('|')[3]
                        ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff,
                              gene, mpc, mtr, revel, exac_af, exac_ac, exac_an,
                              exac_cov_frac, kv_af, nm, protein_change, gene, ccr)
@@ -171,6 +163,3 @@ rule add_diseaase_other:
         df.loc[:, 'class'] = df.apply(mk_class_other, axis=1)
         crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1, axis=1)
         df[crit].to_csv(output.o, index=False, sep='\t')
-
-# rule all:
-#     input: DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls'

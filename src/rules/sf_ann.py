@@ -79,7 +79,7 @@ rule snpeff_epi:
     input:  DATA + 'interim/epi/{lab}.vcf.gz'
     output: DATA + 'interim/epi/{lab}.eff.vcf'
     shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff -dataDir {DATA}raw/snpeff/data/ \
-               -strict -noStats hg19 -c {EFF_CONFIG} \
+               -strict -noStats GRCh37.75 -c {EFF_CONFIG} \
                {input} > {output}"""
 
 # rule annotateDbnsfp_epi:
@@ -179,11 +179,9 @@ rule parse_vcf_epi:
                    else:
                        onekg = '0'
                    if ref != alt:
-                       eff = info.split('ANN=')[1].split(';')[0].split('|')[1]
-                       protein_change_pre = info.split('ANN=')[1].split(';')[0].split('|')[10]
+                       ann = info.split('ANN=')[1].split(';')[0]
+                       eff, gene, protein_change_pre, nm = find_missense_cv_eff(pos, ann)
                        protein_change = convert_protein_change(protein_change_pre)
-                       nm = info.split('ANN=')[1].split('|')[6]
-                       gene = info.split('ANN=')[1].split(';')[0].split('|')[3]
                        ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff, pos_fam,
                              neg_fam, gene, mpc, mtr, revel, exac_af, exac_ac, exac_an,
                              exac_cov_frac, kv_af, c_dot, nm, protein_change, gene, ccr)
@@ -234,5 +232,5 @@ benign_color = '00bfc4'
 # rule all_lollies_epi:
 #     input: expand(DOCS + 'plots/{panel}/{gene}.{panel}.lolly.svg', gene=FOCUS_GENES, panel=('EPIv6', 'panel_two', 'uc'))
 
-# rule all_labs_epi:
-#     input: expand(DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls', lab=('EPIv6', 'uc',))
+rule all_labs_epi:
+    input: expand(DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls', lab=('EPIv6', ))
