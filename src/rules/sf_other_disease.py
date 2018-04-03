@@ -162,4 +162,8 @@ rule add_diseaase_other:
         df = pd.merge(pd.read_csv(input.i, sep='\t'), disease_df, on='gene', how='left')
         df.loc[:, 'class'] = df.apply(mk_class_other, axis=1)
         crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1, axis=1)
-        df[crit].to_csv(output.o, index=False, sep='\t')
+        cols = set(df.columns.values) - set(('clin_class','Hugo_Symbol'))
+        df[crit][list(cols)].drop_duplicates().to_csv(output.o, index=False, sep='\t')
+
+rule other_dat:
+    input: DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls'

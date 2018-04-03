@@ -125,8 +125,8 @@ def eval_disease(disease, clinvar_df_pre_ls, disease_df, fout_stats, fout_eval, 
 
     for test_gene in genes:
         sub_train_df = disease_df[disease_df.gene != test_gene]
-        print(disease, 'disease vars', len(sub_train_df[sub_train_df.gene != test_gene]))
-        print('gene vars', len(disease_df[disease_df.gene == test_gene]))
+        #print(disease, 'disease vars', len(sub_train_df[sub_train_df.gene != test_gene]))
+        #print('gene vars', len(disease_df[disease_df.gene == test_gene]))
         tree_clf_sub = tree.DecisionTreeClassifier( max_depth=len(cols) )
         X, y = sub_train_df[cols], sub_train_df['y']
         tree_clf_sub.fit(X, y)

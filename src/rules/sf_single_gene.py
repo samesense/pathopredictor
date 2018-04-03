@@ -53,7 +53,7 @@ rule all_singles:
 
 rule plot_single_gene:
     input:  WORK + 'single_{plow}_{phigh}.txt'
-    output: DOCS + 'paper_plots/single_gene_collapse_{plow}_{phigh}.pdf'
+    output: DOCS + 'paper_plts/fig6_single_gene_collapse_{plow}_{phigh}.pdf'
     run:
         R("""require(ggplot2)
              dat = read.delim("{input}", header=TRUE, sep="\t")
@@ -63,6 +63,6 @@ rule plot_single_gene:
              ggsave("{output}", p, width=10, height=15)""")
 
 rule single:
-    input: DOCS + 'paper_plots/single_gene_collapse_.003_.1.pdf', DOCS + 'paper_plots/single_gene_collapse_.003_1.pdf',
+    input: DOCS + 'paper_plts/fig6_single_gene_collapse_.003_.1.pdf', DOCS + 'paper_plts/fig6_single_gene_collapse_.003_1.pdf',
 
 
