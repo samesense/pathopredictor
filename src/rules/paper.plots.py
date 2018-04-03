@@ -160,5 +160,5 @@ rule size_bar_paper_plot:
 FIGS = ('fig1_count_plot', 'fig4_eval_clinvar', 'fig3_panelEval.byVarClassFalse',)
 rule all_paper_plots:
     input: expand(DOCS + 'paper_plts/{fig}.pdf', fig=FIGS),
-           expand(DOCS + 'paper_plts/fig5_heatmap.{evidenceCutoff}.{varTypes}.pdf', varTypes=('pathogenic', 'benign', 'both', 'bothAhmad'), evidenceCutoff=(4,5,10)),
-           expand(DOCS + 'paper_plts/fig5b.varCount.{evidenceCutoff}.{varTypes}.pdf', varTypes=('pathogenic', 'benign', 'both', 'bothAhmad'), evidenceCutoff=(4,5,10))
+           #expand(DOCS + 'paper_plts/fig5_heatmap.{evidenceCutoff}.{varTypes}.pdf', varTypes=('pathogenic', 'benign', 'both', 'bothAhmad'), evidenceCutoff=(4,5,10)),
+           #expand(DOCS + 'paper_plts/fig5b.varCount.{evidenceCutoff}.{varTypes}.pdf', varTypes=('pathogenic', 'benign', 'both', 'bothAhmad'), evidenceCutoff=(4,5,10))
