@@ -34,26 +34,35 @@ rule all_singles:
             d = {'gene':gene, 'size':0, 'd':dis, 'PredictionStatusMPC':'CorrectBenign', 'varType':'Benign'}
             dat.append(d)
         ff = pd.DataFrame(dat)
-        cols = ['d', 'PredictionStatusMPC', 'gene', 'varType']
-        final = ( df[cols].groupby(cols)
-                  .size().reset_index()
-                  .rename(columns={0:'size'}) )
-        df = pd.concat([final, ff])
+        cols = ['d', 'gene', 'varType']
+        final_correct = ( df[(df.PredictionStatusMPC=='CorrectBenign') |
+                             (df.PredictionStatusMPC=='CorrectPath')][cols].groupby(cols)
+        .size().reset_index()
+        .rename(columns={0:'size'}) )
+        final_correct.loc[:, 'status'] = 'Correct'
+
+        final_wrong = ( df[(df.PredictionStatusMPC=='WrongBenign') |
+                             (df.PredictionStatusMPC=='WrongPath')][cols].groupby(cols)
+        .size().reset_index()
+        .rename(columns={0:'size'}) )
+        final_wrong.loc[:, 'status'] = 'Wrong'
+
+        df = pd.concat([final_wrong, final_correct])
         ( df.sort_values(by=['d', 'varType', 'gene', 'size'])
             .to_csv(output.o, index=False, sep='\t') )
 
 rule plot_single_gene:
     input:  WORK + 'single_{plow}_{phigh}.txt'
-    output: DOCS + 'paper_plots/single_gene_{plow}_{phigh}.pdf'
+    output: DOCS + 'paper_plots/single_gene_collapse_{plow}_{phigh}.pdf'
     run:
         R("""require(ggplot2)
              dat = read.delim("{input}", header=TRUE, sep="\t")
-             p = ggplot(data=dat) + geom_col(aes(x=gene,y=size,fill=PredictionStatusMPC), position="dodge", stat="identity") +
-             facet_wrap(d~varType, scale="free", ncol=2) + theme_bw(base_size=18) + coord_flip() +
-             theme(axis.text.x = element_text(angle=45, hjust=1), axis.title.y=element_blank(), axis.title.x=element_blank() )
-             ggsave("{output}", p, width=20, height=20)""")
+             p = ggplot(data=dat) + geom_col(aes(x=gene,y=size,fill=status), position="dodge") +
+             facet_grid(d~., scale="free") + theme_bw(base_size=18) + coord_flip() +
+             theme(axis.title.y=element_blank(), axis.title.x=element_blank() )
+             ggsave("{output}", p, width=10, height=15)""")
 
 rule single:
-    input: DOCS + 'paper_plots/single_gene_.003_.1.pdf', DOCS + 'paper_plots/single_gene_.003_1.pdf',
+    input: DOCS + 'paper_plots/single_gene_collapse_.003_.1.pdf', DOCS + 'paper_plots/single_gene_collapse_.003_1.pdf',
 
 
