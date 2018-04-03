@@ -63,7 +63,7 @@ rule improve_prob:
 
 def get_max_pval_row(rows):
     #s = rows.dropna(axis=0, how='any').sort_values(by='idi.pval.twoside', ascending=False)
-    s = rows.sort_values(by='idi.pval.twoside', ascending=False)
+    s = rows.sort_values(by='idi', ascending=True)
     return s.iloc[0][['idi', 'idi_upper', 'idi_lower', 'nri', 'nri_pval', 'idi.pval.twoside']]
 
 def mk_improve_prob_tests(wc):
