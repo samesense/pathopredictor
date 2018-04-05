@@ -14,10 +14,10 @@ rule dl_uniprot_translation:
     output: DATA + 'raw/uniprot/variants.hg38.bed'
     shell: 'mv {input} {output}'
 
-rule add_pos_to_uniprot:
+rule add_codon_to_uniprot:
     input:  uniprot = DATA + 'raw/uniprot/humsavar',
             pos = DATA + 'raw/uniprot/variants.hg38.bed'
-    output: o = DATA + 'interim/uniprot/humsavar.hg38.pos',
+    output: o = DATA + 'interim/uniprot/humsavar.hg38.codon.bed',
             miss = DATA + 'interim/uniprot/humsavar.miss'
     run:
         vars = {}
@@ -39,11 +39,32 @@ rule add_pos_to_uniprot:
                 var = sp[12]
                 if var in vars:
                     # they give the whole codon in bed format
-                    for pos in range(int(sp[1])+1, int(sp[2])+1):
-                       ls = (sp[0], str(pos))
-                       print('\t'.join(ls), file=fout)
+                    print('\t'.join(sp[:3]), file=fout)
                     vars[var] = True
         with open(output.miss, 'w') as fout:
             for var in vars:
                 if not vars[var]:
                     print(var, file=fout)
+
+rule dl_chain_file:
+    input:  HTTP.remote('hgdownload-test.cse.ucsc.edu/goldenPath/hg38/liftOver/hg38ToHg19.over.chain.gz', insecure=True, keep_local=True)
+    output: DATA + 'raw/ucsc/hg38ToHg19.over.chain.gz'
+    shell:  'mv {input} {output}'
+
+rule convert_uniprot_hg38_to_hg19:
+    input:  DATA + 'interim/uniprot/humsavar.hg38.codon.bed',
+            DATA + 'raw/ucsc/hg38ToHg19.over.chain.gz'
+    output: DATA + 'interim/uniprot/humsavar.hg19.codon.0idx',
+            DATA + 'interim/uniprot/humsavar.hg19.codon.unmapped'
+    shell:  'liftOver {input} {output}'
+
+rule mk_uniprot_hg19_pos:
+    input:  i = DATA + 'interim/uniprot/humsavar.hg19.codon.0idx'
+    output: o = DATA + 'interim/uniprot/humsavar.hg19.pos'
+    run:
+        with open(input.i) as f, open(output.o, 'w') as fout:
+            for line in f:
+                chrom, st, end = line.strip().split('\t')
+                for pos in range(int(st)+1, int(end)+1):
+                    ls = (chrom[3:], str(pos))
+                    print('\t'.join(ls), file=fout)
