@@ -114,95 +114,100 @@ rule vcfanno_epi:
     shell:   """vcfanno -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
                 {input.conf} {input.vcf} > {output}"""
 
-rule fixHeader_epi:
-    input:  DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.vcf'
-    output: DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.hHack.vcf'
-    shell:  'python {HEADER_HCKR} {input} {output} {HEADER_FIX}'
+def parse_vcf_data(line):
+    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
+    c_dot = info.split('INIT_VAR=')[1].split(';')[0]
 
-rule zip_epi:
-    input:  DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.hHack.vcf'
-    output: DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.hHack.vcf.gz'
-    shell:  '{BGZ} -c {input} > {output}'
+    exac_af = '0'
+    exac_cov_frac = '0'
+    exac_ac = '0'
+    exac_an = '0'
+    esp_ls = [0]
+    if 'af_exac_all=' in info:
+        exac_af = info.split('af_exac_all=')[1].split(';')[0]
+    if 'totExacCov_10=' in info:
+        exac_cov_frac = info.split('totExacCov_10=')[1].split(';')[0]
+    if 'an_exac_all' in info:
+        exac_an = info.split('an_exac_all=')[1].split(';')[0]
+    if 'ac_exac_all' in info:
+        exac_ac = info.split('ac_exac_all=')[1].split(';')[0]
+
+    if '6500_EA' in info:
+        esp_ls.extend( [float(x) for x in info.split('ESP6500_EA_AF=')[1].split(';')[0].split(',')] )
+    if '6500_AA' in info:
+        esp_ls.extend( [float(x) for x in info.split('ESP6500_EA_AF=')[1].split(';')[0].split(',')] )
+    if 'af_esp_all' in info:
+        esp_ls.extend( [float(x) for x in info.split('af_esp_all=')[1].split(';')[0].split(',')] )
+
+    ccr = '-1'
+    if 'ccr_pct' in info:
+        ccr = info.split('ccr_pct=')[1].split(';')[0]
+
+    mpc, missense_badness, missense_depletion = '0', 'NA', 'NA'
+    if 'mpc=' in info:
+        print(info)
+        mpc = info.split('mpc=')[1].split(';')[0]
+        missense_badness = info.split('mis_badness=')[1].split(';')[0]
+        missense_depeltion = info.split('obs_exp=')[1].split(';')[0]
+
+    fathmm = 'NA'
+    if 'FATHMM_score' in info:
+        fathmm = info.split('FATHMM_score=')[1].split(';')[0]
+    vest = 'NA'
+    if 'VEST3_score' in info:
+        vest = info.split('VEST3_score=')[1].split(';')[0]
+
+    mtr = '0'
+    if 'mtr=' in info:
+        mtr = info.split('mtr=')[1].split(';')[0]
+
+    revel = '-1'
+    if 'REVEL=' in info:
+        revel = info.split('REVEL=')[1].split(';')[0]
+
+    clin = info.split('CLIN_CLASS=')[1].split(';')[0]
+
+    pos_fam = int(info.split('POS_FAM_COUNT=')[1].split(';')[0])
+    neg_fam = info.split('NEG_FAM_COUNT=')[1].split(';')[0]
+    hom_fam = int(info.split('POS_HOM_FAM_COUNT=')[1].split(';')[0])
+    pos_fam = str(pos_fam + hom_fam)
+
+    if 'pfam_domain' in info:
+        pfam = info.split('pfam_domain=')[1].split(';')[0]
+    else:
+        pfam = 'fuck'
+
+    if 'af_1kg_all=' in info:
+        onekg = info.split('af_1kg_all=')[1].split(';')[0]
+    else:
+        onekg = '0'
+
+    ann = info.split('ANN=')[1].split(';')[0]
+    eff, gene, protein_change_pre, nm = find_missense_cv_eff(pos, ann)
+    protein_change = convert_protein_change(protein_change_pre)
+    return {'chrom':chrom, 'pos':pos, 'ref':ref, 'alt':alt, 'eff':eff, 'gene':gene,
+            'clin_class':clin, 'pfam':pfam, 'missense_badness':missense_badness, 'ccr':ccr, 'vest':vest,
+            'missense_depletion':missense_depletion, 'fathmm':fathmm, 'esp_af_max':str(max(esp_ls))}
 
 # neg fam counts ppl
 # pos fam counts ppl
 # need to convert hom to a count of two
 rule parse_vcf_epi:
-   input:  i = DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.hHack.vcf'
-   output: o = DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.hHack.dat.xls',
-           o2 = DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.hHack.splitPfam.dat'
+   input:  i = DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.vcf'
+   output: o = DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.dat.xls',
    run:
-       with open(input.i) as f, open(output.o, 'w') as fout, open(output.o2, 'w') as fout_split_pfam:
-           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tpos_fam\tneg_fam\tgene\tmpc\tmtr\trevel\texac_af\texac_ac\texac_an\texac_cov_frac\tkaviar_af\tc.\tnm\tProtein_Change\tHugo_Symbol\tccr', file=fout)
-           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tpos_fam\tneg_fam\tgene\tmpc\tmtr\trevel\tccr',
-                 file=fout_split_pfam)
+       with open(input.i) as f, open(output.o, 'w') as fout:
+           fields = ['chrom', 'pos', 'ref', 'alt',
+                     'clin_class', 'pfam', 'eff', 'gene',
+                     'esp_af_max',
+                     'ccr', 'fathmm', 'vest', 'missense_badness', 'missense_depletion']
+           print('\t'.join(fields), file=fout)
            for line in f:
                if not line[0] == '#':
-                   chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
-
-                   c_dot = info.split('INIT_VAR=')[1].split(';')[0]
-
-                   exac_af = '0'
-                   kv_af = '0'
-                   exac_cov_frac = '0'
-                   exac_ac = '0'
-                   exac_an = '0'
-                   if 'af_exac_all=' in info:
-                       exac_af = info.split('af_exac_all=')[1].split(';')[0]
-                   if 'kv_af=' in info:
-                       kv_af = info.split('kv_af=')[1].split(';')[0]
-                   if 'totExacCov_10=' in info:
-                       exac_cov_frac = info.split('totExacCov_10=')[1].split(';')[0]
-                   if 'an_exac_all' in info:
-                       exac_an = info.split('an_exac_all=')[1].split(';')[0]
-                   if 'ac_exac_all' in info:
-                       exac_ac = info.split('ac_exac_all=')[1].split(';')[0]
-
-                   ccr = '-1'
-                   if 'ccr_pct' in info:
-                       ccr = info.split('ccr_pct=')[1].split(';')[0]
-
-                   mpc = '0'
-                   if 'mpc=' in info:
-                       mpc = info.split('mpc=')[1].split(';')[0]
-
-                   mtr = '0'
-                   if 'mtr=' in info:
-                       mtr = info.split('mtr=')[1].split(';')[0]
-
-                   revel = '-1'
-                   if 'REVEL=' in info:
-                       revel = info.split('REVEL=')[1].split(';')[0]
-
-
-                   clin = info.split('CLIN_CLASS=')[1].split(';')[0]
-
-                   pos_fam = int(info.split('POS_FAM_COUNT=')[1].split(';')[0])
-                   neg_fam = info.split('NEG_FAM_COUNT=')[1].split(';')[0]
-                   hom_fam = int(info.split('POS_HOM_FAM_COUNT=')[1].split(';')[0])
-                   pos_fam = str(pos_fam + hom_fam)
-
-                   if 'pfam_domain' in info:
-                       pfam = info.split('pfam_domain=')[1].split(';')[0]
-                   else:
-                       pfam = 'fuck'
-
-                   if 'af_1kg_all=' in info:
-                       onekg = info.split('af_1kg_all=')[1].split(';')[0]
-                   else:
-                       onekg = '0'
-                   if ref != alt:
-                       ann = info.split('ANN=')[1].split(';')[0]
-                       eff, gene, protein_change_pre, nm = find_missense_cv_eff(pos, ann)
-                       protein_change = convert_protein_change(protein_change_pre)
-                       ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff, pos_fam,
-                             neg_fam, gene, mpc, mtr, revel, exac_af, exac_ac, exac_an,
-                             exac_cov_frac, kv_af, c_dot, nm, protein_change, gene, ccr)
+                   data = parse_vcf_data(line)
+                   if data['ref'] != data['alt']:
+                       ls = [data[x] for x in fields]
                        print('\t'.join(ls), file=fout)
-
-                       for p in pfam.split(','):
-                           ls = (chrom, pos, ref, alt, clin, p, onekg, eff, pos_fam, neg_fam, gene, mpc, mtr, revel, ccr)
-                           print('\t'.join(ls), file=fout_split_pfam)
 
 def mk_class_epi(row):
     if row['clin_class'] in ('Benign', 'BENIGN', 'LIKELY BENIGN', 'likely benign', 'benign', 'LIKELY_BENIGN', 'likely_benign'):
@@ -220,10 +225,10 @@ def mk_class_epi(row):
 # focus genes and missense
 # must have ccr score
 rule limit_eval_epi:
-    input:  i = DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.hHack.dat.xls',
+    input:  i = DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.dat.xls',
             uniprot_benign = DATA + 'interim/uniprot/humsavar.hg19.pos',
             hgmd = DATA + 'interim/hgmd_ignore.pos'
-    output: o = DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls'
+    output: o = DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.dat.limit.xls'
     run:
         uniprot_benign = {}
         with open(input.uniprot_benign) as f:
@@ -240,7 +245,8 @@ rule limit_eval_epi:
         df.loc[:, 'in_uniprot_benign'] = df.apply(lambda row: str(row['chrom']) + ':' + str(row['pos']) in uniprot_benign, axis=1)
         crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1
                         and not (row['class'] == 'P' and row['in_hgmd_dm'])
-                        and not (row['class']=='B' and row['in_uniprot_benign']), axis=1)
+                        and not (row['class']=='B' and row['in_uniprot_benign'])
+                        and not (row['class']=='B' and row['esp_af_max']>=.01), axis=1)
         df[crit].to_csv(output.o, index=False, sep='\t')
 
 path_color = 'f8766d'
@@ -261,4 +267,4 @@ benign_color = '00bfc4'
 #     input: expand(DOCS + 'plots/{panel}/{gene}.{panel}.lolly.svg', gene=FOCUS_GENES, panel=('EPIv6', 'panel_two', 'uc'))
 
 rule all_labs_epi:
-    input: expand(DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.vcf', lab=('EPIv6', ))
+    input: expand(DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.dat.limit.xls', lab=('EPIv6', ))
