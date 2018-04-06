@@ -44,7 +44,8 @@ PY27_T = '~/me/condas/miniconda3/envs/testPy27/bin/python'
 PY27 = '~/me/condas/miniconda3/envs/py27/bin/python'
 JAVA = '/nas/is1/bin/java'
 EFF = '/home/evansj/me/condas/miniconda3/envs/mahdi_epi/share/snpeff-4.3.1t-0/snpEff.jar'
-SIFT_DBNSFP = '/home/evansj/me/tools/snpEff/data/dbNSFP/dbNSFP2.4.txt.gz'
+SIFT = '/home/evansj/me/condas/miniconda3/envs/mahdi_epi/share/snpsift-4.3-2/SnpSift.jar'
+SIFT_DBNSFP = DATA + 'raw/snpsift/dbNSFP.txt.gz'
 EFF_CONFIG = '/home/evansj/me/condas/miniconda3/envs/mahdi_epi/share/snpeff-4.3.1t-0/snpEff.config'
 CLINVAR = '/mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/clinvar_20180225.tidy.vcf.gz'
 GNOMAD = '/home/evansj/me/projects/me/tidy-gnomad/data/raw/gnomad.exomes.r2.0.2.sites.tidy.vcf.gz'
@@ -68,8 +69,8 @@ feats = ('mpc', 'revel', 'ccr', 'is_domain')
 COMBO_FEATS = ['-'.join(x) for x in powerset(feats) if x]
 COMBO_FEATS_AT_LEAST_2 = ['-'.join(x) for x in powerset(feats) if x if len(x)>1]
 
-DBNSFP_FIELDS = 'Interpro_domain,SIFT_score,Polyphen2_HVAR_pred,RadialSVM_pred,LR_pred,Reliability_index,FATHMM_pred,MutationAssessor_pred,MutationTaster_pred,phyloP100way_vertebrate,phastCons100way_vertebrate'
+DBNSFP_FIELDS = 'Interpro_domain,SIFT_score,Polyphen2_HVAR_pred,Reliability_index,VEST3_score,FATHMM_pred,FATHMM_score,ESP6500_AA_AF,ESP6500_EA_AF,MutationAssessor_pred,MutationTaster_pred,phyloP100way_vertebrate,phastCons100way_vertebrate'
 
-HEADER_FIX = 'eff_indel_splice,1,Flag AC,1,Integer AF,1,Float dbNSFP_FATHMM_pred,.,String dbNSFP_Interpro_domain,.,String dbNSFP_LR_pred,.,String dbNSFP_phyloP100way_vertebrate,.,String dbNSFP_phastCons100way_vertebrate,.,String dbNSFP_SIFT_score,.,String dbNSFP_Reliability_index,.,String dbNSFP_RadialSVM_pred,.,String dbNSFP_RadialSVM_pred,.,String dbNSFP_Polyphen2_HVAR_pred,.,String dbNSFP_MutationTaster_pred,.,String dbNSFP_MutationAssessor_pred,.,String'
+HEADER_FIX = 'dbNSFP_VEST3_max,1,Float dbNSFP_FATHMM_min,1,Float AC,1,Integer AF,1,Float dbNSFP_FATHMM_pred,.,String dbNSFP_FATHM_score,.,Float dbNSFP_Interpro_domain,.,String dbNSFP_phyloP100way_vertebrate,.,String dbNSFP_phastCons100way_vertebrate,.,String dbNSFP_SIFT_score,.,String dbNSFP_Reliability_index,.,String dbNSFP_Polyphen2_HVAR_pred,.,String dbNSFP_MutationTaster_pred,.,String dbNSFP_MutationAssessor_pred,.,String'
 
 CRUZ_PY = '/home/evansj/me/franklin_condas/envs/cruzdb/bin/python'

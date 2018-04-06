@@ -82,23 +82,36 @@ rule snpeff_epi:
                -strict -noStats GRCh37.75 -c {EFF_CONFIG} \
                {input} > {output}"""
 
-# rule annotateDbnsfp_epi:
-#     input:  DATA + 'interim/epi/{lab}.eff.vcf'
-#     output: DATA + 'interim/epi/{lab}.eff.dbnsfp.vcf'
-#     shell:  """{JAVA} -Xmx32g -Xms16g -jar SnpSift dbnsfp -v \
-#                -db {SIFT_DBNSFP} -f {DBNSFP_FIELDS} {input} > {output}"""
+rule annotateDbnsfp_epi:
+    input:  DATA + 'interim/epi/{lab}.eff.vcf'
+    output: DATA + 'interim/epi/{lab}.eff.dbnsfp.pre.vcf'
+    shell:  """{JAVA} -Xmx32g -Xms16g -jar {SIFT} dbnsfp \
+               -db {SIFT_DBNSFP} -f {DBNSFP_FIELDS} {input} > {output}"""
 
+rule fix_dbnsfp:
+    input:  i = DATA + 'interim/epi/{lab}.eff.dbnsfp.pre.vcf'
+    output: o = DATA + 'interim/epi/{lab}.eff.dbnsfp.vcf'
+    run:
+        lines = False
+        with open(input.i) as f, open(output.o, 'w') as fout:
+            for line in f:
+                if lines:
+                    if line[0] == '#':
+                        break
+                print(line.strip(), file=fout)
+                if line[0] != '#':
+                    lines = True
 # fix pfam
 # /mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/hg19.pfam.ucscgenes.enum.bed.gz
 # ann fixed pfam
 # parse genes
 rule vcfanno_epi:
-    input:   vcf = DATA + 'interim/epi/{lab}.eff.vcf',
+    input:   vcf = DATA + 'interim/epi/{lab}.eff.dbnsfp.vcf',
              conf = CONFIG + 'vcfanno.conf',
              lua = VCFANNO_LUA_FILE
     output:  DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.vcf'
     threads: 10
-    shell:   """{VCFANNO} -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
+    shell:   """vcfanno -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
                 {input.conf} {input.vcf} > {output}"""
 
 rule fixHeader_epi:
@@ -248,4 +261,4 @@ benign_color = '00bfc4'
 #     input: expand(DOCS + 'plots/{panel}/{gene}.{panel}.lolly.svg', gene=FOCUS_GENES, panel=('EPIv6', 'panel_two', 'uc'))
 
 rule all_labs_epi:
-    input: expand(DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls', lab=('EPIv6', ))
+    input: expand(DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.vcf', lab=('EPIv6', ))
