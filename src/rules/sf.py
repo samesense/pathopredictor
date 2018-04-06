@@ -7,6 +7,7 @@ from collections import defaultdict
 
 include: "const.py"
 include: "sf_uniprot.py"
+include: "sf_hgmd.py"
 
 include: "sf_ann.py"
 include: "sf_other_disease.py"

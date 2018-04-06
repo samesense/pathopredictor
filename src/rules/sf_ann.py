@@ -208,17 +208,26 @@ def mk_class_epi(row):
 # must have ccr score
 rule limit_eval_epi:
     input:  i = DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.hHack.dat.xls',
-            uniprot_benign = DATA + 'interim/uniprot/humsavar.hg19.pos'
+            uniprot_benign = DATA + 'interim/uniprot/humsavar.hg19.pos',
+            hgmd = DATA + 'interim/hgmd_ignore.pos'
     output: o = DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls'
     run:
         uniprot_benign = {}
         with open(input.uniprot_benign) as f:
             for line in f:
                 uniprot_benign[':'.join(line.strip().split('\t'))] = True
+        hgmd = {}
+        with open(input.hgmd) as f:
+            for line in f:
+                hgmd[':'.join(line.strip().split('\t'))] = True
+
         df = pd.read_csv(input.i, sep='\t')
         df.loc[:, 'class'] = df.apply(mk_class_epi, axis=1)
+        df.loc[:, 'in_hgmd_dm'] = df.apply(lambda row: str(row['chrom']) + ':' + str(row['pos']) in hgmd, axis=1)
         df.loc[:, 'in_uniprot_benign'] = df.apply(lambda row: str(row['chrom']) + ':' + str(row['pos']) in uniprot_benign, axis=1)
-        crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1 and not (row['class']=='B' and row['in_uniprot_benign']), axis=1)
+        crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1
+                        and not (row['class'] == 'P' and row['in_hgmd_dm'])
+                        and not (row['class']=='B' and row['in_uniprot_benign']), axis=1)
         df[crit].to_csv(output.o, index=False, sep='\t')
 
 path_color = 'f8766d'
