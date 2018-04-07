@@ -148,14 +148,20 @@ def parse_vcf_data(line):
         print(info)
         mpc = info.split('mpc=')[1].split(';')[0]
         missense_badness = info.split('mis_badness=')[1].split(';')[0]
-        missense_depeltion = info.split('obs_exp=')[1].split(';')[0]
+        missense_depletion = info.split('obs_exp=')[1].split(';')[0]
 
     fathmm = 'NA'
     if 'FATHMM_score' in info:
-        fathmm = info.split('FATHMM_score=')[1].split(';')[0]
+        fathmm = min([float(x) for x in
+                      info.split('FATHMM_score=')[1].split(';')[0].split(',')
+                      if x != '.'])
     vest = 'NA'
     if 'VEST3_score' in info:
-        vest = info.split('VEST3_score=')[1].split(';')[0]
+        ls = [float(x) for x in
+              info.split('VEST3_score=')[1].split(';')[0].split(',')
+              if x != '.']
+        if ls:
+            vest = min(ls)
 
     mtr = '0'
     if 'mtr=' in info:
@@ -186,8 +192,8 @@ def parse_vcf_data(line):
     eff, gene, protein_change_pre, nm = find_missense_cv_eff(pos, ann)
     protein_change = convert_protein_change(protein_change_pre)
     return {'chrom':chrom, 'pos':pos, 'ref':ref, 'alt':alt, 'eff':eff, 'gene':gene,
-            'clin_class':clin, 'pfam':pfam, 'missense_badness':missense_badness, 'ccr':ccr, 'vest':vest,
-            'missense_depletion':missense_depletion, 'fathmm':fathmm, 'esp_af_max':str(max(esp_ls))}
+            'clin_class':clin, 'pfam':pfam, 'missense_badness':missense_badness, 'ccr':ccr, 'vest':str(vest),
+            'missense_depletion':missense_depletion, 'fathmm':str(fathmm), 'esp_af_max':str(max(esp_ls))}
 
 # neg fam counts ppl
 # pos fam counts ppl
@@ -239,9 +245,11 @@ rule limit_eval_epi:
             for line in f:
                 hgmd[':'.join(line.strip().split('\t'))] = True
 
-        df = pd.read_csv(input.i, sep='\t')
+        df = pd.read_csv(input.i, sep='\t').dropna()
         df.loc[:, 'class'] = df.apply(mk_class_epi, axis=1)
         df.loc[:, 'in_hgmd_dm'] = df.apply(lambda row: str(row['chrom']) + ':' + str(row['pos']) in hgmd, axis=1)
+        df.loc[:, 'is_domain'] = df.apply(lambda row: 0 if 'none' in row['pfam'] else 1, axis=1)
+        df.loc[:, 'y'] = df.apply(lambda row: 1 if row['class']=='P' else 0, axis=1)
         df.loc[:, 'in_uniprot_benign'] = df.apply(lambda row: str(row['chrom']) + ':' + str(row['pos']) in uniprot_benign, axis=1)
         crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1
                         and not (row['class'] == 'P' and row['in_hgmd_dm'])
