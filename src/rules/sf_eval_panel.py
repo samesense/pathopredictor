@@ -2,7 +2,7 @@
 
 rule eval_panel_global:
     input:  expand(DATA + 'interim/{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo')),
-            DATA + 'interim/epi/EPIv6.eff.dbnsfp.anno.hHack.dat.limit.xls',
+            DATA + 'interim/epi/EPIv6.eff.dbnsfp.anno.dat.limit.xls',
             DATA + 'interim/epi/uc.eff.dbnsfp.anno.hHack.dat.limit.xls',
             DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls'
     output: WORK + 'global.eval_panel.{cols}.stats',

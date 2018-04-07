@@ -71,26 +71,26 @@ rule sort_vcf_epi:
     shell:  'cat {input} | vcf-sort > {output}'
 
 rule bgzipVcf_epi:
-    input:  DATA + 'interim/epi/{lab}.vcf'
-    output: DATA + 'interim/epi/{lab}.vcf.gz'
+    input:  DATA + 'interim/{dir}/{lab}.vcf'
+    output: DATA + 'interim/{dir}/{lab}.vcf.gz'
     shell:  '{BGZ} -c {input} > {output}'
 
-rule snpeff_epi:
-    input:  DATA + 'interim/epi/{lab}.vcf.gz'
-    output: DATA + 'interim/epi/{lab}.eff.vcf'
+rule snpeff_general:
+    input:  DATA + 'interim/{lab_dir}/{lab}.vcf.gz'
+    output: DATA + 'interim/{lab_dir}/{lab}.eff.vcf'
     shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff -dataDir {DATA}raw/snpeff/data/ \
                -strict -noStats GRCh37.75 -c {EFF_CONFIG} \
                {input} > {output}"""
 
-rule annotateDbnsfp_epi:
-    input:  DATA + 'interim/epi/{lab}.eff.vcf'
-    output: DATA + 'interim/epi/{lab}.eff.dbnsfp.pre.vcf'
+rule annotateDbnsfp_general:
+    input:  DATA + 'interim/{dir}/{lab}.eff.vcf'
+    output: temp(DATA + 'interim/{dir}/{lab}.eff.dbnsfp.tmp.vcf')
     shell:  """{JAVA} -Xmx32g -Xms16g -jar {SIFT} dbnsfp \
                -db {SIFT_DBNSFP} -f {DBNSFP_FIELDS} {input} > {output}"""
 
-rule fix_dbnsfp:
-    input:  i = DATA + 'interim/epi/{lab}.eff.dbnsfp.pre.vcf'
-    output: o = DATA + 'interim/epi/{lab}.eff.dbnsfp.vcf'
+rule fix_dbnsfp_general:
+    input:  i = DATA + 'interim/{dir}/{lab}.eff.dbnsfp.tmp.vcf'
+    output: o = DATA + 'interim/{dir}/{lab}.eff.dbnsfp.vcf'
     run:
         lines = False
         with open(input.i) as f, open(output.o, 'w') as fout:
@@ -105,19 +105,20 @@ rule fix_dbnsfp:
 # /mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/hg19.pfam.ucscgenes.enum.bed.gz
 # ann fixed pfam
 # parse genes
-rule vcfanno_epi:
-    input:   vcf = DATA + 'interim/epi/{lab}.eff.dbnsfp.vcf',
+rule vcfanno_general:
+    input:   vcf = DATA + 'interim/{dir}/{lab}.eff.dbnsfp.vcf',
              conf = CONFIG + 'vcfanno.conf',
              lua = VCFANNO_LUA_FILE
-    output:  DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.vcf'
+    output:  DATA + 'interim/{dir}/{lab}.eff.dbnsfp.anno.vcf'
     threads: 10
     shell:   """vcfanno -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
                 {input.conf} {input.vcf} > {output}"""
 
 def parse_vcf_data(line):
     chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
-    c_dot = info.split('INIT_VAR=')[1].split(';')[0]
-
+    #c_dot = info.split('INIT_VAR=')[1].split(';')[0]
+    if ref == alt:
+        return {}
     exac_af = '0'
     exac_cov_frac = '0'
     exac_ac = '0'
@@ -173,10 +174,10 @@ def parse_vcf_data(line):
 
     clin = info.split('CLIN_CLASS=')[1].split(';')[0]
 
-    pos_fam = int(info.split('POS_FAM_COUNT=')[1].split(';')[0])
-    neg_fam = info.split('NEG_FAM_COUNT=')[1].split(';')[0]
-    hom_fam = int(info.split('POS_HOM_FAM_COUNT=')[1].split(';')[0])
-    pos_fam = str(pos_fam + hom_fam)
+    # pos_fam = int(info.split('POS_FAM_COUNT=')[1].split(';')[0])
+    # neg_fam = info.split('NEG_FAM_COUNT=')[1].split(';')[0]
+    # hom_fam = int(info.split('POS_HOM_FAM_COUNT=')[1].split(';')[0])
+    # pos_fam = str(pos_fam + hom_fam)
 
     if 'pfam_domain' in info:
         pfam = info.split('pfam_domain=')[1].split(';')[0]
@@ -187,7 +188,7 @@ def parse_vcf_data(line):
         onekg = info.split('af_1kg_all=')[1].split(';')[0]
     else:
         onekg = '0'
-
+    #print(info, ref, alt)
     ann = info.split('ANN=')[1].split(';')[0]
     eff, gene, protein_change_pre, nm = find_missense_cv_eff(pos, ann)
     protein_change = convert_protein_change(protein_change_pre)
@@ -198,9 +199,9 @@ def parse_vcf_data(line):
 # neg fam counts ppl
 # pos fam counts ppl
 # need to convert hom to a count of two
-rule parse_vcf_epi:
-   input:  i = DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.vcf'
-   output: o = DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.dat.xls',
+rule parse_vcf_general:
+   input:  i = DATA + 'interim/{dir}/{lab}.eff.dbnsfp.anno.vcf'
+   output: o = DATA + 'interim/{dir}/{lab}.eff.dbnsfp.anno.dat.xls',
    run:
        with open(input.i) as f, open(output.o, 'w') as fout:
            fields = ['chrom', 'pos', 'ref', 'alt',
@@ -211,7 +212,7 @@ rule parse_vcf_epi:
            for line in f:
                if not line[0] == '#':
                    data = parse_vcf_data(line)
-                   if data['ref'] != data['alt']:
+                   if data:
                        ls = [data[x] for x in fields]
                        print('\t'.join(ls), file=fout)
 
@@ -230,12 +231,20 @@ def mk_class_epi(row):
 
 # focus genes and missense
 # must have ccr score
-rule limit_eval_epi:
-    input:  i = DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.dat.xls',
+rule limit_eval_general:
+    input:  d = DATA + 'raw/gene_disease.xlsx',
+            i = DATA + 'interim/{dir}/{lab}.eff.dbnsfp.anno.dat.xls',
             uniprot_benign = DATA + 'interim/uniprot/humsavar.hg19.pos',
             hgmd = DATA + 'interim/hgmd_ignore.pos'
-    output: o = DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.dat.limit.xls'
+    output: o = DATA + 'interim/{dir}/{lab}.eff.dbnsfp.anno.dat.limit.xls'
     run:
+        if wildcards.dir == 'other':
+            disease_df = pd.read_excel(input.d, skiprows=[0,1,2]).rename(columns={'Gene':'gene'})
+            df = pd.merge(pd.read_csv(input.i, sep='\t'), disease_df, on='gene', how='left')
+        elif wildcards.dir == 'epi':
+            df = pd.read_csv(input.i, sep='\t').dropna()
+            df['Disease'] = 'EPI'
+
         uniprot_benign = {}
         with open(input.uniprot_benign) as f:
             for line in f:
@@ -245,8 +254,11 @@ rule limit_eval_epi:
             for line in f:
                 hgmd[':'.join(line.strip().split('\t'))] = True
 
-        df = pd.read_csv(input.i, sep='\t').dropna()
-        df.loc[:, 'class'] = df.apply(mk_class_epi, axis=1)
+        if wildcards.dir == 'other':
+            df.loc[:, 'class'] = df.apply(mk_class_other, axis=1)
+        elif wildcards.dir == 'epi':
+            df.loc[:, 'class'] = df.apply(mk_class_epi, axis=1)
+
         df.loc[:, 'in_hgmd_dm'] = df.apply(lambda row: str(row['chrom']) + ':' + str(row['pos']) in hgmd, axis=1)
         df.loc[:, 'is_domain'] = df.apply(lambda row: 0 if 'none' in row['pfam'] else 1, axis=1)
         df.loc[:, 'y'] = df.apply(lambda row: 1 if row['class']=='P' else 0, axis=1)
@@ -254,25 +266,15 @@ rule limit_eval_epi:
         crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1
                         and not (row['class'] == 'P' and row['in_hgmd_dm'])
                         and not (row['class']=='B' and row['in_uniprot_benign'])
+                        and not row['Disease'] in ('Connective tissue disorders', 'Hearing Loss', '')
                         and not (row['class']=='B' and row['esp_af_max']>=.01), axis=1)
-        df[crit].to_csv(output.o, index=False, sep='\t')
+        df[crit].dropna().drop_duplicates(subset=['chrom', 'pos', 'ref', 'alt', 'Disease']).to_csv(output.o, index=False, sep='\t')
 
-path_color = 'f8766d'
-benign_color = '00bfc4'
-# rule denovo_lolly_epi:
-#     input:  i = DATA + 'interim/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls'
-#     output: DOCS + 'plots/{lab}/{gene}.{lab}.lolly.svg'
-#     run:
-#         df_pre = pd.read_csv(input.i, sep='\t')
-#         df = df_pre[ (df_pre.gene==wildcards.gene) ]
-#         s = set(df[df['class']=='B']['Protein_Change'].values)
-#         benign_ls = [x + '#' + benign_color for x in s]
-#         s = set(df[df['class']=='P']['Protein_Change'].values)
-#         path_ls = [x + '#' + path_color for x in s]
-#         shell('~/me/bin/lollipops -domain-labels=off -o={output} -f=/home/evansj/me/fonts/arial.ttf {wildcards.gene} {path_ls} {benign_ls}')
+rule all_panels:
+    input:  expand(DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.dat.limit.xls', lab=('EPIv6', )), expand(DATA + 'interim/{lab}/{lab}.eff.dbnsfp.anno.dat.limit.xls', lab=('other', ))
+    output: o = DATA + 'interim/panel.dat'
+    run:
+        dfs = [pd.read_csv(afile, sep='\t') for afile in input]
+        pd.concat(dfs).to_csv(output.o, index=False, sep='\t')
 
-# rule all_lollies_epi:
-#     input: expand(DOCS + 'plots/{panel}/{gene}.{panel}.lolly.svg', gene=FOCUS_GENES, panel=('EPIv6', 'panel_two', 'uc'))
 
-rule all_labs_epi:
-    input: expand(DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.dat.limit.xls', lab=('EPIv6', ))

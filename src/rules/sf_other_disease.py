@@ -32,40 +32,40 @@ rule sort_vcf_other:
     output: DATA + 'interim/other/{lab}.vcf'
     shell:  'cat {input} | vcf-sort > {output}'
 
-rule bgzipVcf_other:
-    input:  DATA + 'interim/other/{lab}.vcf'
-    output: DATA + 'interim/other/{lab}.vcf.gz'
-    shell:  '{BGZ} -c {input} > {output}'
+#rule bgzipVcf_other:
+#     input:  DATA + 'interim/other/{lab}.vcf'
+#     output: DATA + 'interim/other/{lab}.vcf.gz'
+#     shell:  '{BGZ} -c {input} > {output}'
 
-rule snpeff_other:
-    input:  DATA + 'interim/other/{lab}.vcf.gz'
-    output: DATA + 'interim/other/{lab}.eff.vcf'
-    shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff -dataDir {DATA}/raw/snpeff/data/ \
-               -strict -noStats GRCh37.75 -c {EFF_CONFIG} \
-               {input} > {output}"""
+# rule snpeff_other:
+#     input:  DATA + 'interim/other/{lab}.vcf.gz'
+#     output: DATA + 'interim/other/{lab}.eff.vcf'
+#     shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff -dataDir {DATA}/raw/snpeff/data/ \
+#                -strict -noStats GRCh37.75 -c {EFF_CONFIG} \
+#                {input} > {output}"""
 
 # fix pfam
 # /mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/hg19.pfam.ucscgenes.enum.bed.gz
 # ann fixed pfam
 # parse genes
-rule vcfanno_other:
-    input:   vcf = DATA + 'interim/other/{lab}.eff.vcf',
-             conf = CONFIG + 'vcfanno.conf',
-             lua = VCFANNO_LUA_FILE
-    output:  DATA + 'interim/other/{lab}.eff.dbnsfp.anno.vcf'
-    threads: 10
-    shell:   """{VCFANNO} -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
-                {input.conf} {input.vcf} > {output}"""
+# rule vcfanno_other:
+#     input:   vcf = DATA + 'interim/other/{lab}.eff.vcf',
+#              conf = CONFIG + 'vcfanno.conf',
+#              lua = VCFANNO_LUA_FILE
+#     output:  DATA + 'interim/other/{lab}.eff.dbnsfp.anno.vcf'
+#     threads: 10
+#     shell:   """{VCFANNO} -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
+#                 {input.conf} {input.vcf} > {output}"""
 
-rule fixHeader_other:
-    input:  DATA + 'interim/other/{lab}.eff.dbnsfp.anno.vcf'
-    output: DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.vcf'
-    shell:  'python {HEADER_HCKR} {input} {output} {HEADER_FIX}'
+# rule fixHeader_other:
+#     input:  DATA + 'interim/other/{lab}.eff.dbnsfp.anno.vcf'
+#     output: DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.vcf'
+#     shell:  'python {HEADER_HCKR} {input} {output} {HEADER_FIX}'
 
-rule zip_other:
-    input:  DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.vcf'
-    output: DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.vcf.gz'
-    shell:  '{BGZ} -c {input} > {output}'
+# rule zip_other:
+#     input:  DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.vcf'
+#     output: DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.vcf.gz'
+#     shell:  '{BGZ} -c {input} > {output}'
 
 # neg fam counts ppl
 # pos fam counts ppl
@@ -153,17 +153,17 @@ def mk_class_other(row):
         i = 1/0
 
 # use all genes
-rule add_diseaase_other:
-    input:  d = DATA + 'raw/gene_disease.xlsx',
-            i = DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.dat.xls'
-    output: o = DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.dat.limit.xls'
-    run:
-        disease_df = pd.read_excel(input.d, skiprows=[0,1,2]).rename(columns={'Gene':'gene'})
-        df = pd.merge(pd.read_csv(input.i, sep='\t'), disease_df, on='gene', how='left')
-        df.loc[:, 'class'] = df.apply(mk_class_other, axis=1)
-        crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1, axis=1)
-        cols = set(df.columns.values) - set(('clin_class','Hugo_Symbol'))
-        df[crit][list(cols)].drop_duplicates().to_csv(output.o, index=False, sep='\t')
+# rule add_diseaase_other:
+#     input:  d = DATA + 'raw/gene_disease.xlsx',
+#             i = DATA + 'interim/other/{lab}.eff.dbnsfp.anno.dat.xls'
+#     output: o = DATA + 'interim/other/{lab}.eff.dbnsfp.anno.dat.limit.xls'
+#     run:
+#         disease_df = pd.read_excel(input.d, skiprows=[0,1,2]).rename(columns={'Gene':'gene'})
+#         df = pd.merge(pd.read_csv(input.i, sep='\t'), disease_df, on='gene', how='left')
+#         df.loc[:, 'class'] = df.apply(mk_class_other, axis=1)
+#         crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1, axis=1)
+#         cols = set(df.columns.values) - set(('clin_class','Hugo_Symbol'))
+#         df[crit][list(cols)].drop_duplicates().to_csv(output.o, index=False, sep='\t')
 
-rule other_dat:
-    input: DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls'
+# rule other_dat:
+#     input: DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls'
