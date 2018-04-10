@@ -143,12 +143,14 @@ def calc_final_sig_clinvar(row):
     return 'V'
 
 def load_clinvar(afile):
-    """single
+    """tot
+    single
     mult
     exp
     apply cutoff and higher"""
     df = pd.read_csv(afile, sep='\t')
-    dfs = []
+    df['Disease'] = 'clinvar_tot'
+    dfs = [df]
     crit = df.apply(lambda row: 'expert' in row['confidence'], axis=1)
     df2 = df[crit]
     df2['Disease'] = 'clinvar_exp'

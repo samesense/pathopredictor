@@ -1,15 +1,16 @@
 """Predict status for gene panel vars"""
 
 rule eval_panel_global:
-    input:  expand(DATA + 'interim/{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo')),
-            DATA + 'interim/epi/EPIv6.eff.dbnsfp.anno.dat.limit.xls',
-            DATA + 'interim/epi/uc.eff.dbnsfp.anno.hHack.dat.limit.xls',
-            DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls'
-    output: WORK + 'global.eval_panel.{cols}.stats',
-            WORK + 'global.eval_panel.{cols}.eval',
+    input:  DATA + 'interim/clinvar/clinvar.eff.dbnsfp.anno.dat.limit.xls',
+            DATA + 'interim/panel.dat',
+    output:
             WORK + 'roc_df_panel/{cols}',
             WORK + 'roc_df_clinvar/{cols}'
     shell:  'python {SCRIPTS}score_panel_global_model.py {wildcards.cols} {input} {output}'
+
+feats = ['ccr', 'vest', 'fathmm', 'missense_badness', 'missense_depletion']
+rule simple_eval:
+    input: expand(WORK + 'roc_df_panel/{cols}', cols=feats + ['-'.join(feats) + '-is_domain'])
 
 rule eval_panel_single_gene:
     input:  expand(DATA + 'interim/clinvar{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo')),
