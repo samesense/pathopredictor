@@ -163,14 +163,23 @@ def read_df(afile):
         print(col)
     return df
 
-rule combine_predictions:
-    input:  expand( WORK + 'roc_df_{{eval_source}}/{cols}', cols=COMBO_FEATS)
+# rule combine_predictions:
+#     input:  expand( WORK + 'roc_df_{{eval_source}}/{cols}', cols=COMBO_FEATS)
+#     output: o = WORK + '{eval_source}.roc_df_combo'
+#     run:
+#         dfs = [read_df(afile) for afile in list(input)]
+#         keys = ['Disease', 'chrom', 'pos', 'alt', 'y']
+#         m = reduce(lambda left, right: pd.merge(left, right, on=keys), dfs)
+#         m.to_csv(output.o, index=False, sep='\t')
+
+rule roc_combo:
+    input:  expand(WORK + 'roc_df_{{eval_source}}/{cols}', cols=feats + ['-'.join(feats) + '-is_domain'])
     output: o = WORK + '{eval_source}.roc_df_combo'
     run:
-        dfs = [read_df(afile) for afile in list(input)]
-        keys = ['Disease', 'chrom', 'pos', 'alt', 'y']
-        m = reduce(lambda left, right: pd.merge(left, right, on=keys), dfs)
-        m.to_csv(output.o, index=False, sep='\t')
+        dfs = [pd.read_csv(afile, sep='\t') for afile in list(input)]
+        pd.concat(dfs).to_csv(output.o, index=False, sep='\t')
+rule roc_combos:
+    input: expand(WORK + '{source}.roc_df_combo', source=('clinvar', 'panel'))
 
 rule all_eval:
     input: expand( DOCS + 'plot/{method}.eval_panel.{cols}.totWrong.png', method=('global',), cols=COMBO_FEATS)
