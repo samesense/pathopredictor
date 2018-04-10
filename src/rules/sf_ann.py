@@ -77,14 +77,14 @@ rule bgzipVcf_epi:
 
 rule snpeff_general:
     input:  DATA + 'interim/{lab_dir}/{lab}.vcf.gz'
-    output: DATA + 'interim/{lab_dir}/{lab}.eff.vcf'
+    output: DATA + 'interim/{lab_dir,epi|other}/{lab}.eff.vcf'
     shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff -dataDir {DATA}raw/snpeff/data/ \
                -strict -noStats GRCh37.75 -c {EFF_CONFIG} \
                {input} > {output}"""
 
 rule annotateDbnsfp_general:
     input:  DATA + 'interim/{dir}/{lab}.eff.vcf'
-    output: temp(DATA + 'interim/{dir}/{lab}.eff.dbnsfp.tmp.vcf')
+    output: DATA + 'interim/{dir}/{lab}.eff.dbnsfp.tmp.vcf'
     shell:  """{JAVA} -Xmx32g -Xms16g -jar {SIFT} dbnsfp \
                -db {SIFT_DBNSFP} -f {DBNSFP_FIELDS} {input} > {output}"""
 
@@ -114,94 +114,12 @@ rule vcfanno_general:
     shell:   """vcfanno -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
                 {input.conf} {input.vcf} > {output}"""
 
-def parse_vcf_data(line):
-    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
-    #c_dot = info.split('INIT_VAR=')[1].split(';')[0]
-    if ref == alt:
-        return {}
-    exac_af = '0'
-    exac_cov_frac = '0'
-    exac_ac = '0'
-    exac_an = '0'
-    esp_ls = [0]
-    if 'af_exac_all=' in info:
-        exac_af = info.split('af_exac_all=')[1].split(';')[0]
-    if 'totExacCov_10=' in info:
-        exac_cov_frac = info.split('totExacCov_10=')[1].split(';')[0]
-    if 'an_exac_all' in info:
-        exac_an = info.split('an_exac_all=')[1].split(';')[0]
-    if 'ac_exac_all' in info:
-        exac_ac = info.split('ac_exac_all=')[1].split(';')[0]
-
-    if '6500_EA' in info:
-        esp_ls.extend( [float(x) for x in info.split('ESP6500_EA_AF=')[1].split(';')[0].split(',')] )
-    if '6500_AA' in info:
-        esp_ls.extend( [float(x) for x in info.split('ESP6500_EA_AF=')[1].split(';')[0].split(',')] )
-    if 'af_esp_all' in info:
-        esp_ls.extend( [float(x) for x in info.split('af_esp_all=')[1].split(';')[0].split(',')] )
-
-    ccr = '-1'
-    if 'ccr_pct' in info:
-        ccr = info.split('ccr_pct=')[1].split(';')[0]
-
-    mpc, missense_badness, missense_depletion = '0', 'NA', 'NA'
-    if 'mpc=' in info:
-        print(info)
-        mpc = info.split('mpc=')[1].split(';')[0]
-        missense_badness = info.split('mis_badness=')[1].split(';')[0]
-        missense_depletion = info.split('obs_exp=')[1].split(';')[0]
-
-    fathmm = 'NA'
-    if 'FATHMM_score' in info:
-        fathmm = min([float(x) for x in
-                      info.split('FATHMM_score=')[1].split(';')[0].split(',')
-                      if x != '.'])
-    vest = 'NA'
-    if 'VEST3_score' in info:
-        ls = [float(x) for x in
-              info.split('VEST3_score=')[1].split(';')[0].split(',')
-              if x != '.']
-        if ls:
-            vest = min(ls)
-
-    mtr = '0'
-    if 'mtr=' in info:
-        mtr = info.split('mtr=')[1].split(';')[0]
-
-    revel = '-1'
-    if 'REVEL=' in info:
-        revel = info.split('REVEL=')[1].split(';')[0]
-
-    clin = info.split('CLIN_CLASS=')[1].split(';')[0]
-
-    # pos_fam = int(info.split('POS_FAM_COUNT=')[1].split(';')[0])
-    # neg_fam = info.split('NEG_FAM_COUNT=')[1].split(';')[0]
-    # hom_fam = int(info.split('POS_HOM_FAM_COUNT=')[1].split(';')[0])
-    # pos_fam = str(pos_fam + hom_fam)
-
-    if 'pfam_domain' in info:
-        pfam = info.split('pfam_domain=')[1].split(';')[0]
-    else:
-        pfam = 'fuck'
-
-    if 'af_1kg_all=' in info:
-        onekg = info.split('af_1kg_all=')[1].split(';')[0]
-    else:
-        onekg = '0'
-    #print(info, ref, alt)
-    ann = info.split('ANN=')[1].split(';')[0]
-    eff, gene, protein_change_pre, nm = find_missense_cv_eff(pos, ann)
-    protein_change = convert_protein_change(protein_change_pre)
-    return {'chrom':chrom, 'pos':pos, 'ref':ref, 'alt':alt, 'eff':eff, 'gene':gene,
-            'clin_class':clin, 'pfam':pfam, 'missense_badness':missense_badness, 'ccr':ccr, 'vest':str(vest),
-            'missense_depletion':missense_depletion, 'fathmm':str(fathmm), 'esp_af_max':str(max(esp_ls))}
-
 # neg fam counts ppl
 # pos fam counts ppl
 # need to convert hom to a count of two
 rule parse_vcf_general:
    input:  i = DATA + 'interim/{dir}/{lab}.eff.dbnsfp.anno.vcf'
-   output: o = DATA + 'interim/{dir}/{lab}.eff.dbnsfp.anno.dat.xls',
+   output: o = DATA + 'interim/{dir,epi|other}/{lab}.eff.dbnsfp.anno.dat.xls',
    run:
        with open(input.i) as f, open(output.o, 'w') as fout:
            fields = ['chrom', 'pos', 'ref', 'alt',
@@ -244,6 +162,8 @@ rule limit_eval_general:
         elif wildcards.dir == 'epi':
             df = pd.read_csv(input.i, sep='\t').dropna()
             df['Disease'] = 'EPI'
+        elif wildcards.dir == 'clinvar':
+            df = load_clinvar(input.i)
 
         uniprot_benign = {}
         with open(input.uniprot_benign) as f:
@@ -258,6 +178,8 @@ rule limit_eval_general:
             df.loc[:, 'class'] = df.apply(mk_class_other, axis=1)
         elif wildcards.dir == 'epi':
             df.loc[:, 'class'] = df.apply(mk_class_epi, axis=1)
+        elif wildcards.dir == 'clinvar':
+            df.loc[:, 'class'] = df.apply(calc_final_sig_clinvar, axis=1)
 
         df.loc[:, 'in_hgmd_dm'] = df.apply(lambda row: str(row['chrom']) + ':' + str(row['pos']) in hgmd, axis=1)
         df.loc[:, 'is_domain'] = df.apply(lambda row: 0 if 'none' in row['pfam'] else 1, axis=1)
@@ -277,4 +199,6 @@ rule all_panels:
         dfs = [pd.read_csv(afile, sep='\t') for afile in input]
         pd.concat(dfs).to_csv(output.o, index=False, sep='\t')
 
+rule parse_dat:
+    input: DATA + 'interim/panel.dat', DATA + 'interim/clinvar/clinvar.eff.dbnsfp.anno.dat.limit.xls'
 

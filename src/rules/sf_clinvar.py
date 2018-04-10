@@ -1,5 +1,90 @@
 """Annotate clinvar"""
-import pandas as pd
+
+def parse_vcf_data(line):
+    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
+    #c_dot = info.split('INIT_VAR=')[1].split(';')[0]
+    if ref == alt:
+        return {}
+    exac_af = '0'
+    exac_cov_frac = '0'
+    exac_ac = '0'
+    exac_an = '0'
+    esp_ls = [0]
+    if 'af_exac_all=' in info:
+        exac_af = info.split('af_exac_all=')[1].split(';')[0]
+    if 'totExacCov_10=' in info:
+        exac_cov_frac = info.split('totExacCov_10=')[1].split(';')[0]
+    if 'an_exac_all' in info:
+        exac_an = info.split('an_exac_all=')[1].split(';')[0]
+    if 'ac_exac_all' in info:
+        exac_ac = info.split('ac_exac_all=')[1].split(';')[0]
+
+    if '6500_EA' in info:
+        esp_ls.extend( [float(x) for x in info.split('ESP6500_EA_AF=')[1].split(';')[0].split(',')] )
+    if '6500_AA' in info:
+        esp_ls.extend( [float(x) for x in info.split('ESP6500_EA_AF=')[1].split(';')[0].split(',')] )
+    if 'af_esp_all' in info:
+        esp_ls.extend( [float(x) for x in info.split('af_esp_all=')[1].split(';')[0].split(',')] )
+
+    ccr = '-1'
+    if 'ccr_pct' in info:
+        ccr = info.split('ccr_pct=')[1].split(';')[0]
+
+    mpc, missense_badness, missense_depletion = '0', 'NA', 'NA'
+    if 'mpc=' in info:
+        mpc = info.split('mpc=')[1].split(';')[0]
+        missense_badness = info.split('mis_badness=')[1].split(';')[0]
+        missense_depletion = info.split('obs_exp=')[1].split(';')[0]
+
+    fathmm = 'NA'
+    if 'FATHMM_score' in info:
+        fathmm = min([float(x) for x in
+                      info.split('FATHMM_score=')[1].split(';')[0].split(',')
+                      if x != '.'])
+    vest = 'NA'
+    if 'VEST3_score' in info:
+        ls = [float(x) for x in
+              info.split('VEST3_score=')[1].split(';')[0].split(',')
+              if x != '.']
+        if ls:
+            vest = min(ls)
+
+    mtr = '0'
+    if 'mtr=' in info:
+        mtr = info.split('mtr=')[1].split(';')[0]
+
+    revel = '-1'
+    if 'REVEL=' in info:
+        revel = info.split('REVEL=')[1].split(';')[0]
+
+    if 'CLIN_CLASS=' in info:
+        clin = info.split('CLIN_CLASS=')[1].split(';')[0]
+    else:
+        clin = 'clinvar'
+
+    # pos_fam = int(info.split('POS_FAM_COUNT=')[1].split(';')[0])
+    # neg_fam = info.split('NEG_FAM_COUNT=')[1].split(';')[0]
+    # hom_fam = int(info.split('POS_HOM_FAM_COUNT=')[1].split(';')[0])
+    # pos_fam = str(pos_fam + hom_fam)
+
+    if 'pfam_domain' in info:
+        pfam = info.split('pfam_domain=')[1].split(';')[0]
+    else:
+        pfam = 'fuck'
+
+    if 'af_1kg_all=' in info:
+        onekg = info.split('af_1kg_all=')[1].split(';')[0]
+    else:
+        onekg = '0'
+    #print(chrom, pos, info, ref, alt)
+    if not 'ANN=' in info:
+        return {}
+    ann = info.split('ANN=')[1].split(';')[0]
+    eff, gene, protein_change_pre, nm = find_missense_cv_eff(pos, ann)
+    #protein_change = convert_protein_change(protein_change_pre)
+    return {'chrom':chrom, 'pos':pos, 'ref':ref, 'alt':alt, 'eff':eff, 'gene':gene,
+            'clin_class':clin, 'pfam':pfam, 'missense_badness':missense_badness, 'ccr':ccr, 'vest':str(vest),
+            'missense_depletion':missense_depletion, 'fathmm':str(fathmm), 'esp_af_max':str(max(esp_ls))}
 
 rule snpeff_clinvar:
     input:  CLINVAR
@@ -7,36 +92,6 @@ rule snpeff_clinvar:
     shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff -dataDir {DATA}raw/snpeff/data/ \
                -strict -noStats GRCh37.75 -c {EFF_CONFIG} \
                {input} > {output}"""
-
-# rule limit_clinvar_genes:
-#     input:  DATA + 'raw/EPIv6.xlsx',
-#             DATA + 'interim/clinvar/clinvar.eff.vcf'
-#     output: DATA + 'interim/clinvar/clinvar.use.vcf'
-#     shell:  'python {SCRIPTS}limit_clinvar_genes.py {input} {output}'
-
-# rule annotateDbnsfp_clinvar:
-#     input:  DATA + 'interim/clinvar/clinvar.eff.vcf'
-#     output: DATA + 'interim/clinvar/clinvar.eff.dbnsfp.vcf'
-#     shell:  """{JAVA} -Xmx32g -Xms16g -jar SnpSift dbnsfp -v \
-#                -db {SIFT_DBNSFP} -f {DBNSFP_FIELDS} {input} > {output}"""
-
-# fix pfam
-# /mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/hg19.pfam.ucscgenes.enum.bed.gz
-# ann fixed pfam
-# parse genes
-rule vcfanno_clinvar:
-    input:   vcf = DATA + 'interim/clinvar/clinvar.eff.vcf',
-             conf = CONFIG + 'vcfanno.conf',
-             lua = VCFANNO_LUA_FILE
-    output:  DATA + 'interim/clinvar/clinvar.anno.vcf'
-    threads: 10
-    shell:   """{VCFANNO} -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
-                {input.conf} {input.vcf} > {output}"""
-
-rule fixHeader_clinvar:
-    input:  DATA + 'interim/clinvar/clinvar.anno.vcf'
-    output: DATA + 'interim/clinvar/clinvar.anno.hHack.vcf'
-    shell:  'python {HEADER_HCKR} {input} {output} {HEADER_FIX}'
 
 def find_missense_cv_eff(pos, ann):
     """return eff, gene, protein_change_pre, nm"""
@@ -48,54 +103,33 @@ def find_missense_cv_eff(pos, ann):
                 return eff, gene, protein_change, nm
     return ls[1], ls[3], ls[10], ls[6]
 
+def parse_clin_dat(info):
+    dat = {}
+    if 'CLNSIG=' in info and 'ANN=' in info:
+        clin_sig = info.split('CLNSIG=')[1].split(';')[0]
+        confidence = info.split('CLNREVSTAT=')[1].split(';')[0]
+        dat = {'clinSig':clin_sig, 'confidence':confidence}
+    return dat
+
 rule parse_clinvar_vcf:
-   input:  i = DATA + 'interim/clinvar/clinvar.anno.hHack.vcf'
-   output: o = DATA + 'interim/clinvar/clinvar.dat'
+   input:  i = DATA + 'interim/clinvar/clinvar.eff.dbnsfp.anno.vcf'
+   output: o = DATA + 'interim/clinvar/clinvar.eff.dbnsfp.anno.dat.xls'
    run:
        with open(input.i) as f, open(output.o, 'w') as fout:
-           print('chrom\tpos\tref\talt\tpfam\teff\tclinSig\taf_1kg_all\tgene\tmpc\tmtr\tnm\tProtein_Change\tconfidence\trevel\tccr', file=fout)
+           fields = ['chrom', 'pos', 'ref', 'alt',
+                     'clin_class', 'pfam', 'eff', 'gene',
+                     'esp_af_max',
+                     'ccr', 'fathmm', 'vest', 'missense_badness', 'missense_depletion',
+                     'clinSig', 'confidence']
+           print('\t'.join(fields), file=fout)
            for line in f:
                if line[0] != '#':
-                   chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
-
-                   ccr = '-1'
-                   if 'ccr_pct' in info:
-                       ccr = info.split('ccr_pct=')[1].split(';')[0]
-
-                   mtr = '0'
-                   if 'mtr=' in info:
-                       mtr = info.split('mtr=')[1].split(';')[0]
-
-                   revel = '-1'
-                   if 'REVEL=' in info:
-                       revel = info.split('REVEL=')[1].split(';')[0]
-
-                   mpc = '0'
-                   if 'mpc=' in info:
-                       mpc = info.split('mpc=')[1].split(';')[0]
-
-                   if 'pfam_domain' in info:
-                       pfam = info.split('pfam_domain=')[1].split(';')[0]
-                   else:
-                       pfam = 'fuck'
-
-                   if 'af_1kg_all=' in info:
-                       onekg = info.split('af_1kg_all=')[1].split(';')[0]
-                   else:
-                       onekg = '0'
-
-                   if 'CLNSIG=' in info and 'ANN=' in info:
-                       clin_sig = info.split('CLNSIG=')[1].split(';')[0]
-                       confidence = info.split('CLNREVSTAT=')[1].split(';')[0]
-
-                       ann = info.split('ANN=')[1].split(';')[0]
-                       eff, gene, protein_change_pre, nm = find_missense_cv_eff(pos, ann)
-                       try:
-                           protein_change = convert_protein_change(protein_change_pre)
-                       except:
-                           protein_change = 'WTF'
-
-                       ls = (chrom, pos, ref, alt, pfam, eff, clin_sig, onekg, gene, mpc, mtr, nm, protein_change, confidence, revel, ccr)
+                   init_dat = parse_vcf_data(line)
+                   clin_dat= parse_clin_dat(line)
+                   dat = init_dat.copy()
+                   dat.update(clin_dat)
+                   if clin_dat:
+                       ls = [ dat[x] for x in fields]
                        print('\t'.join(ls), file=fout)
 
 def calc_final_sig_clinvar(row):
@@ -103,77 +137,29 @@ def calc_final_sig_clinvar(row):
     has_benign = 'enign' in row['clinSig']
     has_path = 'athogenic' in row['clinSig'] and not 'flict' in row['clinSig']
     if has_path and not has_benign:
-        return 1
+        return 'P'
     if not has_path and has_benign:
-        return 0
-    return -1
+        return 'B'
+    return 'V'
 
-# focus genes
-rule limit_eval2_clinvar:
-    input:  i = DATA + 'interim/clinvar/clinvar.dat'
-    output: o = DATA + 'interim/clinvar/clinvar.limit2.dat'
-    run:
-        df = pd.read_csv(input.i, sep='\t')
-        df.loc[:, 'clin_class'] = df.apply(calc_final_sig_clinvar, axis=1)
-        crit = df.apply(lambda row: row['gene'] in FOCUS_GENES and row['clin_class'] != -1, axis=1)
+def load_clinvar(afile):
+    """single
+    mult
+    exp
+    apply cutoff and higher"""
+    df = pd.read_csv(afile, sep='\t')
+    dfs = []
+    crit = df.apply(lambda row: 'expert' in row['confidence'], axis=1)
+    df2 = df[crit]
+    df2['Disease'] = 'clinvar_exp'
+    dfs.append(df2)
+    crit = df.apply(lambda row: 'mult' in row['confidence'] or 'expert' in row['confidence'], axis=1)
+    df2 = df[crit]
+    df2['Disease'] = 'clinvar_mult'
+    dfs.append(df2)
+    crit = df.apply(lambda row: 'single' in row['confidence'] or 'mult' in row['confidence'] or 'expert' in row['confidence'], axis=1)
+    df2 = df[crit]
+    df2['Disease'] = 'clinvar_single'
+    dfs.append(df2)
+    return pd.concat(dfs)
 
-        df[crit].to_csv(output.o, index=False, sep='\t')
-
-# focus genes and missense
-rule limit_eval_clinvar:
-    input:  i = DATA + 'interim/clinvar/clinvar.dat'
-    output: o = DATA + 'interim/clinvar/clinvar.limit.dat'
-    run:
-        df = pd.read_csv(input.i, sep='\t')
-        df.loc[:, 'clin_class'] = df.apply(calc_final_sig_clinvar, axis=1)
-        crit = df.apply(lambda row: row['gene'] in FOCUS_GENES and row['eff'] == 'missense_variant' and row['clin_class'] != -1, axis=1)
-        df[crit].to_csv(output.o, index=False, sep='\t')
-
-# missense
-rule limit_eval3_clinvar:
-    input:  i = DATA + 'interim/clinvar/clinvar.dat'
-    output: o = DATA + 'interim/clinvar/clinvar.limit3.dat'
-    run:
-        df = pd.read_csv(input.i, sep='\t')
-        df.loc[:, 'clin_class'] = df.apply(calc_final_sig_clinvar, axis=1)
-        crit = df.apply(lambda row: row['eff'] == 'missense_variant'and row['clin_class'] != -1 and row['ccr']>-1, axis=1)
-        df[crit].to_csv(output.o, index=False, sep='\t')
-
-# singlr
-# mult
-# exp
-# apply cutoff and higher
-rule limit_clinvar_by_conf:
-    input:  i=DATA + 'interim/clinvar/clinvar.limit3.dat'
-    output: o=DATA + 'interim/clinvar_{conf}/clinvar_{conf}.limit3.dat'
-    run:
-        df = pd.read_csv(input.i, sep='\t')
-        if wildcards.conf=='exp':
-            crit = df.apply(lambda row: 'expert' in row['confidence'], axis=1)
-        elif wildcards.conf=='mult':
-            crit = df.apply(lambda row: 'mult' in row['confidence'] or 'expert' in row['confidence'], axis=1)
-        elif wildcards.conf=='single':
-            crit = df.apply(lambda row: 'single' in row['confidence'] or 'mult' in row['confidence'] or 'expert' in row['confidence'], axis=1)
-        else:
-            i = 1/0
-        df[crit].to_csv(output.o, index=False, sep='\t')
-
-rule all_confidence:
-    input: expand(DATA + 'interim/clinvar_{conf}/clinvar_{conf}.limit3.dat', conf=('exp', 'mult', 'single') )
-
-path_color = 'f8766d'
-benign_color = '00bfc4'
-rule clinvar_lolly:
-    input:  i = DATA + 'interim/clinvar/clinvar.limit.dat'
-    output: DOCS + 'plots/clinvar/{gene}.clinvar.lolly.svg'
-    run:
-        df_pre = pd.read_csv(input.i, sep='\t')
-        df = df_pre[ (df_pre.gene==wildcards.gene) ]
-        s = set(df[df.clin_class==0]['Protein_Change'].values)
-        benign_ls = [x + '#' + benign_color for x in s if str(x) != 'nan']
-        s = set(df[df.clin_class==1]['Protein_Change'].values)
-        path_ls = [x + '#' + path_color for x in s if str(x) != 'nan']
-        shell('~/me/bin/lollipops -domain-labels=off -o={output} -f=/home/evansj/me/fonts/arial.ttf {wildcards.gene} {path_ls} {benign_ls}')
-
-rule all_lollies_clinvar:
-    input: expand(DOCS + 'plots/clinvar/{gene}.clinvar.lolly.svg', gene=FOCUS_GENES)
