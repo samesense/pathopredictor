@@ -31,8 +31,18 @@ def run_ensemble(df, eval_set, disease_col, out):
        write_feature_importance(eval_set, disease, X, indices, col_names, importances, std, out)
 
 def run_panel(afile, out):
+    FOCUS_GENES = ('SCN1A','SCN2A','KCNQ2', 'KCNQ3', 'CDKL5',
+                   'PCDH19', 'SCN1B', 'SCN8A', 'SLC2A1',
+                   'SPTAN1', 'STXBP1', 'TSC1')
+
     df = pd.read_csv(afile, sep='\t')
-    run_ensemble(df, 'panel', 'Disease', out)
+    df.loc[:, 'disease'] = df.apply(lambda row: 'Epilepsy' if row['Disease']=='EPI'
+                                    else row['Disease'], axis=1)
+    crit = df.apply(lambda row: row['Disease'] == 'EPI' and row['gene'] in FOCUS_GENES, axis=1)
+    disease_genedx_limitGene_df= df[crit]
+    disease_genedx_limitGene_df['disease'] = 'Epilepsy (dominant genes)'
+    disease_df = pd.concat([df, disease_genedx_limitGene_df])
+    run_ensemble(disease_df, 'panel', 'disease', out)
 
 def run_clinvar(panel_file, clinvar_file, out):
      panel_df_pre = pd.read_csv(panel_file, sep='\t')

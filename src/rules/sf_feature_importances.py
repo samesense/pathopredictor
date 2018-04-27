@@ -18,7 +18,7 @@ rule plot_feature_importance:
               geom_errorbar(aes(ymin=importance-eb, ymax=importance+eb), size=.3, width=.2) + \
               facet_grid(disease~.) + coord_flip() + theme_bw(base_size=18) + \
               xlab('') + ylab('Feature importance')
-          ggsave("{output}", p)
+          ggsave("{output}", p, height=12)
           """)
 # rule collapse_feature_importance:
 #     input: expand(DATA + 'interim/importances/{eval_set}.feat_importance', eval_set=('panel',))
