@@ -16,6 +16,7 @@ def write_feature_importance(eval_set, disease, X, indices, cols, importances, s
 
 def run_ensemble(df, eval_set, disease_col, out):
     cols = ['ccr', 'fathmm', 'vest', 'missense_badness', 'missense_depletion', 'is_domain']
+    col_names = ['CCR', 'FATHMM', 'VEST', 'Missense badness', 'Missense depletion', 'Domain']
     for disease in set(df[disease_col]):
        X = df[df[disease_col]==disease][cols]
        y = df[df[disease_col]==disease]['y']
@@ -27,7 +28,7 @@ def run_ensemble(df, eval_set, disease_col, out):
        importances = forest.feature_importances_
        std = np.std([tree.feature_importances_ for tree in forest.estimators_], axis=0)
        indices = np.argsort(importances)[::-1]
-       write_feature_importance(eval_set, disease, X, indices, cols, importances, std, out)
+       write_feature_importance(eval_set, disease, X, indices, col_names, importances, std, out)
 
 def run_panel(afile, out):
     df = pd.read_csv(afile, sep='\t')

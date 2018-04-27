@@ -6,7 +6,7 @@ from snakemake.utils import R
 from collections import defaultdict
 
 include: "const.py"
-include: "sf_uniprot.py"
+#include: "sf_uniprot.py"
 include: "sf_hgmd.py"
 
 include: "sf_clinvar.py"
@@ -23,6 +23,7 @@ include: "sf_coords.py"
 include: "sf_eval_ahmad.py" # plot_ahmad
 include: "paper.plots.py"
 include: "sf_predict_clinvar.py"
+include: "sf_feature_importances.py"
 
 include: "sf.rank.eval.py"
 
