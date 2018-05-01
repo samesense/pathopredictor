@@ -65,7 +65,8 @@ def powerset(iterable):
     s = list(iterable)
     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
-feats = ('ccr', 'is_domain')
+feats = ['ccr', 'vest', 'fathmm', 'missense_badness', 'missense_depletion']
+#feats = ('ccr', 'is_domain')
 COMBO_FEATS = ['-'.join(x) for x in powerset(feats) if x]
 COMBO_FEATS_AT_LEAST_2 = ['-'.join(x) for x in powerset(feats) if x if len(x)>1]
 

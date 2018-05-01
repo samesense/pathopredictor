@@ -192,6 +192,17 @@ rule limit_eval_general:
                         and not (row['class']=='B' and row['esp_af_max']>=.01), axis=1)
         df[crit].dropna().drop_duplicates(subset=['chrom', 'pos', 'ref', 'alt', 'Disease']).to_csv(output.o, index=False, sep='\t')
 
+rule limit_clinvar:
+    input:  c = DATA + 'interim/clinvar/clinvar.eff.dbnsfp.anno.dat.limit.xls',
+            p = DATA + 'interim/panel.dat'
+    output: o = DATA + 'interim/clinvar.dat'
+    run:
+        cols = ['chrom', 'pos', 'ref', 'alt']
+        panel = pd.read_csv(input.p, sep='\t')[cols]
+        clinvar = pd.read_csv(input.c, sep='\t')
+        m = pd.merge(clinvar, panel, on=cols, how='outer', indicator=True)
+        m[m._merge=='left_only'].to_csv(output.o, index=False, sep='\t')
+
 rule all_panels:
     input:  expand(DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.dat.limit.xls', lab=('EPIv6', )), expand(DATA + 'interim/{lab}/{lab}.eff.dbnsfp.anno.dat.limit.xls', lab=('other', ))
     output: o = DATA + 'interim/panel.dat'
@@ -200,5 +211,5 @@ rule all_panels:
         pd.concat(dfs).to_csv(output.o, index=False, sep='\t')
 
 rule parse_dat:
-    input: DATA + 'interim/panel.dat', DATA + 'interim/clinvar/clinvar.eff.dbnsfp.anno.dat.limit.xls'
+    input: DATA + 'interim/panel.dat', DATA + 'interim/clinvar.dat'
 

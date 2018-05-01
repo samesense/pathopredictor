@@ -101,7 +101,7 @@ def print_eval(disease, test_df, metric, fout):
         ls = (disease, 'global_' + metric, 'TotWrong', str(tot_bad))
         print('\t'.join(ls), file=fout)
 
-def eval_disease(disease, clinvar_df, disease_df, cols):
+def eval_disease(disease, clinvar_df_init, disease_df, cols):
     clin_labels = ('clinvar_tot', 'clinvar_single')
     # one gene at a time
     acc_df_ls = []
@@ -131,10 +131,10 @@ def eval_disease(disease, clinvar_df, disease_df, cols):
 
         for clin_label in clin_labels:
             # limit to gene
-            clinvar_df = clinvar_df[(clinvar_df.gene==test_gene) & (clinvar_df.clinvar_subset==clin_label)]
-            clinvar_df['Disease'] = disease
-            X = clinvar_df[cols]
+            clinvar_df = clinvar_df_init[(clinvar_df_init.gene==test_gene) & (clinvar_df_init.clinvar_subset==clin_label)]
             if len(clinvar_df):
+                clinvar_df['Disease'] = disease
+                X = clinvar_df[cols]
                 clinvar_preds = lm.predict(X)
                 lm_preds = lm.predict(X)
                 clinvar_df.loc[:, pred_col] = lm_preds
@@ -157,7 +157,7 @@ def main(args):
 
     # load panels
     panel_df = pd.read_csv(args.panel, sep='\t')
-    crit = panel_df.apply(lambda row: row['gene'] in FOCUS_GENES, axis=1)
+    crit = panel_df.apply(lambda row: row['Disease'] == 'EPI' and row['gene'] in FOCUS_GENES, axis=1)
     disease_genedx_limitGene_df= panel_df[crit]
     disease_genedx_limitGene_df['Disease'] = 'genedx-epi-limitGene'
 
@@ -166,7 +166,8 @@ def main(args):
 
     eval_df_ls, eval_df_clinvar_ls = [], []
     for disease in diseases:
-        eval_panel_df, eval_clinvar_df = eval_disease(disease, clinvar_df, disease_df[disease_df.Disease == disease],
+        eval_panel_df, eval_clinvar_df = eval_disease(disease, clinvar_df,
+                                                      disease_df[disease_df.Disease == disease],
                                                       score_cols)
         eval_df_ls.append(eval_panel_df)
         eval_df_clinvar_ls.append(eval_clinvar_df)

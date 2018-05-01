@@ -5,14 +5,14 @@
 
 up_ftp = 'ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/genome_annotation_tracks/UP000005640_9606_beds/UP000005640_9606_variants.bed'
 rule dl_uniprot_humsavar:
-    input: HTTP.remote("www.uniprot.org/docs/humsavar.txt", keep_local=True)
+    input:  HTTP.remote("www.uniprot.org/docs/humsavar.txt", keep_local=True)
     output: DATA + 'raw/uniprot/humsavar'
     shell:  'mv {input} {output}'
 
 rule dl_uniprot_translation:
-    input: FTP.remote(up_ftp, keep_local=True)
+    input:  FTP.remote(up_ftp, keep_local=True)
     output: DATA + 'raw/uniprot/variants.hg38.bed'
-    shell: 'mv {input} {output}'
+    shell:  'mv {input} {output}'
 
 rule add_codon_to_uniprot:
     input:  uniprot = DATA + 'raw/uniprot/humsavar',

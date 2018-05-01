@@ -1,16 +1,15 @@
 """Predict status for gene panel vars"""
 
 rule eval_panel_global:
-    input:  DATA + 'interim/clinvar/clinvar.eff.dbnsfp.anno.dat.limit.xls',
+    input:  DATA + 'interim/clinvar.dat',
             DATA + 'interim/panel.dat',
     output:
             WORK + 'roc_df_panel/{cols}',
             WORK + 'roc_df_clinvar/{cols}'
     shell:  'python {SCRIPTS}score_panel_global_model.py {wildcards.cols} {input} {output}'
 
-feats = ['ccr', 'vest', 'fathmm', 'missense_badness', 'missense_depletion']
 rule simple_eval:
-    input: expand(WORK + 'roc_df_panel/{cols}', cols=feats + ['-'.join(feats) + '-is_domain'])
+    input: expand(WORK + 'roc_df_clinvar/{cols}', cols=('-'.join(feats + ['is_domain']),)), WORK + 'roc_df_clinvar/ccr-vest-missense_badness'
 
 rule eval_panel_single_gene:
     input:  expand(DATA + 'interim/clinvar{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo')),
@@ -152,15 +151,12 @@ rule draw_tree:
     output: TMP + 'trees/{features}'
     shell:  '{PY27} {SCRIPTS}draw_tree.py {wildcards.features} {input}; touch {output}'
 
-def read_df(afile):
+def read_df(afile, keys):
     col = afile.split('/')[-1]
     df_pre = pd.read_csv(afile, sep='\t')
-    if col in df_pre.columns.values:
-        df = df_pre[['chrom', 'pos', 'alt', col, 'y', 'Disease']]
-    elif col + '_pred_lm' in df_pre.columns.values:
-        df = df_pre[['chrom', 'pos', 'alt', col + '_pred_lm', 'y', 'Disease']]
-    else:
-        print(col)
+    col = col + '_probaPred'
+    df = df_pre[keys + [col]]
+    print(df.head())
     return df
 
 # rule combine_predictions:
@@ -176,8 +172,14 @@ rule roc_combo:
     input:  expand(WORK + 'roc_df_{{eval_source}}/{cols}', cols=feats + ['-'.join(feats) + '-is_domain'])
     output: o = WORK + '{eval_source}.roc_df_combo'
     run:
-        dfs = [pd.read_csv(afile, sep='\t') for afile in list(input)]
-        pd.concat(dfs).to_csv(output.o, index=False, sep='\t')
+        if wildcards.eval_source == 'clinvar':
+            keys = feats + ['clinvar_subset', 'Disease', 'chrom', 'pos', 'alt', 'y']
+        elif wildcards.eval_source == 'panel':
+            keys = feats + ['Disease', 'chrom', 'pos', 'alt', 'y']
+        dfs = [read_df(afile, keys) for afile in list(input)]
+        m = reduce(lambda left, right: pd.merge(left, right, on=keys), dfs)
+        m.to_csv(output.o, index=False, sep='\t')
+
 rule roc_combos:
     input: expand(WORK + '{source}.roc_df_combo', source=('clinvar', 'panel'))
 

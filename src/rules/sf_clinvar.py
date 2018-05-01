@@ -34,13 +34,14 @@ def parse_vcf_data(line):
     if 'mpc=' in info:
         mpc = info.split('mpc=')[1].split(';')[0]
         missense_badness = info.split('mis_badness=')[1].split(';')[0]
-        missense_depletion = info.split('obs_exp=')[1].split(';')[0]
+        missense_depletion = str( -1 * float(info.split('obs_exp=')[1].split(';')[0]) )
 
     fathmm = 'NA'
     if 'FATHMM_score' in info:
-        fathmm = min([float(x) for x in
-                      info.split('FATHMM_score=')[1].split(';')[0].split(',')
-                      if x != '.'])
+        # negate fathmm for roc curve
+        fathmm = -1 * min([float(x) for x in
+                           info.split('FATHMM_score=')[1].split(';')[0].split(',')
+                           if x != '.'])
     vest = 'NA'
     if 'VEST3_score' in info:
         ls = [float(x) for x in
