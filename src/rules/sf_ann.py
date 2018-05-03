@@ -201,7 +201,7 @@ rule limit_clinvar:
         panel = pd.read_csv(input.p, sep='\t')[cols]
         clinvar = pd.read_csv(input.c, sep='\t')
         m = pd.merge(clinvar, panel, on=cols, how='outer', indicator=True)
-        m[m._merge=='left_only'].to_csv(output.o, index=False, sep='\t')
+        m[m._merge=='left_only'].drop(['_merge'], axis=1).to_csv(output.o, index=False, sep='\t')
 
 rule all_panels:
     input:  expand(DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.dat.limit.xls', lab=('EPIv6', )), expand(DATA + 'interim/{lab}/{lab}.eff.dbnsfp.anno.dat.limit.xls', lab=('other', ))

@@ -9,7 +9,7 @@ rule eval_panel_global:
     shell:  'python {SCRIPTS}score_panel_global_model.py {wildcards.cols} {input} {output}'
 
 rule simple_eval:
-    input: expand(WORK + 'roc_df_clinvar/{cols}', cols=('-'.join(feats + ['is_domain']),)), WORK + 'roc_df_clinvar/ccr-vest-missense_badness'
+    input: expand(WORK + 'roc_df_clinvar/{cols}', cols=feats + ['-'.join(feats + ['is_domain']),]), WORK + 'roc_df_clinvar/ccr-vest-missense_badness'
 
 rule eval_panel_single_gene:
     input:  expand(DATA + 'interim/clinvar{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo')),
