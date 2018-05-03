@@ -29,7 +29,7 @@ rule mk_panel_eval_figure_data:
 
 rule plot_panel_eval:
     input:  i = DATA + 'interim/pred_panel_eval/' + C_FEATS
-    output: o = DOCS + 'paper_plts/fig3_panelEval.pdf'
+    output: o = DOCS + 'paper_plts/fig4_panelEval.pdf'
     run:
         plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) ) +
                       geom_text(data=label_df, colour="white", aes(x=x, y=y, label=label), hjust="left")"""

@@ -53,7 +53,7 @@ rule eval_by_gene_clinvar:
 
 rule plot_clinvar_eval_paper:
     input:  expand(DATA + 'interim/pred_clinvar_eval/{clinvar_set}.' + C_FEATS, clinvar_set=('clinvar_tot', 'clinvar_single'))
-    output: o = DOCS + 'paper_plts/fig4_eval_clinvar.pdf'
+    output: o = DOCS + 'paper_plts/fig5_evalClinvar.pdf'
     run:
         plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) ) +
                       geom_text(hjust="left", colour="white", data=label_df, aes(x=x, y=y, label=label))"""

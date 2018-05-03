@@ -1,15 +1,22 @@
+import pandas as pd
+from functools import reduce
+from itertools import combinations, chain
+from sklearn import metrics
+from snakemake.utils import R
+from collections import defaultdict
+from snakemake.remote.dropbox import RemoteProvider as DropboxRemoteProvider
 from snakemake.remote.FTP import RemoteProvider as FTPRemoteProvider
 FTP = FTPRemoteProvider()
 from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
 HTTP = HTTPRemoteProvider()
-
 import os, sys
-from itertools import combinations, chain
 from p_change import *
 
-# SECRETS = '/home/evansj/me/.secrets/'
-# sys.path.append(SECRETS)
-# from pass_wd import *
+SECRETS = '/home/evansj/me/.secrets/'
+sys.path.append(SECRETS)
+from pass_wd import *
+
+DBox = DropboxRemoteProvider(oauth2_access_token=DROP_BOX)
 
 # DONE = TWILIO_PRE + "--data-urlencode 'Body=DONE' " + TWILIO_POST
 # FAIL = TWILIO_PRE + "--data-urlencode 'Body=FAIL' " + TWILIO_POST

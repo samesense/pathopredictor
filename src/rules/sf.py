@@ -1,10 +1,18 @@
 """Main snakefile"""
-import pandas as pd
-from functools import reduce
-from itertools import combinations, chain
-from sklearn import metrics
-from snakemake.utils import R
-from collections import defaultdict
+# import pandas as pd
+# from functools import reduce
+# from itertools import combinations, chain
+# from sklearn import metrics
+# from snakemake.utils import R
+# from collections import defaultdict
+# from snakemake.remote.dropbox import RemoteProvider as DropboxRemoteProvider
+# from snakemake.remote.FTP import RemoteProvider as FTPRemoteProvider
+# FTP = FTPRemoteProvider()
+# from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
+# HTTP = HTTPRemoteProvider()
+# import os, sys
+# from p_change import *
+
 
 include: "const.py"
 #include: "sf_uniprot.py"
