@@ -64,7 +64,7 @@ rule plot_clinvar_eval_paper:
         df = df_tot[['clinvar_type', 'disease_name', 'benign_size', 'pathogenic_size']].drop_duplicates().melt(id_vars=['clinvar_type', 'disease_name'], var_name='var_type')
         df.loc[:, 'label'] = df.apply(lambda row: row['var_type'].split('_')[0] + '=%d' % (row['value']), axis=1)
         df.loc[:, 'x'] = df.apply(lambda row: 'Missense badness' if 'benign' in row['label'] else 'Missense depletion', axis=1)
-        df['y'] = .05
+        df['y'] = .01
         df.to_csv(output.o + '.tmp.clinvar.labels', index=False, sep='\t')
 
         R("""
@@ -78,25 +78,3 @@ rule plot_clinvar_eval_paper:
           ggsave("{output}", p, height=9, width=20)
           """)
         shell('rm {output}.tmp.clinvar.labels')
-
-rule plot_clinvar_eval:
-    input:  DATA + 'interim/{eval_source}.by_gene_feat_combo.predictFullClinvar'
-    output: DOCS + 'plot/eval_clinvar/{eval_source}.{disease}.predictFullClinvar.byVarClass{byVarClass}.png'
-    run:
-        dd = wildcards.disease.split(':')[0]
-        if wildcards.byVarClass == 'True':
-            plot_cmd = 'geom_col(aes(y=wrongFrac, x=reorder(combo, predictorWrongFracTot), fill=var_class), position="dodge")'
-        else:
-            plot_cmd = 'geom_col(aes(y=wrongFrac, x=reorder(combo, predictorWrongFracTot)), position="dodge")'
-        R("""
-          require(ggplot2)
-          d = read.delim("{input}", sep='\t', header=TRUE)
-          p = ggplot(data=d[d$dd=="{dd}",]) + {plot_cmd} +
-              ylab('Wrong prediction fraction') + xlab('') + theme_bw() + facet_grid(clinvar_type~.) +
-              labs(fill="Variant class") + coord_flip() +
-              theme(axis.text.y = element_text(size=6))
-          ggsave("{output}", p, height=20)
-          """)
-
-
-
