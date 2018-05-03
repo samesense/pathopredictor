@@ -51,45 +51,6 @@ rule eval_by_gene_clinvar:
         m.loc[:, 'disease_order'] = m.apply(lambda row: disease_order[row['Disease']], axis=1)
         m.to_csv(output.o, index=False, sep='\t')
 
-rule combine_features_by_gene_clinvar_plot:
-    input:  clinvar_data = expand(DATA + 'interim/pred_clinvar_eval/{{eval_source}}.{feature}.10.both', feature=COMBO_FEATS),
-            panel_data = WORK + 'cc.pvals'
-    output: o=DATA + 'interim/{eval_source}.by_gene_feat_combo.predictFullClinvar'
-    run:
-        disease_order = {'genedx-epi-limitGene':3,
-                         'Rasopathies':4,
-                         'genedx-epi':2,
-                         'Cardiomyopathy':1}
-
-        diseases = {'genedx-epi-limitGene':'Epilepsy (dominant genes)',
-                    'Rasopathies':'Rasopathies',
-                    'genedx-epi':'Epilepsy',
-                    'Cardiomyopathy':'Cardiomyopathy'}
-        clinvar_names  = {'tot': 'Total ClinVar',
-                          'single': 'ClinVar w/ Evidence'}
-        dfp = pd.concat([pd.read_csv(afile, sep='\t') for afile in list(input.clinvar_data)])
-        panel_cols = ['disease', 'st', 'box']
-        panel_df_pre = pd.read_csv(input.panel_data, sep='\t')[panel_cols].drop_duplicates().rename(columns={'disease':'dd', 'st':'combo'})
-        crit = panel_df_pre.apply(lambda row: not 'BASE' in row['combo'] and '-' in row['combo'], axis=1)
-        panel_df = panel_df_pre[crit]
-
-        crit = dfp.apply(lambda row: row['clinvar_type'] in clinvar_names, axis=1)
-        df2 = dfp[crit]
-        min_df = (df2[['clinvar_type', 'dd', 'wrongFrac']]
-                  .groupby(['clinvar_type', 'dd'])
-                  .apply(min).rename(columns={'dd':'dd_junk', 'clinvar_type':'clinvar_type_junk', 'wrongFrac':'min'})
-                  .reset_index() )
-        df3 = pd.merge(df2, min_df, on=['clinvar_type', 'dd'], how='left')
-        df3.loc[:, 'Classifier'] = df3.apply(color_clinvar_bar, axis=1)
-        df3.loc[:, 'combo'] = df3.apply(lambda row: row['combo'].replace('clinvar.', 'TRAINED_').replace('clinvar_base.', 'BASE_'), axis=1)
-        df = pd.merge(df3, panel_df, on=['dd','combo'], how='left').fillna(False)
-        df.loc[:, 'dd'] = df.apply(lambda row: diseases[row['dd']], axis=1)
-        df.loc[:, 'clinvar_type'] = df.apply(lambda row: clinvar_names[row['clinvar_type']], axis=1)
-        df.loc[:, 'is_best_clinvar'] = df.apply(lambda row: row['wrongFrac']==row['min'], axis=1)
-        #df.loc[:, 'is_best'] = df.apply(lambda row: row['panel_best'] or row['is_best_clinvar'], axis=1)
-        #df.loc[:, 'best_label'] = df.apply(calc_clinvar_best_label, axis=1)
-        df.to_csv(output.o, index=False, sep='\t')
-
 rule plot_clinvar_eval_paper:
     input:  expand(DATA + 'interim/pred_clinvar_eval/{clinvar_set}.' + C_FEATS, clinvar_set=('clinvar_tot', 'clinvar_single'))
     output: o = DOCS + 'paper_plts/fig4_eval_clinvar.pdf'
@@ -103,7 +64,7 @@ rule plot_clinvar_eval_paper:
         df = df_tot[['clinvar_type', 'disease_name', 'benign_size', 'pathogenic_size']].drop_duplicates().melt(id_vars=['clinvar_type', 'disease_name'], var_name='var_type')
         df.loc[:, 'label'] = df.apply(lambda row: row['var_type'].split('_')[0] + '=%d' % (row['value']), axis=1)
         df.loc[:, 'x'] = df.apply(lambda row: 'Missense badness' if 'benign' in row['label'] else 'Missense depletion', axis=1)
-        df['y'] = .05 #df.apply(lambda row: .15 if 'benign' in row['label'] else .15, axis=1)
+        df['y'] = .05
         df.to_csv(output.o + '.tmp.clinvar.labels', index=False, sep='\t')
 
         R("""
