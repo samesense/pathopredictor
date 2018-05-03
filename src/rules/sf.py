@@ -2,6 +2,7 @@
 import pandas as pd
 from functools import reduce
 from itertools import combinations, chain
+from sklearn import metrics
 from snakemake.utils import R
 from collections import defaultdict
 
@@ -29,7 +30,6 @@ include: "sf.rank.eval.py"
 
 include: "sf.webtool.py"
 include: "sf_single_gene.py"
-#WORK + 'roc_df_panel/is_domain'
 
 rule all_dat:
     input: DATA + 'interim/denovo/denovo.limit3.dat', \

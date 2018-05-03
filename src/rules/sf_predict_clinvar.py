@@ -2,51 +2,54 @@
    evaluate on clinvar
 """
 
+def eval_pr(df, disease, acc_ls):
+    scores = [x for x in df.columns.values if '_probaPred' in x or x in FEATS]
+    feat_names = {'Combination':'Combination', 'ccr':'CCR', 'fathmm':'FATHMM', 'vest':'VEST', 'missense_badness':'Missense badness', 'missense_depletion':'Missense depletion'}
+    for score in scores:
+        fpr, tpr, _ = metrics.roc_curve(df['y'], df[score], pos_label=1)
+        auc = metrics.auc(fpr, tpr)
+        avg_pr = metrics.average_precision_score(df['y'], df[score])
+        feature = score
+        if '-' in feature:
+            feature = 'Combination'
+        acc_ls.append((auc, avg_pr, feat_names[feature], disease))
+
 rule eval_by_gene_clinvar:
-    input:  i = WORK + 'roc_df_{eval_source}/{features}'
-    output: o = DATA + 'interim/pred_clinvar_eval/{eval_source}.{features}.{evidenceCutoff}.{varTypes}'
+    input:  i = WORK + 'roc_df_clinvar/{features}'
+    output: o = DATA + 'interim/pred_clinvar_eval/{eval_source}.{features}'
     run:
-        keys = ['Disease']
         df_pre = pd.read_csv(input.i, sep='\t')
-        crit = df_pre.apply(lambda row: not 'uc' in row['Disease'] and not 'issue' in row['Disease'] and not 'earing' in row['Disease'], axis=1)
-        df = df_pre[crit]
+        if wildcards.eval_source == 'clinvar_tot':
+            df = df_pre
+        elif wildcards.eval_source == 'clinvar_single':
+            df = df_pre[df_pre.is_single]
+        else:
+            i = 1/0
 
-        apply_calc_wrong_baseline = mk_calc_wrong_func(int(wildcards.evidenceCutoff), 'PredictionStatusBaseline', wildcards.varTypes)
-        apply_calc_wrong= mk_calc_wrong_func(int(wildcards.evidenceCutoff), 'PredictionStatusMPC', wildcards.varTypes)
+        acc_ls = []
+        for dis in set(df['Disease']):
+            eval_pr(df[df.Disease==dis], dis, acc_ls)
+        score_df = pd.DataFrame(acc_ls, columns=['auc', 'avg_pr', 'features', 'Disease'])
+        benign_size_df = df[df.y==0].groupby(['Disease']).size().reset_index().rename(columns={0:'benign_size'})
+        path_size_df = df[df.y==1].groupby(['Disease']).size().reset_index().rename(columns={0:'pathogenic_size'})
+        size_df = pd.merge(benign_size_df, path_size_df, on='Disease', how='outer')
+        m = pd.merge(score_df, size_df, on=['Disease'])
+        clinvar_names  = {'clinvar_tot': 'Total ClinVar',
+                          'clinvar_single': 'ClinVar w/ Evidence'}
 
-        # baseline
-        wrong_baseline_df = df.groupby(keys).apply(apply_calc_wrong_baseline).reset_index().rename(columns={0:'wrongFrac'})
-        wrong_baseline_df['combo'] = 'clinvar_base.' + wildcards.features
+        m.loc[:, 'clinvar_type'] = clinvar_names[wildcards.eval_source]
+        disease_order = {'genedx-epi-limitGene':3,
+                         'Rasopathies':4,
+                         'EPI':2,
+                         'Cardiomyopathy':1}
 
-        wrong_df= df.groupby(keys).apply(apply_calc_wrong).reset_index().rename(columns={0:'wrongFrac'})
-        wrong_df['combo'] = 'clinvar.' + wildcards.features
-
-        tot_wrong_df = df.groupby(['Disease']).apply(apply_calc_wrong).reset_index().rename(columns={0:'predictorWrongFracTot'})
-        size_df = df.groupby(keys).size().reset_index().rename(columns={0:'size'})
-
-        m0 = pd.concat([wrong_df, wrong_baseline_df])
-        m = pd.merge(m0, size_df, on=keys)
-        m.loc[:, 'clinvar_type'] = m.apply(lambda row: row['Disease'].split(':')[1], axis=1)
-        m.loc[:, 'dd'] = m.apply(lambda row: row['Disease'].split(':')[0], axis=1)
-        final_cols = ['Disease', 'dd', 'clinvar_type', 'combo',
-                      'size', 'predictorWrongFracTot', 'wrongFrac']
-        pd.merge(m, tot_wrong_df, on='Disease', how='left')[final_cols].to_csv(output.o, index=False, sep='\t')
-
-def color_clinvar_bar(row):
-    if row['combo'] in ('clinvar_base.mpc', 'clinvar_base.revel', 'clinvar_base.ccr', 'clinvar_base.is_domain'):
-        return 'Baseline'
-    if 'base' in row['combo']:
-        return 'Combined baseline'
-    return 'Trained'
-
-def calc_clinvar_best_label(row):
-    if row['panel_best'] and not row['is_best_clinvar']:
-        return 'Best panel'
-    if row['is_best_clinvar'] and not row['panel_best']:
-        return 'Best ClinVar'
-    if row['is_best_clinvar'] and row['panel_best']:
-        return 'Best both'
-    return 'NA'
+        diseases = {'genedx-epi-limitGene':'Epilepsy (dominant genes)',
+                    'Rasopathies':'Rasopathies',
+                    'EPI':'Epilepsy',
+                    'Cardiomyopathy':'Cardiomyopathy'}
+        m.loc[:, 'disease_name'] = m.apply(lambda row: diseases[row['Disease']], axis=1)
+        m.loc[:, 'disease_order'] = m.apply(lambda row: disease_order[row['Disease']], axis=1)
+        m.to_csv(output.o, index=False, sep='\t')
 
 rule combine_features_by_gene_clinvar_plot:
     input:  clinvar_data = expand(DATA + 'interim/pred_clinvar_eval/{{eval_source}}.{feature}.10.both', feature=COMBO_FEATS),
@@ -88,32 +91,32 @@ rule combine_features_by_gene_clinvar_plot:
         df.to_csv(output.o, index=False, sep='\t')
 
 rule plot_clinvar_eval_paper:
-    input:  i = DATA + 'interim/clinvar.by_gene_feat_combo.predictFullClinvar'
-    output: DOCS + 'paper_plts/fig4_eval_clinvar.pdf'
+    input:  expand(DATA + 'interim/pred_clinvar_eval/{clinvar_set}.' + C_FEATS, clinvar_set=('clinvar_tot', 'clinvar_single'))
+    output: o = DOCS + 'paper_plts/fig4_eval_clinvar.pdf'
     run:
-        plot_cmd = """geom_col( aes(fill=Classifier, y=wrongFrac, x=reorder(combo, wrongFrac)) ) +
-                      geom_text(data=label_df, aes(x=x,y=y,label=label))"""
-        df = pd.read_csv(input.i, sep='\t')[['clinvar_type','dd','size']].drop_duplicates()
-        df.loc[:, 'label'] = df.apply(lambda row: 'n=%d' % (row['size']), axis=1)
-        df['y'] = 0.45
-        df['x'] = 'TRAINED_mpc-revel-ccr'
-        df.to_csv('tmp.clinvar.labels', index=False, sep='\t')
+        plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) ) +
+                      geom_text(hjust="left", colour="white", data=label_df, aes(x=x, y=y, label=label))"""
+
+        df_tot = pd.concat([pd.read_csv(afile, sep='\t') for afile in input])
+        df_tot.to_csv(output.o + '.df', index=False, sep='\t')
+
+        df = df_tot[['clinvar_type', 'disease_name', 'benign_size', 'pathogenic_size']].drop_duplicates().melt(id_vars=['clinvar_type', 'disease_name'], var_name='var_type')
+        df.loc[:, 'label'] = df.apply(lambda row: row['var_type'].split('_')[0] + '=%d' % (row['value']), axis=1)
+        df.loc[:, 'x'] = df.apply(lambda row: 'Missense badness' if 'benign' in row['label'] else 'Missense depletion', axis=1)
+        df['y'] = .05 #df.apply(lambda row: .15 if 'benign' in row['label'] else .15, axis=1)
+        df.to_csv(output.o + '.tmp.clinvar.labels', index=False, sep='\t')
 
         R("""
           require(ggplot2)
-          cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-          cbbPalette <- c("#D55E00", "#009E73", "#000000")
-          d = read.delim("{input}", sep='\t', header=TRUE)
-          label_df = read.delim("tmp.clinvar.labels", sep="\t", header=TRUE)
-          dbest = d[d$is_best=="True",]
+          d = read.delim("{output}.df", sep='\t', header=TRUE)
+          label_df = read.delim("{output}.tmp.clinvar.labels", sep="\t", header=TRUE)
           d$clinvar_type = factor(d$clinvar_type, levels=c("Total ClinVar", "ClinVar w/ Evidence"))
-          p = ggplot(data=d) + {plot_cmd} + scale_fill_manual(values=cbPalette) +
-              ylab('Incorrect prediction fraction') + xlab('') + theme_bw(base_size=18) + facet_grid(clinvar_type~dd) +
-              coord_flip() + labs(colour="") +
-              theme(legend.position="bottom", axis.text.y = element_text(size=10)) + scale_colour_manual(values=cbbPalette)
+          p = ggplot(data=d) + {plot_cmd} +
+              ylab('Average precision') + xlab('') + theme_bw(base_size=18) + facet_grid(clinvar_type~disease_name) +
+              coord_flip()
           ggsave("{output}", p, height=9, width=20)
           """)
-        shell('rm tmp.clinvar.labels')
+        shell('rm {output}.tmp.clinvar.labels')
 
 rule plot_clinvar_eval:
     input:  DATA + 'interim/{eval_source}.by_gene_feat_combo.predictFullClinvar'

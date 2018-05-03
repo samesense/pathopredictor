@@ -8,8 +8,8 @@ rule eval_panel_global:
             WORK + 'roc_df_clinvar/{cols}'
     shell:  'python {SCRIPTS}score_panel_global_model.py {wildcards.cols} {input} {output}'
 
-rule simple_eval:
-    input: expand(WORK + 'roc_df_clinvar/{cols}', cols=feats + ['-'.join(feats + ['is_domain']),]), WORK + 'roc_df_clinvar/ccr-vest-missense_badness'
+# rule simple_eval:
+#     input: expand(WORK + 'roc_df_clinvar/{cols}', cols=feats + ['-'.join(feats + ['is_domain']),]), WORK + 'roc_df_clinvar/ccr-vest-missense_badness'
 
 rule eval_panel_single_gene:
     input:  expand(DATA + 'interim/clinvar{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo')),
@@ -169,7 +169,7 @@ def read_df(afile, keys):
 #         m.to_csv(output.o, index=False, sep='\t')
 
 rule roc_combo:
-    input:  expand(WORK + 'roc_df_{{eval_source}}/{cols}', cols=feats + ['-'.join(feats) + '-is_domain'])
+    input:  expand(WORK + 'roc_df_{{eval_source}}/{cols}', cols=COMBO_FEATS)
     output: o = WORK + '{eval_source}.roc_df_combo'
     run:
         if wildcards.eval_source == 'clinvar':
