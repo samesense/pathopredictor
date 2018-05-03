@@ -1,44 +1,56 @@
 """Predictor paper plots."""
 
 rule count_plot_data:
-    input: panel = WORK + 'roc_df_panel/mpc',
-           clinvar = WORK + 'roc_df_clinvar/mpc'
+    input: panel = WORK + 'roc_df_panel/' + C_FEATS,
+           clinvar = WORK + 'roc_df_clinvar/' + C_FEATS
     output: o = WORK + 'paper_plot_data/count_plot'
     run:
         diseases = {'genedx-epi-limitGene':'Epilepsy (dominant genes)',
                     'Rasopathies':'Rasopathies',
-                    'genedx-epi':'Epilepsy',
+                    'EPI':'Epilepsy',
                     'Cardiomyopathy':'Cardiomyopathy'}
         clin_labels = {'single':'ClinVar w/ Evidence',
                        'tot': 'Total ClinVar'}
         df_panel = pd.read_csv(input.panel, sep='\t')
-        crit_p = df_panel.apply(lambda row: row['Disease'] in diseases, axis=1)
-        panel = df_panel[crit_p].groupby(['Disease','y']).size().reset_index().rename(columns={0:'count'})
+        panel = df_panel.groupby(['Disease','y']).size().reset_index().rename(columns={0:'count'})
         panel['eval_type'] = 'Panel'
         panel.loc[:, 'Disease'] = panel.apply(lambda row: diseases[row['Disease']], axis=1)
+
         df_clinvar = pd.read_csv(input.clinvar, sep='\t')
-        crit_c = df_clinvar.apply(lambda row: row['Disease'].split(':')[0] in diseases and row['Disease'].split(':')[1] in ('tot', 'single'), axis=1)
-        clinvar = df_clinvar[crit_c].groupby(['Disease','y']).size().reset_index().rename(columns={0:'count'})
-        clinvar.loc[:, 'eval_type'] = clinvar.apply(lambda row: clin_labels[row['Disease'].split(':')[1]], axis=1)
-        clinvar.loc[:, 'Disease'] = clinvar.apply(lambda row: diseases[row['Disease'].split(':')[0]], axis=1)
-        df = pd.concat([panel, clinvar])
+        df_clinvar_single = df_clinvar[df_clinvar.is_single]
+
+        clinvar = df_clinvar.groupby(['Disease','y']).size().reset_index().rename(columns={0:'count'})
+        clinvar.loc[:, 'eval_type'] = clin_labels['tot']
+        clinvar.loc[:, 'Disease'] = clinvar.apply(lambda row: diseases[row['Disease']], axis=1)
+
+        s_clinvar = df_clinvar_single.groupby(['Disease','y']).size().reset_index().rename(columns={0:'count'})
+        s_clinvar.loc[:, 'eval_type'] = clin_labels['single']
+        s_clinvar.loc[:, 'Disease'] = s_clinvar.apply(lambda row: diseases[row['Disease']], axis=1)
+        
+        df = pd.concat([panel, clinvar, s_clinvar])
         df.loc[:,'y'] = df.apply(lambda row: 'Pathogenic' if row['y']==1 else 'Benign', axis=1)
         df['count_type'] = 'Variants'
 
-        panel_gene = df_panel[crit_p][['Disease', 'gene']].drop_duplicates().groupby(['Disease']).size().reset_index().rename(columns={0:'count'})
+        panel_gene = df_panel[['Disease', 'gene']].drop_duplicates().groupby(['Disease']).size().reset_index().rename(columns={0:'count'})
         panel_gene['eval_type'] = 'Panel'
         panel_gene.loc[:, 'Disease'] = panel_gene.apply(lambda row: diseases[row['Disease']], axis=1)
-        clinvar_gene = df_clinvar[crit_c][['Disease','gene']].drop_duplicates().groupby(['Disease']).size().reset_index().rename(columns={0:'count'})
-        clinvar_gene.loc[:, 'eval_type'] = clinvar_gene.apply(lambda row: clin_labels[row['Disease'].split(':')[1]], axis=1)
-        clinvar_gene.loc[:, 'Disease'] = clinvar_gene.apply(lambda row: diseases[row['Disease'].split(':')[0]], axis=1)
-        df_gene = pd.concat([panel_gene, clinvar_gene])
+        
+        clinvar_gene = df_clinvar[['Disease','gene']].drop_duplicates().groupby(['Disease']).size().reset_index().rename(columns={0:'count'})
+        clinvar_gene.loc[:, 'eval_type'] = clin_labels['tot']
+        clinvar_gene.loc[:, 'Disease'] = clinvar_gene.apply(lambda row: diseases[row['Disease']], axis=1)
+
+        s_clinvar_gene = df_clinvar_single[['Disease','gene']].drop_duplicates().groupby(['Disease']).size().reset_index().rename(columns={0:'count'})
+        s_clinvar_gene.loc[:, 'eval_type'] = clin_labels['single']
+        s_clinvar_gene.loc[:, 'Disease'] = s_clinvar_gene.apply(lambda row: diseases[row['Disease']], axis=1)
+        
+        df_gene = pd.concat([panel_gene, clinvar_gene, s_clinvar_gene])
         df_gene['y'] = 'Gene'
         df_gene['count_type'] = 'Genes'
         pd.concat([df, df_gene]).to_csv(output.o, index=False, sep='\t')
 
 rule count_plot:
     input:  WORK + 'paper_plot_data/count_plot'
-    output: DOCS + 'paper_plts/fig1_count_plot.pdf'
+    output: DOCS + 'paper_plts/fig1_countPlot.pdf'
     run:
         R("""
           require(ggplot2)
@@ -159,7 +171,7 @@ rule size_bar_paper_plot:
 
 #FIGS = ('fig1_count_plot', 'fig4_eval_clinvar', 'fig3_panelEval.byVarClassFalse', 'fig5_idi', 'fig6_single_gene_collapse_.003_.1')
 #FIGS = ('fig1_count_plot', 'fig3_panelEval.byVarClassFalse')
-FIGS = ('fig5_evalClinvar', 'fig4_panelEval', 'fig3_featureImportance')
+FIGS = ('fig1_countPlot', 'fig5_evalClinvar', 'fig4_panelEval', 'fig3_featureImportance')
 
 rule upload_paper_plot:
     input: DOCS + 'paper_plts/{fig}.pdf'
