@@ -33,6 +33,7 @@ include: "sf_eval_ahmad.py" # plot_ahmad
 include: "paper.plots.py"
 include: "sf_predict_clinvar.py"
 include: "sf_feature_importances.py"
+include: "sf_feature_cor.py"
 
 include: "sf.rank.eval.py"
 

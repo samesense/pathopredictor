@@ -70,7 +70,7 @@ rule plot_clinvar_eval_paper:
 
         R("""
           require(ggplot2)
-          feature_palette <- c("red", "grey")
+          feature_palette <- c("#D4ED91", "grey")
           d = read.delim("{output}.df", sep='\t', header=TRUE)
           label_df = read.delim("{output}.tmp.clinvar.labels", sep="\t", header=TRUE)
           d$clinvar_type = factor(d$clinvar_type, levels=c("Total ClinVar", "ClinVar w/ Evidence"))
