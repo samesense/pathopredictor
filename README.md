@@ -1,7 +1,14 @@
 mahdi_epi
 ==============================
 
-Variant effect prediction using domains
+Missense variant effect pathogenicity prediction
+
+### Todo
+* Methods (today)
+* Background (thurs)
+* Discussion (fri)
+* Method overview figure (chou)
+* Single gene train/test (drop it?)
 
 ### Meeting notes
 * [080817](docs/meeting_080817.md)
