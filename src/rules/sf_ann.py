@@ -162,6 +162,10 @@ rule limit_eval_general:
             df['Disease'] = 'EPI'
         elif wildcards.dir == 'clinvar':
             df = load_clinvar(input.i)
+        elif wildcards.dir == 'gnomad':
+            df = pd.read_csv(input.i, sep='\t')
+        else:
+            i = 1/0
 
         uniprot_benign = {}
         with open(input.uniprot_benign) as f:
@@ -178,6 +182,11 @@ rule limit_eval_general:
             df.loc[:, 'class'] = df.apply(mk_class_epi, axis=1)
         elif wildcards.dir == 'clinvar':
             df.loc[:, 'class'] = df.apply(calc_final_sig_clinvar, axis=1)
+        elif wildcards.dir == 'gnomad':
+            df.loc[:, 'class'] = 'B'
+            df.loc[:, 'Disease'] = 'gnomad'
+        else:
+            i = 1/0
 
         df.loc[:, 'in_hgmd_dm'] = df.apply(lambda row: str(row['chrom']) + ':' + str(row['pos']) in hgmd, axis=1)
         df.loc[:, 'is_domain'] = df.apply(lambda row: 0 if 'none' in row['pfam'] else 1, axis=1)
@@ -196,9 +205,12 @@ rule limit_clinvar:
     output: o = DATA + 'interim/clinvar.dat'
     run:
         cols = ['chrom', 'pos', 'ref', 'alt']
-        panel = pd.read_csv(input.p, sep='\t')[cols]
+        panel = pd.read_csv(input.p, sep='\t')
+        panel_genes = set(panel['gene'])
+        panel = panel[cols]
         clinvar = pd.read_csv(input.c, sep='\t')
-        m = pd.merge(clinvar, panel, on=cols, how='outer', indicator=True)
+        crit = clinvar.apply(lambda row: row['gene'] in panel_genes, axis=1)
+        m = pd.merge(clinvar[crit], panel, on=cols, how='outer', indicator=True)
         m[m._merge=='left_only'].drop(['_merge'], axis=1).to_csv(output.o, index=False, sep='\t')
 
 rule all_panels:
