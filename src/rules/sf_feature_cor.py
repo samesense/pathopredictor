@@ -31,7 +31,7 @@ rule mk_cor_data:
 
 rule plot_feature_cor:
     input:  DATA + 'interim/feature_cor/plot_data'
-    output: DOCS + 'paper_plts/fig3a_featureCor.pdf'
+    output: DOCS + 'paper_plts/fig3b_featureCor.pdf'
     run:
         R("""
           require(ggplot2)

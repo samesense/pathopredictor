@@ -22,7 +22,7 @@ def parse_vcf_data(line):
     if '6500_EA' in info:
         esp_ls.extend( [float(x) for x in info.split('ESP6500_EA_AF=')[1].split(';')[0].split(',')] )
     if '6500_AA' in info:
-        esp_ls.extend( [float(x) for x in info.split('ESP6500_EA_AF=')[1].split(';')[0].split(',')] )
+        esp_ls.extend( [float(x) for x in info.split('ESP6500_AA_AF=')[1].split(';')[0].split(',')] )
     if 'af_esp_all' in info:
         esp_ls.extend( [float(x) for x in info.split('af_esp_all=')[1].split(';')[0].split(',')] )
 
