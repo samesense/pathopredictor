@@ -9,7 +9,7 @@ from snakemake.remote.FTP import RemoteProvider as FTPRemoteProvider
 FTP = FTPRemoteProvider()
 from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
 HTTP = HTTPRemoteProvider()
-import os, sys
+import os, sys, csv
 from p_change import *
 
 SECRETS = '/home/evansj/me/.secrets/'

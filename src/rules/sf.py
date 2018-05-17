@@ -15,6 +15,7 @@
 
 
 include: "const.py"
+include: "sf_patient_counts.py"
 #include: "sf_uniprot.py"
 include: "sf_hgmd.py"
 
