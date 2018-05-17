@@ -1,6 +1,4 @@
 """Annotate epilepsy panel vcfs"""
-import csv
-import pandas as pd
 
 rule fix_mutalyzer:
     input:  DATA + 'raw/mutalyzer.{panel}'

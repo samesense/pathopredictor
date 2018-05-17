@@ -1,5 +1,7 @@
 """Annotate gnomad."""
-import pandas as pd
+
+rule gnomad_process:
+    input: DATA + 'interim/gnomad/gnomad.eff.dbnsfp.anno.vcf'
 
 rule snpeff_gnomad:
     input:  GNOMAD
@@ -8,23 +10,23 @@ rule snpeff_gnomad:
                -strict -noStats GRCh37.75 -c {EFF_CONFIG} \
                {input} > {output}"""
 
-# fix pfam
+#fix pfam
 # /mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/hg19.pfam.ucscgenes.enum.bed.gz
 # ann fixed pfam
 # parse genes
-rule vcfanno_gnomad:
-    input:   vcf = DATA + 'interim/gnomad/gnomad.eff.vcf',
-             conf = CONFIG + 'vcfanno.conf',
-             lua = VCFANNO_LUA_FILE
-    output:  temp(DATA + 'interim/gnomad/gnomad.anno.vcf')
-    threads: 10
-    shell:   """{VCFANNO} -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
-                {input.conf} {input.vcf} > {output}"""
+# rule vcfanno_gnomad:
+#     input:   vcf = DATA + 'interim/gnomad/gnomad.eff.vcf',
+#              conf = CONFIG + 'vcfanno.conf',
+#              lua = VCFANNO_LUA_FILE
+#     output:  temp(DATA + 'interim/gnomad/gnomad.anno.vcf')
+#     threads: 10
+#     shell:   """{VCFANNO} -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
+#                 {input.conf} {input.vcf} > {output}"""
 
-rule fixHeader_gnomad:
-    input:  DATA + 'interim/gnomad/gnomad.anno.vcf'
-    output: DATA + 'interim/gnomad/gnomad.anno.hHack.vcf'
-    shell:  'python {HEADER_HCKR} {input} {output} {HEADER_FIX}'
+# rule fixHeader_gnomad:
+#     input:  DATA + 'interim/gnomad/gnomad.anno.vcf'
+#     output: DATA + 'interim/gnomad/gnomad.anno.hHack.vcf'
+#     shell:  'python {HEADER_HCKR} {input} {output} {HEADER_FIX}'
 
 def find_missense_eff(pos, ann, csq):
     """return eff, gene, protein_change_pre, nm"""

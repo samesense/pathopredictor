@@ -3,10 +3,8 @@
 """
 
 rule single_eval:
-    input:  expand(DATA + 'interim/{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp',)),
-            DATA + 'interim/epi/EPIv6.eff.dbnsfp.anno.hHack.dat.limit.xls',
-            DATA + 'interim/epi/uc.eff.dbnsfp.anno.hHack.dat.limit.xls',
-            DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls',
+    input:  DATA + 'interm/panel.dat',
+            DATA + 'interim/clinvar.dat',
             DATA + 'interim/gnomad/gnomad.rare.panel_{plow}_{phigh}',
     output:
             WORK + 'single_roc_df_clinvar/{cols}_{plow}_{phigh}'
