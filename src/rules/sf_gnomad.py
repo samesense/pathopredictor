@@ -62,8 +62,8 @@ def limit_gnomad(input, output, low, high):
     df[(df.af>low) & (df.af<high)].to_csv(output, index=False, sep='\t')
 
 rule gnomad_panel:
-    input:  i = DATA + 'interim/gnomad/gnomad.eff.dbnsfp.anno.dat.limit.xls'
-    output: o = DATA + 'interim/gnomad/gnomad.rare.panel_{low}_{high}'
+    input:  i = DATA + 'interim/gnomad/{limit_type}/gnomad.eff.dbnsfp.anno.dat.limit.xls'
+    output: o = DATA + 'interim/gnomad/{limit_type}/gnomad.rare.panel_{low}_{high}'
     run:
         limit_gnomad(input.i, output.o, float(wildcards.low), float(wildcards.high))
 

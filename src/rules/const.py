@@ -73,9 +73,12 @@ def powerset(iterable):
     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
 FEATS = ['ccr', 'vest', 'fathmm', 'missense_badness', 'missense_depletion']
+FEATS_SINGLE = ['ccr', 'missense_badness', 'missense_depletion']
 C_FEATS = '-'.join(FEATS + ['is_domain'])
+C_FEATS_SINGLE = '-'.join(FEATS_SINGLE + ['is_domain'])
 #feats = ('ccr', 'is_domain')
-COMBO_FEATS = FEATS + [C_FEATS] # for x in powerset(FEATS) if x]
+COMBO_FEATS = FEATS + [C_FEATS] 
+COMBO_FEATS_SINGLE = FEATS_SINGLE + [C_FEATS_SINGLE]
 COMBO_FEATS_AT_LEAST_2 = ['-'.join(x) for x in powerset(FEATS) if x if len(x)>1]
 
 DBNSFP_FIELDS = 'Interpro_domain,SIFT_score,Polyphen2_HVAR_pred,Reliability_index,VEST3_score,FATHMM_pred,FATHMM_score,ESP6500_AA_AF,ESP6500_EA_AF,MutationAssessor_pred,MutationTaster_pred,phyloP100way_vertebrate,phastCons100way_vertebrate'

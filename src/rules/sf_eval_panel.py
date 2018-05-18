@@ -1,20 +1,11 @@
 """Predict status for gene panel vars"""
 
 rule eval_panel_global:
-    input:  DATA + 'interim/clinvar.dat',
-            DATA + 'interim/panel.dat',
+    input:  DATA + 'interim/full/clinvar.dat',
+            DATA + 'interim/full/panel.dat',
     output: WORK + 'roc_df_panel/{cols}',
             WORK + 'roc_df_clinvar/{cols}'
     shell:  'python {SCRIPTS}score_panel_global_model.py {wildcards.cols} {input} {output}'
-
-rule eval_panel_single_gene:
-    input:  expand(DATA + 'interim/clinvar{dat}/{dat}.limit3.dat', dat=('clinvar', 'clinvar_single', 'clinvar_mult', 'clinvar_exp', 'denovo')),
-            DATA + 'interim/epi/EPIv6.eff.dbnsfp.anno.hHack.dat.limit.xls',
-            DATA + 'interim/epi/uc.eff.dbnsfp.anno.hHack.dat.limit.xls',
-            DATA + 'interim/other/other.eff.dbnsfp.anno.hHack.dat.limit.xls'
-    output: WORK + 'single.eval_panel.stats',
-            WORK + 'single.eval_panel.eval'
-    shell:  'python {SCRIPTS}score_panel_single_gene_model.py {input} {output}'
 
 rule plot_gene_heatmap:
     input:  DATA + 'interim/{eval_source}.by_gene_feat_combo.{var_cutoff}'

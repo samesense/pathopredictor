@@ -147,12 +147,14 @@ def mk_class_epi(row):
 
 # focus genes and missense
 # must have ccr score
+# limit type is single and full
+# single does not use vest or fathmm
 rule limit_eval_general:
     input:  d = DATA + 'raw/gene_disease.xlsx',
             i = DATA + 'interim/{dir}/{lab}.eff.dbnsfp.anno.dat.xls',
             uniprot_benign = DATA + 'interim/uniprot/humsavar.hg19.pos',
             hgmd = DATA + 'interim/hgmd_ignore.pos'
-    output: o = DATA + 'interim/{dir}/{lab}.eff.dbnsfp.anno.dat.limit.xls'
+    output: o = DATA + 'interim/{dir}/{limit_type}/{lab}.eff.dbnsfp.anno.dat.limit.xls'
     run:
         if wildcards.dir == 'other':
             disease_df = pd.read_excel(input.d, skiprows=[0,1,2]).rename(columns={'Gene':'gene'})
@@ -192,23 +194,26 @@ rule limit_eval_general:
         df.loc[:, 'is_domain'] = df.apply(lambda row: 0 if 'none' in row['pfam'] else 1, axis=1)
         df.loc[:, 'y'] = df.apply(lambda row: 1 if row['class']=='P' else 0, axis=1)
         df.loc[:, 'in_uniprot_benign'] = df.apply(lambda row: str(row['chrom']) + ':' + str(row['pos']) in uniprot_benign, axis=1)
-        crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1
+        if wildcards.limit_type=='full':
+            crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1
                             and not (row['class'] == 'P' and row['in_hgmd_dm'])
                             and not (row['class']=='B' and row['in_uniprot_benign'])
                             and not row['Disease'] in ('Connective tissue disorders', 'Hearing Loss', '')
                             and not (row['class']=='B' and row['esp_af_max']>=.01), axis=1)
+        elif wildcards.limit_type=='single':
+            crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1
+                            and not row['Disease'] in ('Connective tissue disorders', 'Hearing Loss', ''), axis=1)
+
         df[crit].dropna().drop_duplicates(subset=['chrom', 'pos', 'ref', 'alt', 'Disease']).to_csv(output.o, index=False, sep='\t')
 #        if wildcards.dir == 'gnomad':
             # esp not removed, hgmd will not be removed, and uniprot benign will not be removed b/c vest and fathmm will not be used
             # I must do this to have enough training data per gene
-#            crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1
-#                            and not row['Disease'] in ('Connective tissue disorders', 'Hearing Loss', ''), axis=1)
 #        else:
 
 rule limit_clinvar:
-    input:  c = DATA + 'interim/clinvar/clinvar.eff.dbnsfp.anno.dat.limit.xls',
-            p = DATA + 'interim/panel.dat'
-    output: o = DATA + 'interim/clinvar.dat'
+    input:  c = DATA + 'interim/clinvar/{limit_type}/clinvar.eff.dbnsfp.anno.dat.limit.xls',
+            p = DATA + 'interim/{limit_type}/panel.dat'
+    output: o = DATA + 'interim/{limit_type}/clinvar.dat'
     run:
         cols = ['chrom', 'pos', 'ref', 'alt']
         panel = pd.read_csv(input.p, sep='\t')
@@ -220,8 +225,9 @@ rule limit_clinvar:
         m[m._merge=='left_only'].drop(['_merge'], axis=1).to_csv(output.o, index=False, sep='\t')
 
 rule all_panels:
-    input:  expand(DATA + 'interim/epi/{lab}.eff.dbnsfp.anno.dat.limit.xls', lab=('EPIv6', )), expand(DATA + 'interim/{lab}/{lab}.eff.dbnsfp.anno.dat.limit.xls', lab=('other', ))
-    output: o = DATA + 'interim/panel.dat'
+    input:  expand(DATA + 'interim/epi/{{limit_type}}/{lab}.eff.dbnsfp.anno.dat.limit.xls', lab=('EPIv6', )),
+            expand(DATA + 'interim/{lab}/{{limit_type}}/{lab}.eff.dbnsfp.anno.dat.limit.xls', lab=('other', ))
+    output: o = DATA + 'interim/{limit_type}/panel.dat'
     run:
         dfs = [pd.read_csv(afile, sep='\t') for afile in input]
         pd.concat(dfs).to_csv(output.o, index=False, sep='\t')

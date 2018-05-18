@@ -36,11 +36,11 @@ def add_gnomad(data, gnomad, disease):
             continue
 
         rows = len(gnomad[gnomad.gene==gene])
-        print(gene, rows, path_count)
+        print(gene, rows, path_count, benign_count)
         n = min([rows, path_count-benign_count])
         if n + benign_count > 3:
-            extra_gnomad.append( gnomad[gnomad.gene==gene].sample(n) )
-            print('here')
+            if n:
+                extra_gnomad.append( gnomad[gnomad.gene==gene].sample(n) )
         else:
             drop_genes.append(gene)
 
