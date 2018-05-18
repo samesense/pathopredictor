@@ -1,49 +1,49 @@
 auc	avg_pr	features	Disease	benign_size	pathogenic_size	clinvar_type	disease_name	disease_order	feature_color
-0.8058252427184466	0.9122390427228356	CCR	Cardiomyopathy	142	309	Total ClinVar	Cardiomyopathy	1	feat
-0.8035120105747755	0.8929351138441964	FATHMM	Cardiomyopathy	142	309	Total ClinVar	Cardiomyopathy	1	feat
-0.6649687770636765	0.8073372486444976	Missense badness	Cardiomyopathy	142	309	Total ClinVar	Cardiomyopathy	1	feat
-0.8225306531747116	0.8901924114347365	Missense depletion	Cardiomyopathy	142	309	Total ClinVar	Cardiomyopathy	1	feat
-0.8472127261953598	0.9135862818517516	VEST	Cardiomyopathy	142	309	Total ClinVar	Cardiomyopathy	1	feat
-0.9024340216053603	0.95513849084758	Combination	Cardiomyopathy	142	309	Total ClinVar	Cardiomyopathy	1	bomdo
 0.8791087426629595	0.9275647026200438	CCR	EPI	195	332	Total ClinVar	Epilepsy	2	feat
 0.7929487179487179	0.8646039682220319	FATHMM	EPI	195	332	Total ClinVar	Epilepsy	2	feat
 0.6668443002780352	0.7785632595190672	Missense badness	EPI	195	332	Total ClinVar	Epilepsy	2	feat
 0.7704819277108432	0.8632112111036339	Missense depletion	EPI	195	332	Total ClinVar	Epilepsy	2	feat
 0.8825069508804448	0.9268051163323676	VEST	EPI	195	332	Total ClinVar	Epilepsy	2	feat
 0.9402996601791782	0.9592686505217968	Combination	EPI	195	332	Total ClinVar	Epilepsy	2	bomdo
-0.880213872149356	0.947940631186268	CCR	genedx-epi-limitGene	78	217	Total ClinVar	Epilepsy (dominant genes)	3	feat
-0.8567883729174052	0.9191088617843566	FATHMM	genedx-epi-limitGene	78	217	Total ClinVar	Epilepsy (dominant genes)	3	feat
-0.7004903698452085	0.8599009931060716	Missense badness	genedx-epi-limitGene	78	217	Total ClinVar	Epilepsy (dominant genes)	3	feat
-0.7694670920477372	0.9011511632942842	Missense depletion	genedx-epi-limitGene	78	217	Total ClinVar	Epilepsy (dominant genes)	3	feat
-0.8760782228524164	0.9469908376241972	VEST	genedx-epi-limitGene	78	217	Total ClinVar	Epilepsy (dominant genes)	3	feat
-0.936133758714404	0.9654956737207752	Combination	genedx-epi-limitGene	78	217	Total ClinVar	Epilepsy (dominant genes)	3	bomdo
+0.8058252427184466	0.9122390427228356	CCR	Cardiomyopathy	142	309	Total ClinVar	Cardiomyopathy	1	feat
+0.8035120105747755	0.8929351138441964	FATHMM	Cardiomyopathy	142	309	Total ClinVar	Cardiomyopathy	1	feat
+0.6649687770636765	0.8073372486444976	Missense badness	Cardiomyopathy	142	309	Total ClinVar	Cardiomyopathy	1	feat
+0.8225306531747116	0.8901924114347365	Missense depletion	Cardiomyopathy	142	309	Total ClinVar	Cardiomyopathy	1	feat
+0.8472127261953598	0.9135862818517516	VEST	Cardiomyopathy	142	309	Total ClinVar	Cardiomyopathy	1	feat
+0.9024340216053603	0.95513849084758	Combination	Cardiomyopathy	142	309	Total ClinVar	Cardiomyopathy	1	bomdo
 0.9059168443496802	0.9689785505256988	CCR	Rasopathies	56	134	Total ClinVar	Rasopathies	4	feat
 0.8140325159914713	0.8998970106681743	FATHMM	Rasopathies	56	134	Total ClinVar	Rasopathies	4	feat
 0.7202158848614073	0.8484196106820641	Missense badness	Rasopathies	56	134	Total ClinVar	Rasopathies	4	feat
 0.7822494669509594	0.909542419368946	Missense depletion	Rasopathies	56	134	Total ClinVar	Rasopathies	4	feat
 0.8718017057569296	0.9359450719210451	VEST	Rasopathies	56	134	Total ClinVar	Rasopathies	4	feat
 0.953358208955224	0.9782885456035469	Combination	Rasopathies	56	134	Total ClinVar	Rasopathies	4	bomdo
-0.8925736961451247	0.9368397273935101	CCR	Rasopathies	56	63	ClinVar w/ Evidence	Rasopathies	4	feat
-0.8280895691609977	0.8159278706551352	FATHMM	Rasopathies	56	63	ClinVar w/ Evidence	Rasopathies	4	feat
-0.7215136054421769	0.7199468044745931	Missense badness	Rasopathies	56	63	ClinVar w/ Evidence	Rasopathies	4	feat
-0.7185374149659864	0.7781599857319872	Missense depletion	Rasopathies	56	63	ClinVar w/ Evidence	Rasopathies	4	feat
-0.8806689342403627	0.8869182078351594	VEST	Rasopathies	56	63	ClinVar w/ Evidence	Rasopathies	4	feat
-0.9571995464852608	0.9578094991559158	Combination	Rasopathies	56	63	ClinVar w/ Evidence	Rasopathies	4	bomdo
-0.7937945409988452	0.9042579175850084	CCR	Cardiomyopathy	131	271	ClinVar w/ Evidence	Cardiomyopathy	1	feat
-0.8176389397481761	0.8994191904364148	FATHMM	Cardiomyopathy	131	271	ClinVar w/ Evidence	Cardiomyopathy	1	feat
-0.6709247626827414	0.8074607383356077	Missense badness	Cardiomyopathy	131	271	ClinVar w/ Evidence	Cardiomyopathy	1	feat
-0.8340328441452354	0.9011639968638656	Missense depletion	Cardiomyopathy	131	271	ClinVar w/ Evidence	Cardiomyopathy	1	feat
-0.861989803104138	0.9226076386786368	VEST	Cardiomyopathy	131	271	ClinVar w/ Evidence	Cardiomyopathy	1	feat
-0.9068195262105292	0.957864486335738	Combination	Cardiomyopathy	131	271	ClinVar w/ Evidence	Cardiomyopathy	1	bomdo
-0.8824050453514738	0.9234887864372476	CCR	EPI	192	294	ClinVar w/ Evidence	Epilepsy	2	feat
-0.8010735544217686	0.8572854037566741	FATHMM	EPI	192	294	ClinVar w/ Evidence	Epilepsy	2	feat
-0.6705197704081634	0.7624597318891755	Missense badness	EPI	192	294	ClinVar w/ Evidence	Epilepsy	2	feat
-0.7875124007936508	0.8596108791617771	Missense depletion	EPI	192	294	ClinVar w/ Evidence	Epilepsy	2	feat
-0.8885257227891157	0.922045706731558	VEST	EPI	192	294	ClinVar w/ Evidence	Epilepsy	2	feat
-0.9443381519274376	0.9578991282843572	Combination	EPI	192	294	ClinVar w/ Evidence	Epilepsy	2	bomdo
+0.880213872149356	0.947940631186268	CCR	genedx-epi-limitGene	78	217	Total ClinVar	Epilepsy (dominant genes)	3	feat
+0.8567883729174052	0.9191088617843566	FATHMM	genedx-epi-limitGene	78	217	Total ClinVar	Epilepsy (dominant genes)	3	feat
+0.7004903698452085	0.8599009931060716	Missense badness	genedx-epi-limitGene	78	217	Total ClinVar	Epilepsy (dominant genes)	3	feat
+0.7694670920477372	0.9011511632942842	Missense depletion	genedx-epi-limitGene	78	217	Total ClinVar	Epilepsy (dominant genes)	3	feat
+0.8760782228524164	0.9469908376241972	VEST	genedx-epi-limitGene	78	217	Total ClinVar	Epilepsy (dominant genes)	3	feat
+0.936133758714404	0.9654956737207752	Combination	genedx-epi-limitGene	78	217	Total ClinVar	Epilepsy (dominant genes)	3	bomdo
 0.8795955288492603	0.943981811599066	CCR	genedx-epi-limitGene	77	201	ClinVar w/ Evidence	Epilepsy (dominant genes)	3	feat
 0.8536538088776895	0.9122232813172634	FATHMM	genedx-epi-limitGene	77	201	ClinVar w/ Evidence	Epilepsy (dominant genes)	3	feat
 0.6994895651612069	0.8516515729156536	Missense badness	genedx-epi-limitGene	77	201	ClinVar w/ Evidence	Epilepsy (dominant genes)	3	feat
 0.7710796666020547	0.8952513814554708	Missense depletion	genedx-epi-limitGene	77	201	ClinVar w/ Evidence	Epilepsy (dominant genes)	3	feat
 0.8839568391807198	0.9463998188498588	VEST	genedx-epi-limitGene	77	201	ClinVar w/ Evidence	Epilepsy (dominant genes)	3	feat
 0.9364863991729664	0.962807744980861	Combination	genedx-epi-limitGene	77	201	ClinVar w/ Evidence	Epilepsy (dominant genes)	3	bomdo
+0.8925736961451247	0.9368397273935101	CCR	Rasopathies	56	63	ClinVar w/ Evidence	Rasopathies	4	feat
+0.8280895691609977	0.8159278706551352	FATHMM	Rasopathies	56	63	ClinVar w/ Evidence	Rasopathies	4	feat
+0.7215136054421769	0.7199468044745931	Missense badness	Rasopathies	56	63	ClinVar w/ Evidence	Rasopathies	4	feat
+0.7185374149659864	0.7781599857319872	Missense depletion	Rasopathies	56	63	ClinVar w/ Evidence	Rasopathies	4	feat
+0.8806689342403627	0.8869182078351594	VEST	Rasopathies	56	63	ClinVar w/ Evidence	Rasopathies	4	feat
+0.9571995464852608	0.9578094991559158	Combination	Rasopathies	56	63	ClinVar w/ Evidence	Rasopathies	4	bomdo
+0.8824050453514738	0.9234887864372476	CCR	EPI	192	294	ClinVar w/ Evidence	Epilepsy	2	feat
+0.8010735544217686	0.8572854037566741	FATHMM	EPI	192	294	ClinVar w/ Evidence	Epilepsy	2	feat
+0.6705197704081634	0.7624597318891755	Missense badness	EPI	192	294	ClinVar w/ Evidence	Epilepsy	2	feat
+0.7875124007936508	0.8596108791617771	Missense depletion	EPI	192	294	ClinVar w/ Evidence	Epilepsy	2	feat
+0.8885257227891157	0.922045706731558	VEST	EPI	192	294	ClinVar w/ Evidence	Epilepsy	2	feat
+0.9443381519274376	0.9578991282843572	Combination	EPI	192	294	ClinVar w/ Evidence	Epilepsy	2	bomdo
+0.7937945409988452	0.9042579175850084	CCR	Cardiomyopathy	131	271	ClinVar w/ Evidence	Cardiomyopathy	1	feat
+0.8176389397481761	0.8994191904364148	FATHMM	Cardiomyopathy	131	271	ClinVar w/ Evidence	Cardiomyopathy	1	feat
+0.6709247626827414	0.8074607383356077	Missense badness	Cardiomyopathy	131	271	ClinVar w/ Evidence	Cardiomyopathy	1	feat
+0.8340328441452354	0.9011639968638656	Missense depletion	Cardiomyopathy	131	271	ClinVar w/ Evidence	Cardiomyopathy	1	feat
+0.861989803104138	0.9226076386786368	VEST	Cardiomyopathy	131	271	ClinVar w/ Evidence	Cardiomyopathy	1	feat
+0.9068195262105292	0.957864486335738	Combination	Cardiomyopathy	131	271	ClinVar w/ Evidence	Cardiomyopathy	1	bomdo

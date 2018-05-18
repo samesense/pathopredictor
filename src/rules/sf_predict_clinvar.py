@@ -19,12 +19,10 @@ rule eval_by_gene_clinvar:
     output: o = DATA + 'interim/pred_clinvar_eval/{eval_source}.{features}'
     run:
         df_pre = pd.read_csv(input.i, sep='\t')
-        if wildcards.eval_source == 'clinvar_tot':
-            df = df_pre
-        elif wildcards.eval_source == 'clinvar_single':
+        if wildcards.eval_source == 'clinvar_single':
             df = df_pre[df_pre.is_single]
         else:
-            i = 1/0
+            df = df_pre
 
         acc_ls = []
         for dis in set(df['Disease']):

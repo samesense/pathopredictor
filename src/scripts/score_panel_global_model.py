@@ -1,11 +1,5 @@
 """Compare performance
-   MPC>=2
-   Train w/ all clinvar
-   Train w/ clinvar for these genes
    Hold one out testing data
-
-   Does training on clinvar/panel do better than MPC>=2?
-   Does training on panel do better than training with clinvar?
 """
 from collections import defaultdict
 import pandas as pd
@@ -94,7 +88,6 @@ def eval_disease(disease, data, reg_cols, col_names):
        col_names has real col names, but not for regression use.
     """
     disease_df = data[data.dataset=='panel']
-    clin_labels = ('clinvar_tot', 'clinvar_single')
     # one gene at a time
     acc_df_ls = []
     clinvar_acc = []
@@ -118,24 +111,19 @@ def eval_disease(disease, data, reg_cols, col_names):
 
         acc_df_ls.append(test_df)
 
-        for clin_label in clin_labels:
-            if clin_label == 'clinvar_tot':
-                clinvar_df_all = data[data.dataset=='clinvar']
-            elif clin_label == 'clinvar_single':
-                clinvar_df_all = data[(data.dataset=='clivar') & (data.clinvar_subset=='clinvar_single')]
+        clinvar_df_all = data[data.dataset=='clinvar']
 
-            # limit to gene
-            clinvar_df = clinvar_df_all[clinvar_df_all.gene==test_gene]
-            if len(clinvar_df):
-                clinvar_df['Disease'] = disease
-                X = clinvar_df[reg_cols]
-                clinvar_preds = lm.predict(X)
-                lm_preds = lm.predict(X)
-                clinvar_df.loc[:, pred_col] = lm_preds
-                lm_proba = [x[1] for x in lm.predict_proba(X) ]
-                clinvar_df.loc[:, '-'.join(col_names) + '_probaPred'] = lm_proba
-                clinvar_df.loc[:, 'PredictionStatus'] = clinvar_df.apply(lambda row: eval_pred(row, pred_col), axis=1)
-                clinvar_acc.append(clinvar_df)
+        # limit to gene
+        clinvar_df = clinvar_df_all[clinvar_df_all.gene==test_gene]
+        if len(clinvar_df):
+            clinvar_df['Disease'] = disease
+            X = clinvar_df[reg_cols]
+            lm_preds = lm.predict(X)
+            clinvar_df.loc[:, pred_col] = lm_preds
+            lm_proba = [x[1] for x in lm.predict_proba(X) ]
+            clinvar_df.loc[:, '-'.join(col_names) + '_probaPred'] = lm_proba
+            clinvar_df.loc[:, 'PredictionStatus'] = clinvar_df.apply(lambda row: eval_pred(row, pred_col), axis=1)
+            clinvar_acc.append(clinvar_df)
 
     test_df = pd.concat(acc_df_ls)
     clinvar_result_df = pd.concat(clinvar_acc)
@@ -144,7 +132,6 @@ def eval_disease(disease, data, reg_cols, col_names):
 def standardize(df, cols):
     if len(cols)>1:
         poly = preprocessing.PolynomialFeatures(2, interaction_only=True, include_bias=False)
-        print(df[cols].head())
         x = preprocessing.scale( poly.fit_transform(df[cols]) )
         new_feats = poly.get_feature_names()
         df_trans = pd.DataFrame(x, index=df.index, columns=new_feats)
@@ -157,7 +144,13 @@ def standardize(df, cols):
 
     return final_df, new_feats
 
-def mk_panel_clinvar_data(disease_df, clinvar_df, reg_cols):
+def mk_standard(data_unstd, score_cols):
+    data = {}
+    for disease in data_unstd:
+        data[disease] = standardize(data_unstd[disease], score_cols)
+    return data
+
+def mk_panel_clinvar_data(disease_df, clinvar_df):
     """Grab clinvar genes in disease.
        dataset splits clinvar|panel
        is_single applies to clinvar and flags those w/ single evidence
@@ -177,9 +170,9 @@ def mk_panel_clinvar_data(disease_df, clinvar_df, reg_cols):
     clinvar_subset.loc[:, 'dataset'] = 'clinvar'
     disease_df.loc[:, 'dataset'] = 'panel'
     c = pd.concat([disease_df, clinvar_subset])
-    return standardize(pd.concat([disease_df, clinvar_subset], ignore_index=True), reg_cols)
+    return pd.concat([disease_df, clinvar_subset], ignore_index=True)
 
-def load_data(reg_cols):
+def load_data(args):
     FOCUS_GENES = ('SCN1A','SCN2A','KCNQ2', 'KCNQ3', 'CDKL5',
                    'PCDH19', 'SCN1B', 'SCN8A', 'SLC2A1',
                    'SPTAN1', 'STXBP1', 'TSC1')
@@ -196,12 +189,13 @@ def load_data(reg_cols):
     diseases = set(disease_df['Disease'])
     data = {}
     for disease in diseases:
-        data[disease] = mk_panel_clinvar_data(disease_df[disease_df.Disease==disease], clinvar_df, reg_cols)
+        data[disease] = mk_panel_clinvar_data(disease_df[disease_df.Disease==disease], clinvar_df)
     return data
 
 def main(args):
     score_cols = args.score_cols.split('-')
-    data = load_data(score_cols)
+    data_unstandardized = load_data(args)
+    data = mk_standard(data_unstandardized, score_cols)
 
     eval_df_ls, eval_df_clinvar_ls = [], []
     for disease in data:

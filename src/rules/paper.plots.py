@@ -175,9 +175,12 @@ FIGS = ('fig1_countPlot', 'fig5_evalClinvar', 'fig4_panelEval',
         'fig3b_featureCor', 'fig3a_featureImportance')
 
 rule upload_paper_plot:
-    input: DOCS + 'paper_plts/{fig}.pdf'
+    input:  DOCS + 'paper_plts/{fig}.pdf'
     output: DBox.remote('ahmad_predictor/{fig}.pdf')
-    shell: 'cp {input} {output}'
+    shell:  'cp {input} {output}'
+
+rule all_paper_plots:
+    input: expand(DOCS + 'paper_plts/{fig}.pdf', fig=FIGS)
 
 rule upload_all:
     input: expand(DBox.remote('ahmad_predictor/{fig}.pdf'), fig=FIGS)
