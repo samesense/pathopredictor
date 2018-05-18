@@ -193,11 +193,17 @@ rule limit_eval_general:
         df.loc[:, 'y'] = df.apply(lambda row: 1 if row['class']=='P' else 0, axis=1)
         df.loc[:, 'in_uniprot_benign'] = df.apply(lambda row: str(row['chrom']) + ':' + str(row['pos']) in uniprot_benign, axis=1)
         crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1
-                        and not (row['class'] == 'P' and row['in_hgmd_dm'])
-                        and not (row['class']=='B' and row['in_uniprot_benign'])
-                        and not row['Disease'] in ('Connective tissue disorders', 'Hearing Loss', '')
-                        and not (row['class']=='B' and row['esp_af_max']>=.01), axis=1)
+                            and not (row['class'] == 'P' and row['in_hgmd_dm'])
+                            and not (row['class']=='B' and row['in_uniprot_benign'])
+                            and not row['Disease'] in ('Connective tissue disorders', 'Hearing Loss', '')
+                            and not (row['class']=='B' and row['esp_af_max']>=.01), axis=1)
         df[crit].dropna().drop_duplicates(subset=['chrom', 'pos', 'ref', 'alt', 'Disease']).to_csv(output.o, index=False, sep='\t')
+#        if wildcards.dir == 'gnomad':
+            # esp not removed, hgmd will not be removed, and uniprot benign will not be removed b/c vest and fathmm will not be used
+            # I must do this to have enough training data per gene
+#            crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1
+#                            and not row['Disease'] in ('Connective tissue disorders', 'Hearing Loss', ''), axis=1)
+#        else:
 
 rule limit_clinvar:
     input:  c = DATA + 'interim/clinvar/clinvar.eff.dbnsfp.anno.dat.limit.xls',

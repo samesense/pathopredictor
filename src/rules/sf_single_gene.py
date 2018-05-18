@@ -10,7 +10,7 @@ rule mk_single_gene_data:
     shell:  'python {SCRIPTS}mk_single_gene_data.py {input} {output}'
 
 rule tmp_single:
-    input: DATA + 'interim/single_gene/dat_.003_.1'
+    input: DATA + 'interim/single_gene/dat_.003_1'
 
 rule single_eval:
     input:  DATA + 'interm/single_gene/dat_{plow}_{phigh}'
