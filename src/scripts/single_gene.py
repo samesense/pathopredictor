@@ -10,6 +10,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.externals.six import StringIO
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.ensemble import ExtraTreesClassifier
+import score_panel_global_model
 
 def eval_gene(disease, data, reg_cols, col_names):
     train_df = data[data.dataset=='panel']
@@ -27,7 +28,7 @@ def eval_gene(disease, data, reg_cols, col_names):
     return clinvar_df
 
 def eval_by_gene(disease, data, reg_cols, col_names):
-    genes = set( df['gene'] )
+    genes = set( data['gene'] )
     eval_acc = []
     for gene in genes:
         clin_result_df = eval_gene(disease, data[data.gene==gene], reg_cols, col_names)
@@ -37,17 +38,26 @@ def eval_by_gene(disease, data, reg_cols, col_names):
 
 def main(args):
     score_cols = args.score_cols.split('-')
-    data_unstd = pd.read_csv(args.data, sep='\t')
-    data = score_panel_global_model.mk_standard(data_unstd, score_cols)
+    data = pd.read_csv(args.data, sep='\t')
+    diseases = [x for x in set(data['Disease']) if str(x) != 'nan']
+    new_dat = {}
+    for disease in diseases:
+        disease_df = data[data.Disease==disease]
+        genes = set(disease_df['gene'])
+        crit = data.apply(lambda row: row['dataset']=='clinvar' and row['gene'] in genes, axis=1)
+        new_df = pd.concat([disease_df, data[crit]])
+        new_dat[disease] = new_df
+
+    data = score_panel_global_model.mk_standard(new_dat, score_cols)
 
     eval_ls = []
     for disease in data:
         df, cols = data[disease]
         eval_df = eval_by_gene(disease, df, cols, score_cols)
-        eval_ls.append(disease, eval_df, )
+        eval_ls.append(eval_df)
     pd.concat(eval_ls).to_csv(args.out_df_clinvar_eval, index=False, sep='\t')
 
-    if __name__ == "__main__":
+if __name__ == "__main__":
     desc = 'Eval combinations of features on clinvar for single gene training.'
     parser = argparse.ArgumentParser(description=desc)
     argLs = ('score_cols', 'data', 'out_df_clinvar_eval')

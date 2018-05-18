@@ -6,8 +6,8 @@
 * I don't see how clinvar single ran w/ the right data. need to account for clinvar set in main prediction data
 * I can't seem to parse gnomad this morining.
 * Clinvar single vs total was not a problem, but the script should have been clearer. It's under control now.
-* No training data after removing vars. Try not using vest cutoff. Fathmm too.
-* Also must redo clinvar restrictions for these guys.
+* No training data after removing vars. Try not using vest cutoff. Fathmm too. That's a lot of work. There are some left after the vest and fathmm filters.
+* Also must redo clinvar restrictions for these guys. Do this only if vest and fathmm are removed.
 
 ### 2018_05_17
 * Mehods done except single gene
