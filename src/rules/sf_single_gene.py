@@ -65,13 +65,23 @@ rule collapse_single_gene:
 
 rule plot_single_gene:
     input:  DATA + 'interim/single_gene/{limit_type}/plot_data_{plow}_{phigh}'
-    output: DOCS + 'paper_plts/fig6_single_gene_collapse_{plow}_{phigh}.{limit_type}.pdf'
+    output: DOCS + 'paper_plts/fig67_single_gene_collapse_{plow}_{phigh}.{limit_type}.pdf'
     run:
         R("""require(ggplot2)
              dat = read.delim("{input}", header=TRUE, sep="\t")
              p = ggplot(data=dat) + geom_col(aes(x=gene, y=accuracy, fill=terms), position="dodge") + facet_grid(d~., scale="free_y") +
              theme_bw(base_size=18) + coord_flip() + labs(fill="") + ylab("Accuracy") + xlab("") + scale_fill_brewer(palette="Dark2")
              ggsave("{output}", p, width=10, height=15)""")
+
+rule cp_fig6:
+    input:  DOCS + 'paper_plts/fig67_single_gene_collapse_.003_1.full.pdf'
+    output: DOCS + 'paper_plts/fig6_single_gene_collapse_.003_1.full.pdf'
+    shell:  'cp {input} {output}'
+
+rule cp_fig7:
+    input:  DOCS + 'paper_plts/fig67_single_gene_collapse_.003_1.single.pdf'
+    output: DOCS + 'paper_plts/fig7_single_gene_collapse_.003_1.single.pdf'
+    shell:  'cp {input} {output}'
 
 rule single:
     input: expand(DOCS + 'paper_plts/fig6_single_gene_collapse_.003_1.{l}.pdf', l = ('single', 'full'))
