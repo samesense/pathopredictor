@@ -37,11 +37,13 @@ rule score_single_gene:
                     'EPI':'Epilepsy',
                     'Cardiomyopathy':'Cardiomyopathy'}
         feat_names = {'ccr-vest-fathmm-missense_badness-missense_depletion-is_domain':'Combination', 'ccr':'CCR', 'fathmm':'FATHMM', 'vest':'VEST', 'missense_badness':'Missense badness', 'missense_depletion':'Missense depletion'}
-        df = pd.read_csv(input.i, sep='\t')
+        df_pre = pd.read_csv(input.i, sep='\t')
+        df = df_pre[df_pre.Disease=='EPI']
         df.loc[:, 'varType'] = df.apply(lambda row: 'Pathogenic' if 'ath' in row['PredictionStatus'] else 'Benign', axis=1)
         df.loc[:, 'd'] = df.apply(lambda row: diseases[row['Disease'].split(':')[0]], axis=1)
         eval_df = df.groupby(['d', 'gene']).apply(score_gene).reset_index()
         eval_df.loc[:, 'terms'] = feat_names[wildcards.features]
+        eval_df.loc[:, 'gene'] = eval_df.apply(lambda row: row['gene'] + "\n" + row['count_label'], axis=1)
         ( eval_df.sort_values(by='accuracy')
           .to_csv(output.o, index=False, sep='\t') )
 
@@ -57,9 +59,8 @@ rule plot_single_gene:
     run:
         R("""require(ggplot2)
              dat = read.delim("{input}", header=TRUE, sep="\t")
-             p = ggplot(data=dat) + geom_col(aes(x=terms, y=accuracy), position="dodge") +
-             facet_grid(d~gene, scale="free") + theme_bw(base_size=18) + coord_flip() +
-             theme(axis.title.y=element_blank(), axis.title.x=element_blank() )
+             p = ggplot(data=dat) + geom_col(aes(x=gene, y=accuracy, fill=terms), position="dodge") +
+             theme_bw(base_size=18) + coord_flip() + labs(fill="") + ylab("Accuracy") + xlab("")
              ggsave("{output}", p, width=10, height=15)""")
 
 rule single:
