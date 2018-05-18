@@ -23,7 +23,7 @@ def add_gnomad(data, gnomad, disease):
         crit = df.apply(lambda row: row['y']==1, axis=1)
         path_count = len(df[crit])
 
-        if path_count < 4:
+        if path_count < 2:
             # do not evaluate/train gene
             drop_genes.append(gene)
             continue
@@ -38,7 +38,7 @@ def add_gnomad(data, gnomad, disease):
         rows = len(gnomad[gnomad.gene==gene])
         print(gene, rows, path_count, benign_count)
         n = min([rows, path_count-benign_count])
-        if n + benign_count > 3:
+        if n + benign_count > 1:
             if n:
                 extra_gnomad.append( gnomad[gnomad.gene==gene].sample(n) )
         else:

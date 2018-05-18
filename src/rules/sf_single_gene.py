@@ -28,6 +28,13 @@ def score_gene(rows):
     s = pd.Series(dat, index=['count_label', 'accuracy'])
     return s
 
+def mk_single_score_input(wc):
+    if wc.limit_type == 'single':
+        feats = COMBO_FEATS_SINGLE
+    elif wc.limit_type == 'full':
+        feats = COMBO_FEATS
+    return [DATA + 'interim/single_gene/%s/evals/%s.single_' % (wc.limit_type, feat)
+            + wc.plow + '_' + wc.phigh + '.txt' for feat in feats]
 rule score_single_gene:
     input:  i = DATA + 'interim/single_gene/{limit_type}/roc_df_clinvar/{plow}_{phigh}/{features}'
     output: o = DATA + 'interim/single_gene/{limit_type}/evals/{features}.single_{plow}_{phigh}.txt'
@@ -51,7 +58,7 @@ rule score_single_gene:
           .to_csv(output.o, index=False, sep='\t') )
 
 rule collapse_single_gene:
-    input:  expand(DATA + 'interim/single_gene/{{limit_type}}/evals/{features}.single_{{plow}}_{{phigh}}.txt', features = COMBO_FEATS_SINGLE )
+    input:  mk_single_score_input
     output: o = DATA + 'interim/single_gene/{limit_type}/plot_data_{plow}_{phigh}'
     run:
         pd.concat([pd.read_csv(afile, sep='\t') for afile in input]).to_csv(output.o, index=False, sep='\t')
