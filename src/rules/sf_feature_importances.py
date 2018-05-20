@@ -7,7 +7,7 @@ rule feature_importance:
 
 rule plot_feature_importance:
     input:  DATA + 'interim/plot_data/importances'
-    output: DOCS + 'paper_plts/fig3a_featureImportance.pdf'
+    output: DOCS + 'paper_plts/fig2a_featureImportance.pdf'
     run:
         R("""
           require(ggplot2)

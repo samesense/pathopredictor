@@ -9,6 +9,7 @@
 * No training data after removing vars. Try not using vest cutoff. Fathmm too. That's a lot of work. There are some left after the vest and fathmm filters.
 * Also must redo clinvar restrictions for these guys. Do this only if vest and fathmm are removed.
 * only epi has enough training vars
+* gene specific stuff looks too bad to publish, so it's not going in
 
 ### 2018_05_17
 * Mehods done except single gene

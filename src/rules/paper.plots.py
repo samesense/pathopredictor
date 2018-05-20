@@ -172,9 +172,9 @@ rule size_bar_paper_plot:
 #FIGS = ('fig1_count_plot', 'fig4_eval_clinvar', 'fig3_panelEval.byVarClassFalse', 'fig5_idi', 'fig6_single_gene_collapse_.003_.1')
 #FIGS = ('fig1_count_plot', 'fig3_panelEval.byVarClassFalse')
 FIGS = ('fig1_countPlot', 'fig5_evalClinvar', 'fig4_panelEval',
-        'fig3b_featureCor', 'fig3a_featureImportance',
-        'fig6_single_gene_collapse_.003_1.full',
-        'fig7_single_gene_collapse_.003_1.single', )
+        'fig2b_featureCor', 'fig2a_featureImportance',)
+        # 'fig6_single_gene_collapse_.003_1.full',
+        # 'fig7_single_gene_collapse_.003_1.single', )
 
 rule upload_paper_plot:
     input:  DOCS + 'paper_plts/{fig}.pdf'

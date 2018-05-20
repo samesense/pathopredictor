@@ -48,7 +48,7 @@ rule plot_panel_eval:
               facet_grid(.~disease_name) + theme_bw(base_size=18) +
               theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12)) +
               ylab('Average precision') +
-              xlab('') + coord_flip() + theme(axis.text.y = element_text(size=10))
+              xlab('') + coord_flip() 
           ggsave("{output}", p, width=20)
           """)
         shell('rm {output}.tmp.panel.labels')

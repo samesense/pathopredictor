@@ -4,7 +4,7 @@
 
 def eval_pr(df, disease, acc_ls):
     scores = [x for x in df.columns.values if '_probaPred' in x or x in FEATS]
-    feat_names = {'Combination':'Combination', 'ccr':'CCR', 'fathmm':'FATHMM', 'vest':'VEST', 'missense_badness':'Missense badness', 'missense_depletion':'Missense depletion'}
+    feat_names = {'Combination':'PathoPredictor', 'ccr':'CCR', 'fathmm':'FATHMM', 'vest':'VEST', 'missense_badness':'Missense badness', 'missense_depletion':'Missense depletion'}
     for score in scores:
         fpr, tpr, _ = metrics.roc_curve(df['y'], df[score], pos_label=1)
         auc = metrics.auc(fpr, tpr)
@@ -53,11 +53,11 @@ rule plot_clinvar_eval_paper:
     input:  expand(DATA + 'interim/pred_clinvar_eval/{clinvar_set}.' + C_FEATS, clinvar_set=('clinvar_tot', 'clinvar_single'))
     output: o = DOCS + 'paper_plts/fig5_evalClinvar.pdf'
     run:
-        plot_cmd = """geom_col( aes(fill=feature_color, y=avg_pr, x=reorder(features, avg_pr)) ) +
+        plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) ) +
                       geom_text(hjust="left", colour="white", data=label_df, aes(x=x, y=y, label=label))"""
 
         df_tot = pd.concat([pd.read_csv(afile, sep='\t') for afile in input])
-        df_tot.loc[:, 'feature_color'] = df_tot.apply(lambda row: 'bomdo' if row['features']=='Combination' else 'feat', axis=1)
+        # df_tot.loc[:, 'feature_color'] = df_tot.apply(lambda row: 'bomdo' if row['features']=='Combination' else 'feat', axis=1)
         df_tot.to_csv(output.o + '.df', index=False, sep='\t')
 
         df = df_tot[['clinvar_type', 'disease_name', 'benign_size', 'pathogenic_size']].drop_duplicates().melt(id_vars=['clinvar_type', 'disease_name'], var_name='var_type')
@@ -72,9 +72,9 @@ rule plot_clinvar_eval_paper:
           d = read.delim("{output}.df", sep='\t', header=TRUE)
           label_df = read.delim("{output}.tmp.clinvar.labels", sep="\t", header=TRUE)
           d$clinvar_type = factor(d$clinvar_type, levels=c("Total ClinVar", "ClinVar w/ Evidence"))
-          p = ggplot(data=d) + {plot_cmd} + scale_fill_manual(values=feature_palette) + guides(fill=FALSE) +
+          p = ggplot(data=d) + {plot_cmd} + guides(fill=FALSE) +
               ylab('Average precision') + xlab('') + theme_bw(base_size=18) + facet_grid(clinvar_type~disease_name) +
-              coord_flip()
+              coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12)) 
           ggsave("{output}", p, height=9, width=20)
           """)
         shell('rm {output}.tmp.clinvar.labels')
