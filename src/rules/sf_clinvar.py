@@ -36,6 +36,10 @@ def parse_vcf_data(line):
         missense_badness = info.split('mis_badness=')[1].split(';')[0]
         missense_depletion = str( -1 * float(info.split('obs_exp=')[1].split(';')[0]) )
 
+    revel = 'NA'
+    if 'REVEL=' in info:
+        revel = info.split('REVEL=')[1].split(';')[0]
+
     fathmm = 'NA'
     if 'FATHMM_score' in info:
         # negate fathmm for roc curve
@@ -83,7 +87,7 @@ def parse_vcf_data(line):
     ann = info.split('ANN=')[1].split(';')[0]
     eff, gene, protein_change_pre, nm = find_missense_cv_eff(pos, ann)
     #protein_change = convert_protein_change(protein_change_pre)
-    return {'chrom':chrom, 'pos':pos, 'ref':ref, 'alt':alt, 'eff':eff, 'gene':gene,
+    return {'chrom':chrom, 'pos':pos, 'ref':ref, 'alt':alt, 'eff':eff, 'gene':gene, 'revel':revel,
             'clin_class':clin, 'pfam':pfam, 'missense_badness':missense_badness, 'ccr':ccr, 'vest':str(vest),
             'missense_depletion':missense_depletion, 'fathmm':str(fathmm), 'esp_af_max':str(max(esp_ls))}
 
@@ -119,7 +123,7 @@ rule parse_clinvar_vcf:
        with open(input.i) as f, open(output.o, 'w') as fout:
            fields = ['chrom', 'pos', 'ref', 'alt',
                      'clin_class', 'pfam', 'eff', 'gene',
-                     'esp_af_max',
+                     'esp_af_max', 'revel',
                      'ccr', 'fathmm', 'vest', 'missense_badness', 'missense_depletion',
                      'clinSig', 'confidence']
            print('\t'.join(fields), file=fout)

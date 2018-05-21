@@ -3,8 +3,9 @@
 """
 
 def eval_pr(df, disease, acc_ls):
-    scores = [x for x in df.columns.values if '_probaPred' in x or x in FEATS]
-    feat_names = {'Combination':'PathoPredictor', 'ccr':'CCR', 'fathmm':'FATHMM', 'vest':'VEST', 'missense_badness':'Missense badness', 'missense_depletion':'Missense depletion'}
+    scores = [x for x in df.columns.values if '_probaPred' in x or x in FEATS or x == 'revel']
+    feat_names = {'Combination':'PathoPredictor', 'ccr':'CCR', 'fathmm':'FATHMM', 'revel':'REVEL',
+                  'vest':'VEST', 'missense_badness':'Missense badness', 'missense_depletion':'Missense depletion'}
     for score in scores:
         fpr, tpr, _ = metrics.roc_curve(df['y'], df[score], pos_label=1)
         auc = metrics.auc(fpr, tpr)

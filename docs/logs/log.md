@@ -1,3 +1,8 @@
+### 2018_05_21
+* cmp revel
+* pvals for scores
+* top gene pr curves
+
 ### 2018_05_18
 * single gene fig, method, result
 * background

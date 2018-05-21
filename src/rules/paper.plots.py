@@ -26,7 +26,7 @@ rule count_plot_data:
         s_clinvar = df_clinvar_single.groupby(['Disease','y']).size().reset_index().rename(columns={0:'count'})
         s_clinvar.loc[:, 'eval_type'] = clin_labels['single']
         s_clinvar.loc[:, 'Disease'] = s_clinvar.apply(lambda row: diseases[row['Disease']], axis=1)
-        
+
         df = pd.concat([panel, clinvar, s_clinvar])
         df.loc[:,'y'] = df.apply(lambda row: 'Pathogenic' if row['y']==1 else 'Benign', axis=1)
         df['count_type'] = 'Variants'
@@ -34,7 +34,7 @@ rule count_plot_data:
         panel_gene = df_panel[['Disease', 'gene']].drop_duplicates().groupby(['Disease']).size().reset_index().rename(columns={0:'count'})
         panel_gene['eval_type'] = 'Panel'
         panel_gene.loc[:, 'Disease'] = panel_gene.apply(lambda row: diseases[row['Disease']], axis=1)
-        
+
         clinvar_gene = df_clinvar[['Disease','gene']].drop_duplicates().groupby(['Disease']).size().reset_index().rename(columns={0:'count'})
         clinvar_gene.loc[:, 'eval_type'] = clin_labels['tot']
         clinvar_gene.loc[:, 'Disease'] = clinvar_gene.apply(lambda row: diseases[row['Disease']], axis=1)
@@ -42,7 +42,7 @@ rule count_plot_data:
         s_clinvar_gene = df_clinvar_single[['Disease','gene']].drop_duplicates().groupby(['Disease']).size().reset_index().rename(columns={0:'count'})
         s_clinvar_gene.loc[:, 'eval_type'] = clin_labels['single']
         s_clinvar_gene.loc[:, 'Disease'] = s_clinvar_gene.apply(lambda row: diseases[row['Disease']], axis=1)
-        
+
         df_gene = pd.concat([panel_gene, clinvar_gene, s_clinvar_gene])
         df_gene['y'] = 'Gene'
         df_gene['count_type'] = 'Genes'

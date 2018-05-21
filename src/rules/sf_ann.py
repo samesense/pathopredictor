@@ -122,7 +122,7 @@ rule parse_vcf_general:
        with open(input.i) as f, open(output.o, 'w') as fout:
            fields = ['chrom', 'pos', 'ref', 'alt',
                      'clin_class', 'pfam', 'eff', 'gene',
-                     'esp_af_max',
+                     'esp_af_max', 'revel',
                      'ccr', 'fathmm', 'vest', 'missense_badness', 'missense_depletion']
            print('\t'.join(fields), file=fout)
            for line in f:
@@ -233,5 +233,5 @@ rule all_panels:
         pd.concat(dfs).to_csv(output.o, index=False, sep='\t')
 
 rule parse_dat:
-    input: DATA + 'interim/panel.dat', DATA + 'interim/clinvar.dat'
+    input: DATA + 'interim/full/panel.dat', DATA + 'interim/full/clinvar.dat'
 
