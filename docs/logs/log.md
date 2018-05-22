@@ -1,7 +1,8 @@
 ### 2018_05_21
-* cmp revel
+* cmp revel. revel is better
 * pvals for scores
 * top gene pr curves
+* var counts as pipeline moves
 
 ### 2018_05_18
 * single gene fig, method, result

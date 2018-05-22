@@ -30,6 +30,7 @@ include: "sf_eval_panel.py"
 include: "improve_prob.py"
 include: "sf_coords.py"
 include: "sf_eval_ahmad.py" # plot_ahmad
+include: "sf_gene_pr_curve.py"
 include: "paper.plots.py"
 include: "sf_predict_clinvar.py"
 include: "sf_feature_importances.py"
