@@ -38,8 +38,8 @@ include: "sf_feature_cor.py"
 
 include: "sf.rank.eval.py"
 
-include: "sf.webtool.py"
-include: "sf_single_gene.py"
+#include: "sf.webtool.py"
+#include: "sf_single_gene.py"
 
 rule all_dat:
     input: DATA + 'interim/denovo/denovo.limit3.dat', \
