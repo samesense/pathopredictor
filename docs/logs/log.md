@@ -1,3 +1,8 @@
+### 2018_05_22
+* fix top genes
+* count vars
+* eval revel denovo
+
 ### 2018_05_21
 * cmp revel. revel is better
 * pvals for scores

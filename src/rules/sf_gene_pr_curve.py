@@ -25,7 +25,7 @@ rule plot_pr_curve:
            c = DATA + 'interim/gene_pr/clinvar.' + C_FEATS
     output: o = DOCS + 'paper_plts/fig6_byGene.pdf'
     run:
-        genes = ['SPTAN1', 'KCNQ2', 'STXBP1', 'MYH7',
+        genes = ['KCNQ2', 'STXBP1',
                  'SCN2A', 'SCN5A', 'RAF1']
         panel = pd.read_csv(input.p, sep='\t')
         p_crit = panel.apply(lambda row: row['gene'] in genes, axis=1)
