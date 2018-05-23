@@ -28,7 +28,7 @@ rule plot_pr_curve:
         genes = ['KCNQ2', 'STXBP1',
                  'SCN2A', 'SCN5A', 'RAF1']
         panel = pd.read_csv(input.p, sep='\t')
-        p_crit = panel.apply(lambda row: row['gene'] in genes, axis=1)
+        p_crit = panel.apply(lambda row: row['gene'] in genes and row['gene'] != 'RAF1', axis=1)
         clinvar = pd.read_csv(input.c, sep='\t')
         c_crit = clinvar.apply(lambda row: row['gene'] in genes, axis=1)
         panel.loc[:, 'dataset'] = 'Disease panel'

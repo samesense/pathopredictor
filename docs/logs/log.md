@@ -1,3 +1,8 @@
+### 2018_05_23
+* finish count table
+* test auc
+* cmp revel
+
 ### 2018_05_22
 * fix top genes
 * count vars
