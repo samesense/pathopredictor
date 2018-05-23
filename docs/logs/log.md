@@ -1,6 +1,6 @@
 ### 2018_05_23
 * finish count table
-* test auc
+* test auc. I already have it. It looks good! use proc test.roc
 * cmp revel
 
 ### 2018_05_22
