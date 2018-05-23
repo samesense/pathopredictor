@@ -37,6 +37,7 @@ include: "sf_feature_importances.py"
 include: "sf_feature_cor.py"
 
 include: "sf.rank.eval.py"
+include: "sf_eval_roc.py"
 
 #include: "sf.webtool.py"
 #include: "sf_single_gene.py"

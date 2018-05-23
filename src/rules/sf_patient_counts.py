@@ -72,3 +72,32 @@ rule concat_patient_counts:
         cols = ['Dataset', 'Disease', 'Max Patient Count', 'Genes',
                 'Pathogenic Variants', 'Benign Variants', 'VUS']
         pd.concat([pd.read_csv(afile, sep='\t') for afile in input])[cols].to_csv(output.o, index=False, sep='\t')
+
+rule final_patient_table:
+    input:  init = DATA + 'interim/patient_counts/panel.tab',
+            filtered = DATA + 'interim/vus/panel.dat'
+    output: o = DOCS + 'varCount.csv'
+    run:
+        def eval_disease(df, disease):
+            genes = len( set([x for x in df['gene'] if x.strip()]) )
+            g = df[['class']].groupby('class').size().reset_index().rename(columns={'class':'c'})
+            benign = g[g.c=='B'][0].values[0]
+            path = g[g.c=='P'][0].values[0]
+            vus = g[g.c=='V'][0].values[0]
+            if disease == 'EPI':
+                disease = 'Epilepsy'
+            ls = ('Processed', disease, genes, path, benign, vus)
+            return pd.DataFrame([ls], columns=['Dataset', 'Disease', 'Genes', 'Pathogenic Variants', 'Benign Variants', 'VUS'])
+
+        init_df = pd.read_csv(input.init, sep='\t')
+        crit = init_df.apply(lambda row: not 'ear' in row['Disease'] and not 'onnec' in row['Disease'], axis=1)
+        filtered_df = pd.read_csv(input.filtered, sep='\t')
+        ls = []
+        for disease in set(filtered_df['Disease']):
+            ls.append( eval_disease(filtered_df[filtered_df.Disease==disease], disease) )
+        cols = ['Dataset', 'Disease', 'Max Patient Count', 'Genes',
+                'Pathogenic Variants', 'Benign Variants', 'VUS']
+        f = pd.concat(ls)
+        ff = pd.merge(f, init_df[['Disease', 'Max Patient Count']], on='Disease', how='left')
+        pd.concat([init_df[crit], ff])[cols].sort_values(by=['Dataset', 'Disease']).to_csv(output.o, index=False)
+
