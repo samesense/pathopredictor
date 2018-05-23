@@ -1,7 +1,7 @@
 ### 2018_05_23
 * finish count table
 * test auc. I already have it. It looks good! use proc test.roc
-* cmp revel
+* cmp revel. wtf _merge?
 
 ### 2018_05_22
 * fix top genes

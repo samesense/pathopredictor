@@ -16,8 +16,8 @@ def eval_pr(df, disease, acc_ls):
         acc_ls.append((auc, avg_pr, feat_names[feature], disease))
 
 rule eval_by_gene_clinvar:
-    input:  i = WORK + 'roc_df_clinvar/{features}'
-    output: o = DATA + 'interim/pred_clinvar_eval/{eval_source}.{features}'
+    input:  i = WORK + '{eval_set}/roc_df_clinvar/{features}'
+    output: o = DATA + 'interim/EVAL_{eval_set}/pred_clinvar_eval/{eval_source}.{features}'
     run:
         df_pre = pd.read_csv(input.i, sep='\t')
         if wildcards.eval_source == 'clinvar_single':
@@ -51,8 +51,8 @@ rule eval_by_gene_clinvar:
         m.to_csv(output.o, index=False, sep='\t')
 
 rule plot_clinvar_eval_paper:
-    input:  expand(DATA + 'interim/pred_clinvar_eval/{clinvar_set}.' + C_FEATS, clinvar_set=('clinvar_tot', 'clinvar_single'))
-    output: o = DOCS + 'paper_plts/fig5_evalClinvar.pdf'
+    input:  expand(DATA + 'interim/EVAL_{{eval_set}}/pred_clinvar_eval/{clinvar_set}.' + C_FEATS, clinvar_set=('clinvar_tot', 'clinvar_single'))
+    output: o = DOCS + 'paper_plts/fig5_{eval_set}_evalClinvar.pdf'
     run:
         plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) ) +
                       geom_text(hjust="left", colour="white", data=label_df, aes(x=x, y=y, label=label))"""
@@ -75,7 +75,11 @@ rule plot_clinvar_eval_paper:
           d$clinvar_type = factor(d$clinvar_type, levels=c("Total ClinVar", "ClinVar w/ Evidence"))
           p = ggplot(data=d) + {plot_cmd} + guides(fill=FALSE) +
               ylab('Average precision') + xlab('') + theme_bw(base_size=18) + facet_grid(clinvar_type~disease_name) +
-              coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12)) 
+              coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12))
           ggsave("{output}", p, height=9, width=20)
           """)
         shell('rm {output}.tmp.clinvar.labels')
+
+rule both_clinvar_eval:
+    input: expand(DOCS + 'paper_plts/fig5_{eval_set}_evalClinvar.pdf', eval_set=('ndenovo',))
+

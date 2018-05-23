@@ -166,6 +166,9 @@ rule limit_eval_general:
             df = load_clinvar(input.i)
         elif wildcards.dir == 'gnomad':
             df = pd.read_csv(input.i, sep='\t')
+        elif wildcards.dir == 'ndenovo':
+            df = pd.read_csv(input.i, sep='\t')
+            df.loc[:, 'Disease'] = 'ndenovo'
         else:
             i = 1/0
 
@@ -184,6 +187,8 @@ rule limit_eval_general:
             df.loc[:, 'class'] = df.apply(mk_class_epi, axis=1)
         elif wildcards.dir == 'clinvar':
             df.loc[:, 'class'] = df.apply(calc_final_sig_clinvar, axis=1)
+        elif wildcards.dir == 'ndenovo':
+            df.loc[:, 'class'] = df.apply(calc_final_sig_ndenovo, axis=1)
         elif wildcards.dir == 'gnomad':
             df.loc[:, 'class'] = 'B'
             df.loc[:, 'Disease'] = 'gnomad'
@@ -217,9 +222,9 @@ rule limit_eval_general:
 #        else:
 
 rule limit_clinvar:
-    input:  c = DATA + 'interim/clinvar/{limit_type}/clinvar.eff.dbnsfp.anno.dat.limit.xls',
+    input:  c = DATA + 'interim/{clinvar}/{limit_type}/{clinvar}.eff.dbnsfp.anno.dat.limit.xls',
             p = DATA + 'interim/{limit_type}/panel.dat'
-    output: o = DATA + 'interim/{limit_type}/clinvar.dat'
+    output: o = DATA + 'interim/{limit_type}/{clinvar,clinvar|ndenovo}.dat'
     run:
         cols = ['chrom', 'pos', 'ref', 'alt']
         panel = pd.read_csv(input.p, sep='\t')
@@ -239,5 +244,5 @@ rule all_panels:
         pd.concat(dfs).to_csv(output.o, index=False, sep='\t')
 
 rule parse_dat:
-    input: expand(DATA + 'interim/{limit}/{dat}.dat', limit=('full','vus'), dat=('panel', 'clinvar'))
+    input: expand(DATA + 'interim/{limit}/{dat}.dat', limit=('full','vus'), dat=('panel', 'clinvar', 'ndenovo'))
 

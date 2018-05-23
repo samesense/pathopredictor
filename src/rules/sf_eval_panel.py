@@ -1,10 +1,10 @@
 """Predict status for gene panel vars"""
 
 rule eval_panel_global:
-    input:  DATA + 'interim/full/clinvar.dat',
+    input:  DATA + 'interim/full/{eval_set}.dat',
             DATA + 'interim/full/panel.dat',
-    output: WORK + 'roc_df_panel/{cols}',
-            WORK + 'roc_df_clinvar/{cols}'
+    output: WORK + '{eval_set}/roc_df_panel/{cols}',
+            WORK + '{eval_set}/roc_df_clinvar/{cols}'
     shell:  'python {SCRIPTS}score_panel_global_model.py {wildcards.cols} {input} {output}'
 
 rule plot_gene_heatmap:
@@ -42,32 +42,10 @@ rule size_bar_plot:
 
 DD = ('genedx-epi', 'genedx-epi-limitGene', 'Cardiomyopathy', 'Rasopathies')
 vc = (5, 10)
-rule heatmaps:
-    input: expand(DOCS + 'plot/gene_heatmap/{eval_source}.{disease}.evidence{vc}.heatmap.png', eval_source=('panel',), disease=DD, vc=vc), \
-           expand(DOCS + 'plot/gene_var_count/{eval_source}.{disease}.evidence{vc}.varCount.png', eval_source=('panel',), disease=DD, vc=vc), \
-           expand(DOCS + 'plot/gene_heatmap/{eval_source}.{disease}:{d2}.evidence{vc}.heatmap.png', eval_source=('clinvar',), d2=('tot', 'single', ), disease=DD, vc=vc), \
-           expand(DOCS + 'plot/gene_var_count/{eval_source}.{disease}:{d2}.evidence{vc}.varCount.png', eval_source=('clinvar',), d2=('tot', 'single', ), disease=DD, vc=vc)
-
 rule limit_for_plot:
     input:  WORK + '{method}.eval_panel.{cols}.eval'
     output: WORK + '{method}.eval_panel.{cols}.totWrong'
     shell:  "grep 'TotWrong\|count' {input} | grep -v ssue | grep -v earing > {output}"
-
-rule plot:
-    input:  WORK + '{method}.eval_panel.{cols}.totWrong'
-    output: DOCS + 'plot/{method}.eval_panel.{cols}.totWrong.png'
-    run:
-        R("""
-          require(ggplot2)
-          d = read.delim("{input}", sep='\t', header=TRUE)
-          p = ggplot(data=d) +
-          geom_col(aes(y=var_count,x=score_type, fill=score_type)) +
-          facet_grid(disease~., scale='free') + theme_bw() +
-          ylab('Wrong Predictions') +
-          theme(axis.text.x = element_text(angle=45, hjust=1)) +
-          xlab('') + theme(legend.position="none")
-          ggsave("{output}", p)
-          """)
 
 rule eval_by_gene:
     input:  i = WORK + 'roc_df_{eval_source}/{features}'

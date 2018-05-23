@@ -124,9 +124,11 @@ def eval_disease(disease, data, reg_cols, col_names):
             clinvar_df.loc[:, '-'.join(col_names) + '_probaPred'] = lm_proba
             clinvar_df.loc[:, 'PredictionStatus'] = clinvar_df.apply(lambda row: eval_pred(row, pred_col), axis=1)
             clinvar_acc.append(clinvar_df)
-
     test_df = pd.concat(acc_df_ls)
-    clinvar_result_df = pd.concat(clinvar_acc)
+    if clinvar_acc:
+        clinvar_result_df = pd.concat(clinvar_acc)
+    else:
+        clinvar_result_df = pd.DataFrame()
     return test_df, clinvar_result_df
 
 def standardize(df, cols):
@@ -156,20 +158,25 @@ def mk_panel_clinvar_data(disease_df, clinvar_df):
        is_single applies to clinvar and flags those w/ single evidence
     """
     genes = set(disease_df['gene'])
-    crit = clinvar_df.apply(lambda row: row['clinvar_subset'] == 'clinvar_tot' and row['gene'] in genes, axis=1)
-    crit_single = clinvar_df.apply(lambda row: row['clinvar_subset'] == 'clinvar_single' and row['gene'] in genes, axis=1)
-    clinvar_subset = clinvar_df[crit]
-    cols = ['chrom', 'pos', 'ref', 'alt']
-    clinvar_single = clinvar_df[crit_single][cols]
-    if len(clinvar_single):
-        m = pd.merge(clinvar_subset, clinvar_single, on=cols, how='outer', indicator=True)
-        m.loc[:, 'is_single'] = m.apply(lambda row: row['_merge']=='both', axis=1)
-        clinvar_subset = m
+    if 'clinvar_subet' in clinvar_df.columns.values:
+        crit = clinvar_df.apply(lambda row: row['clinvar_subset'] == 'clinvar_tot' and row['gene'] in genes, axis=1)
+        crit_single = clinvar_df.apply(lambda row: row['clinvar_subset'] == 'clinvar_single' and row['gene'] in genes, axis=1)
+        clinvar_subset = clinvar_df[crit]
+        cols = ['chrom', 'pos', 'ref', 'alt']
+        clinvar_single = clinvar_df[crit_single][cols]
+        if len(clinvar_single):
+            m = pd.merge(clinvar_subset, clinvar_single, on=cols, how='outer', indicator=True)
+            m.loc[:, 'is_single'] = m.apply(lambda row: row['_merge']=='both', axis=1)
+            clinvar_subset = m
+        else:
+            clinvar_subset.loc[:, 'is_single'] = False
+        clinvar_subset.loc[:, 'dataset'] = 'clinvar'
     else:
+        crit = clinvar_df.apply(lambda row: row['gene'] in genes, axis=1)
+        clinvar_subset = clinvar_df[crit]
+        clinvar_subset.loc[:, 'dataset'] = 'clinvar'
         clinvar_subset.loc[:, 'is_single'] = False
-    clinvar_subset.loc[:, 'dataset'] = 'clinvar'
     disease_df.loc[:, 'dataset'] = 'panel'
-    c = pd.concat([disease_df, clinvar_subset])
     return pd.concat([disease_df, clinvar_subset], ignore_index=True)
 
 def load_data(args):
