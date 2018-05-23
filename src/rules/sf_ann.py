@@ -203,6 +203,12 @@ rule limit_eval_general:
         elif wildcards.limit_type=='single':
             crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1
                             and not row['Disease'] in ('Connective tissue disorders', 'Hearing Loss', ''), axis=1)
+        elif wildcards.limit_type=='vus':
+            crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['ccr']>-1
+                            and not (row['class'] == 'P' and row['in_hgmd_dm'])
+                            and not (row['class']=='B' and row['in_uniprot_benign'])
+                            and not row['Disease'] in ('Connective tissue disorders', 'Hearing Loss', '')
+                            and not (row['class']=='B' and row['esp_af_max']>=.01), axis=1)
 
         df[crit].dropna().drop_duplicates(subset=['chrom', 'pos', 'ref', 'alt', 'Disease']).to_csv(output.o, index=False, sep='\t')
 #        if wildcards.dir == 'gnomad':
@@ -233,5 +239,5 @@ rule all_panels:
         pd.concat(dfs).to_csv(output.o, index=False, sep='\t')
 
 rule parse_dat:
-    input: DATA + 'interim/full/panel.dat', DATA + 'interim/full/clinvar.dat'
+    input: expand(DATA + 'interim/{limit}/{dat}.dat', limit=('full','vus'), dat=('panel', 'clinvar'))
 
