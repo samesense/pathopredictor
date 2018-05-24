@@ -1,3 +1,6 @@
+docs/paper_plts/*df
+docs/paper_plts/*labels
+docs/paper_plts/*tiff
 src/rules/ahmad_predictor/
 docs/plot/
 src/rules/*pdf

@@ -51,15 +51,16 @@ rule eval_by_gene_clinvar:
         m.to_csv(output.o, index=False, sep='\t')
 
 rule plot_clinvar_eval_paper:
-    input:  expand(DATA + 'interim/EVAL_{{eval_set}}/pred_clinvar_eval/{clinvar_set}.' + C_FEATS, clinvar_set=('clinvar_tot', 'clinvar_single'))
-    output: o = DOCS + 'paper_plts/fig5_{eval_set}_evalClinvar.pdf'
+    input:  expand(DATA + 'interim/EVAL_clinvar/pred_clinvar_eval/{clinvar_set}.' + C_FEATS, clinvar_set=('clinvar_tot', 'clinvar_single'))
+    output: o = DOCS + 'paper_plts/fig5_evalClinvar.tiff'
     run:
         plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) ) +
-                      geom_text(hjust="left", colour="white", data=label_df, aes(x=x, y=y, label=label))"""
+                      geom_text(size=2, hjust="left", colour="white", data=label_df, aes(x=x, y=y, label=label))"""
 
         df_tot = pd.concat([pd.read_csv(afile, sep='\t') for afile in input])
+        crit = df_tot.apply(lambda row: row['features'] != 'REVEL', axis=1)
         # df_tot.loc[:, 'feature_color'] = df_tot.apply(lambda row: 'bomdo' if row['features']=='Combination' else 'feat', axis=1)
-        df_tot.to_csv(output.o + '.df', index=False, sep='\t')
+        df_tot[crit].to_csv(output.o + '.df', index=False, sep='\t')
 
         df = df_tot[['clinvar_type', 'disease_name', 'benign_size', 'pathogenic_size']].drop_duplicates().melt(id_vars=['clinvar_type', 'disease_name'], var_name='var_type')
         df.loc[:, 'label'] = df.apply(lambda row: row['var_type'].split('_')[0] + '=%d' % (row['value']), axis=1)
@@ -74,12 +75,35 @@ rule plot_clinvar_eval_paper:
           label_df = read.delim("{output}.tmp.clinvar.labels", sep="\t", header=TRUE)
           d$clinvar_type = factor(d$clinvar_type, levels=c("Total ClinVar", "ClinVar w/ Evidence"))
           p = ggplot(data=d) + {plot_cmd} + guides(fill=FALSE) +
-              ylab('Average precision') + xlab('') + theme_bw(base_size=18) + facet_grid(clinvar_type~disease_name) +
-              coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12))
-          ggsave("{output}", p, height=9, width=20)
+              ylab('Average precision') + xlab('') + theme_bw(base_size=11) + facet_grid(clinvar_type~disease_name) +
+              coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10))
+          ggsave("{output}", p, height=12, width=19.05, units="cm", dpi=300)
           """)
         shell('rm {output}.tmp.clinvar.labels')
 
+rule plot_ndenovo_eval_paper:
+    input:  i = DATA + 'interim/EVAL_ndenovo/pred_clinvar_eval/clinvar_tot.' + C_FEATS
+    output: o = DOCS + 'paper_plts/fig7_evalDenovo.tiff'
+    run:
+        plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) )"""
+
+        df_tot = pd.read_csv(input.i, sep='\t')
+        crit = df_tot.apply(lambda row: 'Epi' in row['disease_name'] and ('REVEL'==row['features'] or 'PathoPredictor'==row['features']), axis=1)
+        # df_tot.loc[:, 'feature_color'] = df_tot.apply(lambda row: 'bomdo' if row['features']=='Combination' else 'feat', axis=1)
+        df_tot[crit].to_csv(output.o + '.df', index=False, sep='\t')
+
+        R("""
+          require(ggplot2)
+          feature_palette <- c("#D4ED91", "grey")
+          d = read.delim("{output}.df", sep='\t', header=TRUE)
+          d$clinvar_type = factor(d$clinvar_type, levels=c("Total ClinVar", "ClinVar w/ Evidence"))
+          p = ggplot(data=d) + {plot_cmd} + guides(fill=FALSE) +
+              ylab('Average precision') + xlab('') + theme_bw(base_size=12) + facet_grid(clinvar_type~disease_name) +
+              coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12))
+          ggsave("{output}", p, height=12, width=19.05, units="cm", dpi=300)
+          """)
+
 rule both_clinvar_eval:
-    input: expand(DOCS + 'paper_plts/fig5_{eval_set}_evalClinvar.pdf', eval_set=('ndenovo',))
+    input: DOCS + 'paper_plts/fig5_evalClinvar.tiff', DOCS + 'paper_plts/fig7_evalDenovo.tiff',
+
 
