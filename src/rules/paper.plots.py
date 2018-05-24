@@ -171,20 +171,22 @@ rule size_bar_paper_plot:
 
 #FIGS = ('fig1_count_plot', 'fig4_eval_clinvar', 'fig3_panelEval.byVarClassFalse', 'fig5_idi', 'fig6_single_gene_collapse_.003_.1')
 #FIGS = ('fig1_count_plot', 'fig3_panelEval.byVarClassFalse')
-FIGS = ('fig1_countPlot', 'fig5_evalClinvar', 'fig4_panelEval',
-        'fig2b_featureCor', 'fig2a_featureImportance',)
+FIGS = ('fig7_evalDenovo', 'fig5_evalClinvar')
+
+# ('fig1_countPlot', 'fig5_evalClinvar', 'fig4_panelEval',
+#         'fig2b_featureCor', 'fig2a_featureImportance',)
         # 'fig6_single_gene_collapse_.003_1.full',
         # 'fig7_single_gene_collapse_.003_1.single', )
 
 rule upload_paper_plot:
-    input:  DOCS + 'paper_plts/{fig}.pdf'
-    output: DBox.remote('ahmad_predictor/{fig}.pdf')
+    input:  DOCS + 'paper_plts/{fig}.tiff'
+    output: DBox.remote('ahmad_predictor/{fig}.tiff')
     shell:  'cp {input} {output}'
 
 rule all_paper_plots:
     input: expand(DOCS + 'paper_plts/{fig}.pdf', fig=FIGS)
 
 rule upload_all:
-    input: expand(DBox.remote('ahmad_predictor/{fig}.pdf'), fig=FIGS)
+    input: expand(DBox.remote('ahmad_predictor/{fig}.tiff'), fig=FIGS)
            #expand(DOCS + 'paper_plts/fig5_heatmap.{evidenceCutoff}.{varTypes}.pdf', varTypes=('pathogenic', 'benign', 'both', 'bothAhmad'), evidenceCutoff=(4,5,10)),
            #expand(DOCS + 'paper_plts/fig5b.varCount.{evidenceCutoff}.{varTypes}.pdf', varTypes=('pathogenic', 'benign', 'both', 'bothAhmad'), evidenceCutoff=(4,5,10))

@@ -96,11 +96,10 @@ rule plot_ndenovo_eval_paper:
           require(ggplot2)
           feature_palette <- c("#D4ED91", "grey")
           d = read.delim("{output}.df", sep='\t', header=TRUE)
-          d$clinvar_type = factor(d$clinvar_type, levels=c("Total ClinVar", "ClinVar w/ Evidence"))
           p = ggplot(data=d) + {plot_cmd} + guides(fill=FALSE) +
-              ylab('Average precision') + xlab('') + theme_bw(base_size=12) + facet_grid(clinvar_type~disease_name) +
+              ylab('Average precision') + xlab('') + theme_bw(base_size=12) + facet_grid(.~disease_name) +
               coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12))
-          ggsave("{output}", p, height=12, width=19.05, units="cm", dpi=300)
+          ggsave("{output}", p, height=4, width=12, units="cm", dpi=300)
           """)
 
 rule both_clinvar_eval:
