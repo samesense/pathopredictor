@@ -72,18 +72,8 @@ rule fig7:
     output: o = DOCS + 'paper_plts/fig7_byGene_and_evalDenovo.tiff'
     shell:  'convert -append {input} {output}'
 
-FIGS = ('fig1_countPlot', 'fig2_featureImportance', 'fig3_featureCor',
-        'fig5_panelEval', 'fig7_byGene', 'fig8_evalDenovo', 'fig6_evalClinvar')
-
 rule upload_paper_plot:
     input:  DOCS + 'paper_plts/{fig}.tiff'
     output: DBox.remote('ahmad_predictor/{fig}.tiff')
     shell:  'cp {input} {output}'
 
-rule all_paper_plots:
-    input: expand(DOCS + 'paper_plts/{fig}.pdf', fig=FIGS)
-
-rule upload_all:
-    input: expand(DBox.remote('ahmad_predictor/{fig}.tiff'), fig=FIGS)
-           #expand(DOCS + 'paper_plts/fig5_heatmap.{evidenceCutoff}.{varTypes}.pdf', varTypes=('pathogenic', 'benign', 'both', 'bothAhmad'), evidenceCutoff=(4,5,10)),
-           #expand(DOCS + 'paper_plts/fig5b.varCount.{evidenceCutoff}.{varTypes}.pdf', varTypes=('pathogenic', 'benign', 'both', 'bothAhmad'), evidenceCutoff=(4,5,10))

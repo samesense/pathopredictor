@@ -31,6 +31,7 @@ include: "improve_prob.py"
 include: "sf_coords.py"
 include: "sf_eval_ahmad.py" # plot_ahmad
 include: "sf_gene_pr_curve.py"
+include: "sf_paper_data.py"
 include: "paper.plots.py"
 include: "sf_predict_clinvar.py"
 include: "sf_feature_importances.py"
@@ -51,7 +52,14 @@ rule all_dat:
            TMP + 'trees/revel-is_domain', \
            TMP + 'trees/revel', \
 
+FIGS = ('fig1_countPlot', 'fig2_featureImportance', 'fig3_featureCor',
+        'fig5_panelEval', 'fig7_byGene_and_evalDenovo', 'fig6_evalClinvar')
 
+TABLES = ('S1_trainingData_hg19',)
 
+rule all_paper_plots:
+    input: expand(DOCS + 'paper_plts/{fig}.pdf', fig=FIGS)
 
-
+rule upload_all:
+    input: expand(DBox.remote('ahmad_predictor/{fig}.tiff'), fig=FIGS),
+           expand(DBox.remote('ahmad_predictor/{table}.csv'), table=TABLES)
