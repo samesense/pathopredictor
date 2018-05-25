@@ -117,7 +117,7 @@ rule vcfanno_general:
 # need to convert hom to a count of two
 rule parse_vcf_general:
    input:  i = DATA + 'interim/{dir}/{lab}.eff.dbnsfp.anno.vcf'
-   output: o = DATA + 'interim/{dir,epi|other}/{lab}.eff.dbnsfp.anno.dat.xls',
+   output: o = DATA + 'interim/{dir,man|epi|other}/{lab}.eff.dbnsfp.anno.dat.xls',
    run:
        with open(input.i) as f, open(output.o, 'w') as fout:
            fields = ['chrom', 'pos', 'ref', 'alt',
@@ -249,5 +249,5 @@ rule all_panels:
         pd.concat(dfs).to_csv(output.o, index=False, sep='\t')
 
 rule parse_dat:
-    input: expand(DATA + 'interim/{limit}/{dat}.dat', limit=('full','vus','no_esp'), dat=('panel', 'clinvar', 'ndenovo'))
+    input: expand(DATA + 'interim/{limit}/{dat}.dat', limit=('full','vus','no_esp'), dat=('panel', 'clinvar', 'ndenovo', 'man'))
 

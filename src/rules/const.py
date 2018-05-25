@@ -1,3 +1,4 @@
+import Bio.SeqIO
 import pandas as pd
 from functools import reduce
 from itertools import combinations, chain
