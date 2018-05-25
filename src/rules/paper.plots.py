@@ -172,7 +172,7 @@ rule size_bar_paper_plot:
 #FIGS = ('fig1_count_plot', 'fig4_eval_clinvar', 'fig3_panelEval.byVarClassFalse', 'fig5_idi', 'fig6_single_gene_collapse_.003_.1')
 #FIGS = ('fig1_count_plot', 'fig3_panelEval.byVarClassFalse')
 FIGS = ('fig1_countPlot', 'fig2_featureImportance', 'fig3_featureCor',
-        'fig5_panelEval', 'fig8_evalDenovo', 'fig6_evalClinvar')
+        'fig5_panelEval', 'fig7_byGene', 'fig8_evalDenovo', 'fig6_evalClinvar')
 
 # ('fig1_countPlot', 'fig5_evalClinvar', 'fig4_panelEval',
 #         'fig2b_featureCor', 'fig2a_featureImportance',)

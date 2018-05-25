@@ -1,4 +1,4 @@
-"""Gene-wise PR curves for top genes after global model"""
+"""Gene-wise ROC curves for top genes after global model"""
 
 def calc_pr_curve(rows, gene):
     pred_col = [x for x in rows.columns if 'probaPred' in x][0]
@@ -10,7 +10,7 @@ def calc_pr_curve(rows, gene):
     return s
 
 rule calc_pr_curve:
-    input:  i = WORK + 'roc_df_{dat}/{cols}'
+    input:  i = WORK + 'clinvar/roc_df_{dat}/{cols}'
     output: o = DATA + 'interim/gene_pr/{dat}.{cols}'
     run:
         df = pd.read_csv(input.i, sep='\t')
@@ -23,7 +23,7 @@ rule calc_pr_curve:
 rule plot_pr_curve:
     input: p = DATA + 'interim/gene_pr/panel.' + C_FEATS,
            c = DATA + 'interim/gene_pr/clinvar.' + C_FEATS
-    output: o = DOCS + 'paper_plts/fig6_byGene.pdf'
+    output: o = DOCS + 'paper_plts/fig7_byGene.tiff'
     run:
         genes = ['KCNQ2', 'STXBP1',
                  'SCN2A', 'SCN5A', 'RAF1']
@@ -37,10 +37,9 @@ rule plot_pr_curve:
         R("""require(ggplot2)
              d = read.delim("{output}.dat", sep='\t', header=TRUE)
              p = ggplot(data=d) + geom_line(aes(x=fpr, y=tpr, colour=gene)) +
-                 facet_grid(dataset~.) + theme_bw(base_size=18) +
-                 xlab('False positive rate') + ylab('True positive rate')
-            ggsave("{output}", p)
+                 facet_grid(dataset~.) + theme_bw(base_size=18) + labs(colour="") +
+                 xlab('False positive rate') + ylab('True positive rate') +
+                 theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1))
+            ggsave("{output}", p, units="cm", dpi=300, width=10, height=10)
           """)
 
-rule all_pr:
-    input: DOCS + 'paper_plts/fig6_byGene.pdf'
