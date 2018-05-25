@@ -35,11 +35,15 @@ rule plot_pr_curve:
         clinvar.loc[:, 'dataset'] = 'Total ClinVar'
         pd.concat([panel[p_crit], clinvar[c_crit]]).to_csv(output.o + '.dat', index=False, sep='\t')
         R("""require(ggplot2)
+             require(grid)
              d = read.delim("{output}.dat", sep='\t', header=TRUE)
              p = ggplot(data=d) + geom_line(aes(x=fpr, y=tpr, colour=gene)) +
                  facet_grid(dataset~.) + theme_bw(base_size=18) + labs(colour="") +
                  xlab('False positive rate') + ylab('True positive rate') +
                  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1))
-            ggsave("{output}", p, units="cm", dpi=300, width=10, height=10)
+            tiff("{output}", res=300, units="cm", height=10, width=11)
+            grid.draw(p)
+            grid.text("a", x=0.05, y=0.96)
+            dev.off()
           """)
 

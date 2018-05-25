@@ -65,119 +65,52 @@ rule count_plot:
           ggsave("{output}", p, height=9, width=12, units="cm", dpi=300)
           """)
 
-rule combine_heatmap_clinvar_and_panel:
-    input:  clinvar = DATA + 'interim/clinvar.by_gene_feat_combo.{evidenceCutoff}.{varTypes}',
-            panel = DATA + 'interim/panel.by_gene_feat_combo.{evidenceCutoff}.{varTypes}'
-    output: o = WORK + 'paper_plot_data/heatmap.{evidenceCutoff}.{varTypes}'
+# combine revel comparison w/ single gene eval
+rule fig7:
+    input:  denovo = DATA + 'interim/EVAL_ndenovo/pred_clinvar_eval/clinvar_tot.' + C_FEATS,
+            p = DATA + 'interim/gene_pr/panel.' + C_FEATS,
+            c = DATA + 'interim/gene_pr/clinvar.' + C_FEATS
+    output: o = DOCS + 'paper_plts/fig7_byGene_and_evalDenovo.tiff'
     run:
-        diseases = {'genedx-epi-limitGene':'Epilepsy (dominant genes)',
-                    'Rasopathies':'Rasopathies',
-                    'genedx-epi':'Epilepsy',
-                    'Cardiomyopathy':'Cardiomyopathy'}
-        panel_df_pre = pd.read_csv(input.panel, sep='\t')
-        clinvar_df_pre = pd.read_csv(input.clinvar, sep='\t')
-        crit = panel_df_pre.apply(lambda row: row['Disease'] in diseases, axis=1)
-        panel_df = panel_df_pre[crit]
-        panel_df.loc[:, 'disease'] = panel_df.apply(lambda row: diseases[row['Disease']],
-                                                    axis=1)
-        crit = clinvar_df_pre.apply(lambda row: row['Disease'].split(':')[0]
-                                    in diseases, axis=1)
-        clinvar_df = clinvar_df_pre[crit]
-        clinvar_df.loc[:, 'disease'] = clinvar_df.apply(lambda row:
-                                                        diseases[row['Disease'].split(':')[0]], axis=1)
-        df = ( pd.concat([clinvar_df[['disease','gene']].drop_duplicates(),
-                          panel_df[['disease','gene']].drop_duplicates()])
-                 .groupby(['disease', 'gene']).size().reset_index()
-                 .rename(columns={0:'size'})
-             )
-        disease_gene_keep = {row['disease'] + ':' + row['gene']
-                             for _, row in df[df['size']==2].iterrows()}
-        crit = panel_df.apply(lambda row: row['disease'] + ':' + row['gene']
-                              in disease_gene_keep, axis=1)
-        panel_final = panel_df[crit][['disease', 'combo', 'gene', 'wrongFrac', 'var_path_count', 'var_benign_count']]
-        panel_final['panel_or_clinvar'] = 'Panel'
-        panel_final.loc[:, 'gene'] = panel_final.apply(lambda row: row['gene'] + ' Panel', axis=1)
-        min_df = (panel_final[['disease', 'gene', 'wrongFrac']]
-                  .groupby(['disease', 'gene']).apply(min)
-                  .rename(columns={'gene':'gene_junk', 'disease':'dis_junk', 'wrongFrac':'min'})
-                  .reset_index())
-        pm = pd.merge(panel_final, min_df, on=['disease', 'gene'])
-        pm.loc[:, 'is_best'] = pm.apply(lambda row: row['wrongFrac'] == row['min'], axis=1)
+        denovo_plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) )"""
 
-        crit = clinvar_df.apply(lambda row: row['disease'] + ':' + row['gene']
-                                in disease_gene_keep, axis=1)
-        clinvar_final = clinvar_df[crit][['disease', 'combo', 'gene', 'wrongFrac', 'var_path_count', 'var_benign_count']]
-        clinvar_final['panel_or_clinvar'] = 'Total ClinVar'
-        clinvar_final.loc[:, 'gene'] = clinvar_final.apply(lambda row: row['gene'] + ' Total ClinVar', axis=1)
-        min_df = ( clinvar_final[['disease', 'gene', 'wrongFrac']]
-                   .groupby(['disease', 'gene']).apply(min)
-                   .rename(columns={'gene':'gene_junk', 'disease':'dis_junk', 'wrongFrac':'min'})
-                   .reset_index() )
-        pc = pd.merge(clinvar_final, min_df, on=['disease', 'gene'])
-        pc.loc[:, 'is_best'] = pc.apply(lambda row: row['wrongFrac'] == row['min'], axis=1)
+        df_tot = pd.read_csv(input.denovo, sep='\t')
+        crit = df_tot.apply(lambda row: 'Epi' in row['disease_name'] and ('REVEL'==row['features'] or 'PathoPredictor'==row['features']), axis=1)
+        df_tot[crit].to_csv(output.o + '.denovo_df', index=False, sep='\t')
 
-        df_final = pd.concat([pc, pm])
-        df_final.loc[:, 'combo'] = df_final.apply(lambda row: row['combo'].replace('_base.', 'BASE ').replace('_trained.','TRAINED '), axis=1)
-        df_final.to_csv(output.o, index=False, sep='\t')
+        genes = ['KCNQ2', 'STXBP1',
+                 'SCN2A', 'SCN5A', 'RAF1']
+        panel = pd.read_csv(input.p, sep='\t')
+        p_crit = panel.apply(lambda row: row['gene'] in genes and row['gene'] != 'RAF1', axis=1)
+        clinvar = pd.read_csv(input.c, sep='\t')
+        c_crit = clinvar.apply(lambda row: row['gene'] in genes, axis=1)
+        panel.loc[:, 'dataset'] = 'Disease panel'
+        clinvar.loc[:, 'dataset'] = 'Total ClinVar'
+        pd.concat([panel[p_crit], clinvar[c_crit]]).to_csv(output.o + '.byGene_df', index=False, sep='\t')
 
-rule paper_heatmap:
-    input:  WORK + 'paper_plot_data/heatmap.{evidenceCutoff}.{varTypes}'
-    output: DOCS + 'paper_plts/fig5_heatmap.{evidenceCutoff}.{varTypes}.pdf'
-    run:
         R("""
           require(ggplot2)
-          d = read.delim("{input}", sep='\t', header=TRUE)
-          best_d = d[d$is_best=="True",]
-          p = ggplot(data=d) +
-              geom_raster(aes(y=gene, x=reorder(combo, wrongFrac, mean), fill=wrongFrac)) +
-              geom_point(data=best_d, aes(y=gene, x=combo)) +
-              ylab('') + xlab('') + theme_bw(base_size=18) +
-              scale_fill_gradient(low="yellow", high="blue") +
-              labs(fill="Incorrect prediction fraction") +
-              facet_grid(disease~., scale="free") +
-              theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5))
-          ggsave("{output}", p, width=20, height=20)
+          source('../scripts/multiplot.R')
+
+
+          feature_palette <- c("#D4ED91", "grey")
+          d = read.delim("{output}.denovo_df", sep='\t', header=TRUE)
+          p_denovo = ggplot(data=d) + {denovo_plot_cmd} + guides(fill=FALSE) +
+              ylab('Average precision') + xlab('') + theme_bw(base_size=12) + facet_grid(.~disease_name) +
+              coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12))
+
+          d = read.delim("{output}.byGene_df", sep='\t', header=TRUE)
+          p_bygene = ggplot(data=d) + geom_line(aes(x=fpr, y=tpr, colour=gene)) +
+                 facet_grid(dataset~.) + theme_bw(base_size=18) + labs(colour="") +
+                 xlab('False positive rate') + ylab('True positive rate') +
+                 theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1))
+          tiff("{output}", res=300, units="cm", height=10, width=14)
+          multiplot(p_bygene, p_denovo, cols=2)
+          dev.off()
           """)
 
-rule mk_size_plot_data:
-    input:  i = WORK + 'paper_plot_data/heatmap.{evidenceCutoff}.{varTypes}'
-    output: o = WORK + 'paper_plot_data/size.{evidenceCutoff}.{varTypes}'
-    run:
-        df = pd.read_csv(input.i, sep='\t')
-        cols = set(df.columns.values)
-        path_cols = list(cols - set(('var_benign_count')))
-        benign_cols = list(cols - set(('var_path_count')))
-        path_df = df[path_cols].rename(columns={'var_path_count':'var_count'})
-        path_df['VariantType'] = 'Pathogenic'
-
-        benign_df = df[benign_cols].rename(columns={'var_benign_count':'var_count'})
-        benign_df['VariantType'] = 'Benign'
-
-        df = pd.concat([path_df, benign_df])
-        df[['VariantType', 'gene', 'disease', 'var_count']].drop_duplicates().to_csv(output.o, index=False, sep='\t')
-
-rule size_bar_paper_plot:
-    input:  WORK + 'paper_plot_data/size.{evidenceCutoff}.{varTypes}'
-    output: DOCS + 'paper_plts/fig5b.varCount.{evidenceCutoff}.{varTypes}.pdf'
-    run:
-        R("""
-          require(ggplot2)
-          d = read.delim("{input}", sep='\t', header=TRUE)
-          p = ggplot(data=d) +
-              geom_col(aes(fill=VariantType, x=gene, y=var_count), stat="identity") + facet_grid(disease~., scale="free") +
-              coord_flip() + xlab('') + ylab('Variant count') + theme_bw(base_size=18) + labs(fill='')
-          ggsave("{output}", p, height=20)
-          """)
-
-#FIGS = ('fig1_count_plot', 'fig4_eval_clinvar', 'fig3_panelEval.byVarClassFalse', 'fig5_idi', 'fig6_single_gene_collapse_.003_.1')
-#FIGS = ('fig1_count_plot', 'fig3_panelEval.byVarClassFalse')
 FIGS = ('fig1_countPlot', 'fig2_featureImportance', 'fig3_featureCor',
         'fig5_panelEval', 'fig7_byGene', 'fig8_evalDenovo', 'fig6_evalClinvar')
-
-# ('fig1_countPlot', 'fig5_evalClinvar', 'fig4_panelEval',
-#         'fig2b_featureCor', 'fig2a_featureImportance',)
-        # 'fig6_single_gene_collapse_.003_1.full',
-        # 'fig7_single_gene_collapse_.003_1.single', )
 
 rule upload_paper_plot:
     input:  DOCS + 'paper_plts/{fig}.tiff'
