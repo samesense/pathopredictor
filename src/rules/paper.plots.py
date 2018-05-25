@@ -67,47 +67,10 @@ rule count_plot:
 
 # combine revel comparison w/ single gene eval
 rule fig7:
-    input:  denovo = DATA + 'interim/EVAL_ndenovo/pred_clinvar_eval/clinvar_tot.' + C_FEATS,
-            p = DATA + 'interim/gene_pr/panel.' + C_FEATS,
-            c = DATA + 'interim/gene_pr/clinvar.' + C_FEATS
+    input:  DOCS + 'paper_plts/fig7_byGene.tiff',
+            DOCS + 'paper_plts/fig8_evalDenovo.tiff'
     output: o = DOCS + 'paper_plts/fig7_byGene_and_evalDenovo.tiff'
-    run:
-        denovo_plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) )"""
-
-        df_tot = pd.read_csv(input.denovo, sep='\t')
-        crit = df_tot.apply(lambda row: 'Epi' in row['disease_name'] and ('REVEL'==row['features'] or 'PathoPredictor'==row['features']), axis=1)
-        df_tot[crit].to_csv(output.o + '.denovo_df', index=False, sep='\t')
-
-        genes = ['KCNQ2', 'STXBP1',
-                 'SCN2A', 'SCN5A', 'RAF1']
-        panel = pd.read_csv(input.p, sep='\t')
-        p_crit = panel.apply(lambda row: row['gene'] in genes and row['gene'] != 'RAF1', axis=1)
-        clinvar = pd.read_csv(input.c, sep='\t')
-        c_crit = clinvar.apply(lambda row: row['gene'] in genes, axis=1)
-        panel.loc[:, 'dataset'] = 'Disease panel'
-        clinvar.loc[:, 'dataset'] = 'Total ClinVar'
-        pd.concat([panel[p_crit], clinvar[c_crit]]).to_csv(output.o + '.byGene_df', index=False, sep='\t')
-
-        R("""
-          require(ggplot2)
-          source('../scripts/multiplot.R')
-
-
-          feature_palette <- c("#D4ED91", "grey")
-          d = read.delim("{output}.denovo_df", sep='\t', header=TRUE)
-          p_denovo = ggplot(data=d) + {denovo_plot_cmd} + guides(fill=FALSE) +
-              ylab('Average precision') + xlab('') + theme_bw(base_size=12) + facet_grid(.~disease_name) +
-              coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12))
-
-          d = read.delim("{output}.byGene_df", sep='\t', header=TRUE)
-          p_bygene = ggplot(data=d) + geom_line(aes(x=fpr, y=tpr, colour=gene)) +
-                 facet_grid(dataset~.) + theme_bw(base_size=18) + labs(colour="") +
-                 xlab('False positive rate') + ylab('True positive rate') +
-                 theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1))
-          tiff("{output}", res=300, units="cm", height=10, width=14)
-          multiplot(p_bygene, p_denovo, cols=2)
-          dev.off()
-          """)
+    shell:  'convert -append {input} {output}'
 
 FIGS = ('fig1_countPlot', 'fig2_featureImportance', 'fig3_featureCor',
         'fig5_panelEval', 'fig7_byGene', 'fig8_evalDenovo', 'fig6_evalClinvar')

@@ -13,7 +13,7 @@ HTTP = HTTPRemoteProvider()
 import os, sys, csv
 from p_change import *
 
-SECRETS = '/home/evansj/me/.secrets/'
+SECRETS = '/mnt/isilon/cbmi/variome/perry/.secrets/'
 sys.path.append(SECRETS)
 from pass_wd import *
 
