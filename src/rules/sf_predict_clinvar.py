@@ -52,7 +52,7 @@ rule eval_by_gene_clinvar:
 
 rule plot_clinvar_eval_paper:
     input:  expand(DATA + 'interim/EVAL_clinvar/pred_clinvar_eval/{clinvar_set}.' + C_FEATS, clinvar_set=('clinvar_tot', 'clinvar_single'))
-    output: o = DOCS + 'paper_plts/fig5_evalClinvar.tiff'
+    output: o = DOCS + 'paper_plts/fig6_evalClinvar.tiff'
     run:
         plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) ) +
                       geom_text(size=2, hjust="left", colour="white", data=label_df, aes(x=x, y=y, label=label))"""
@@ -83,7 +83,7 @@ rule plot_clinvar_eval_paper:
 
 rule plot_ndenovo_eval_paper:
     input:  i = DATA + 'interim/EVAL_ndenovo/pred_clinvar_eval/clinvar_tot.' + C_FEATS
-    output: o = DOCS + 'paper_plts/fig7_evalDenovo.tiff'
+    output: o = DOCS + 'paper_plts/fig8_evalDenovo.tiff'
     run:
         plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) )"""
 
