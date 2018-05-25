@@ -1,16 +1,7 @@
-mahdi_epi
+PathoPredictor
 ==============================
 
-Missense variant effect pathogenicity prediction
-
-### Todo
-* Revel fig
-
-### Meeting notes
-* [080817](docs/meeting_080817.md)
-* [081517](docs/meeting_081517.md)
-* [082217](docs/meeting_081517.md)
-* [082917](docs/meeting_082917.md)
+Missense variant effect pathogenicity prediction using disease specific classifiers for cardiomyopathy, epilepsy, and rasopathies. If you are here to get PathoPredictor scores for a vcf file, see [prediction instructions](docs/how_to_predict.md). If you want to recreate the whole study, see [reproducing](docs/how_to_reproduce.md).
 
 ### Methods
 * use mutalyzer to convert c. to genome coords (had trouble w/ indels)
