@@ -1,8 +1,8 @@
 """Predictor paper plots."""
 
 rule count_plot_data:
-    input: panel = WORK + 'roc_df_panel/' + C_FEATS,
-           clinvar = WORK + 'roc_df_clinvar/' + C_FEATS
+    input:  panel = WORK + 'clinvar/roc_df_panel/' + C_FEATS,
+            clinvar = WORK + 'clinvar/roc_df_clinvar/' + C_FEATS
     output: o = WORK + 'paper_plot_data/count_plot'
     run:
         diseases = {'genedx-epi-limitGene':'Epilepsy (dominant genes)',
@@ -50,7 +50,7 @@ rule count_plot_data:
 
 rule count_plot:
     input:  WORK + 'paper_plot_data/count_plot'
-    output: DOCS + 'paper_plts/fig1_countPlot.pdf'
+    output: DOCS + 'paper_plts/fig1_countPlot.tiff'
     run:
         R("""
           require(ggplot2)
@@ -59,10 +59,10 @@ rule count_plot:
           d$eval_type = factor(d$eval_type, levels=c("Panel", "Total ClinVar", "ClinVar w/ Evidence"))
           p = ggplot(data=d) +
               geom_bar(stat="identity", aes(x=Disease, y=count, fill=fct_reorder(y,count))) +
-              facet_grid(count_type~eval_type, scale="free_y") + theme_bw(base_size=18) +
+              facet_grid(count_type~eval_type, scale="free_y") + theme_bw(base_size=12) +
               ylab('Count') + labs(fill= "") + theme(legend.position="bottom") +
               theme(axis.text.x = element_text(angle=45, hjust=1), axis.title.x=element_blank())
-          ggsave("{output}", p, width=10)
+          ggsave("{output}", p, height=9, width=12, units="cm", dpi=300)
           """)
 
 rule combine_heatmap_clinvar_and_panel:
