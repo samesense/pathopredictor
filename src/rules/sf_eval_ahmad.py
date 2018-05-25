@@ -19,7 +19,7 @@ rule mk_panel_eval_figure_data:
                          'EPI':2,
                          'Cardiomyopathy':1}
 
-        diseases = {'genedx-epi-limitGene':'Epilepsy (dominant genes)',
+        diseases = {'genedx-epi-limitGene':'Epilepsy (dominant)',
                     'Rasopathies':'Rasopathies',
                     'EPI':'Epilepsy',
                     'Cardiomyopathy':'Cardiomyopathy'}
@@ -53,6 +53,6 @@ rule plot_panel_eval:
               theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10)) +
               ylab('Average precision') +
               xlab('') + coord_flip()
-          ggsave("{output}", p, dpi=300, width=19.05, height=4.5, units="cm")
+          ggsave("{output}", p, dpi=300, width=16, height=4.5, units="cm")
           """)
         shell('rm {output}.tmp.panel.labels')

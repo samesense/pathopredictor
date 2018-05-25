@@ -40,7 +40,7 @@ def run_panel(afile, out):
                                     else row['Disease'], axis=1)
     crit = df.apply(lambda row: row['Disease'] == 'EPI' and row['gene'] in FOCUS_GENES, axis=1)
     disease_genedx_limitGene_df= df[crit]
-    disease_genedx_limitGene_df['disease'] = 'Epilepsy (dominant genes)'
+    disease_genedx_limitGene_df['disease'] = 'Epilepsy (dominant)'
     disease_df = pd.concat([df, disease_genedx_limitGene_df])
     run_ensemble(disease_df, 'panel', 'disease', out)
 

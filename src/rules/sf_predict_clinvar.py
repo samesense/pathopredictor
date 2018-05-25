@@ -42,7 +42,7 @@ rule eval_by_gene_clinvar:
                          'EPI':2,
                          'Cardiomyopathy':1}
 
-        diseases = {'genedx-epi-limitGene':'Epilepsy (dominant genes)',
+        diseases = {'genedx-epi-limitGene':'Epilepsy (dominant)',
                     'Rasopathies':'Rasopathies',
                     'EPI':'Epilepsy',
                     'Cardiomyopathy':'Cardiomyopathy'}
@@ -77,7 +77,7 @@ rule plot_clinvar_eval_paper:
           p = ggplot(data=d) + {plot_cmd} + guides(fill=FALSE) +
               ylab('Average precision') + xlab('') + theme_bw(base_size=10.5) + facet_grid(clinvar_type~disease_name) +
               coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10))
-          ggsave("{output}", p, height=7, width=19.05, units="cm", dpi=300)
+          ggsave("{output}", p, height=8, width=18, units="cm", dpi=300)
           """)
         shell('rm {output}.tmp.clinvar.labels')
 
