@@ -63,8 +63,8 @@ rule plot_clinvar_eval_paper:
         df_tot[crit].to_csv(output.o + '.df', index=False, sep='\t')
 
         df = df_tot[['clinvar_type', 'disease_name', 'benign_size', 'pathogenic_size']].drop_duplicates().melt(id_vars=['clinvar_type', 'disease_name'], var_name='var_type')
-        df.loc[:, 'label'] = df.apply(lambda row: row['var_type'].split('_')[0] + '=%d' % (row['value']), axis=1)
-        df.loc[:, 'x'] = df.apply(lambda row: 'Missense badness' if 'benign' in row['label'] else 'Missense depletion', axis=1)
+        df.loc[:, 'label'] = df.apply(lambda row: row['var_type'].split('_')[0][0] + '=%d' % (row['value']), axis=1)
+        df.loc[:, 'x'] = df.apply(lambda row: 'Missense badness' if 'b' in row['label'] else 'Missense depletion', axis=1)
         df['y'] = .01
         df.to_csv(output.o + '.tmp.clinvar.labels', index=False, sep='\t')
 
@@ -75,9 +75,9 @@ rule plot_clinvar_eval_paper:
           label_df = read.delim("{output}.tmp.clinvar.labels", sep="\t", header=TRUE)
           d$clinvar_type = factor(d$clinvar_type, levels=c("Total ClinVar", "ClinVar w/ Evidence"))
           p = ggplot(data=d) + {plot_cmd} + guides(fill=FALSE) +
-              ylab('Average precision') + xlab('') + theme_bw(base_size=11) + facet_grid(clinvar_type~disease_name) +
+              ylab('Average precision') + xlab('') + theme_bw(base_size=10.5) + facet_grid(clinvar_type~disease_name) +
               coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10))
-          ggsave("{output}", p, height=12, width=19.05, units="cm", dpi=300)
+          ggsave("{output}", p, height=7, width=19.05, units="cm", dpi=300)
           """)
         shell('rm {output}.tmp.clinvar.labels')
 
