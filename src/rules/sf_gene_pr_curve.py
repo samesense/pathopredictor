@@ -9,7 +9,7 @@ def calc_pr_curve(rows, gene):
     s.loc[:, 'gene'] = gene
     return s
 
-rule calc_pr_curve:
+rule calc_roc_curve:
     input:  i = WORK + 'clinvar/roc_df_{dat}/{cols}'
     output: o = DATA + 'interim/gene_pr/{dat}.{cols}'
     run:
@@ -20,7 +20,7 @@ rule calc_pr_curve:
             ls.append(calc_pr_curve(dd, gene))
         pd.concat(ls).to_csv(output.o, index=False, sep='\t')
 
-rule plot_pr_curve:
+rule plot_roc_curve:
     input: p = DATA + 'interim/gene_pr/panel.' + C_FEATS,
            c = DATA + 'interim/gene_pr/clinvar.' + C_FEATS
     output: o = DOCS + 'paper_plts/fig7_byGene.tiff'

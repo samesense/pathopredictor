@@ -94,10 +94,14 @@ rule plot_ndenovo_eval_paper:
 
         R("""
           require(ggplot2)
+          require(grid)
           feature_palette <- c("#D4ED91", "grey")
           d = read.delim("{output}.df", sep='\t', header=TRUE)
           p = ggplot(data=d) + {plot_cmd} + guides(fill=FALSE) +
               ylab('Average precision') + xlab('') + theme_bw(base_size=12) + facet_grid(.~disease_name) +
-              coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12)) + annotate("text", label="b", x=2, y=2, size=8, colour="red")
-          ggsave("{output}", p, height=4, width=10, units="cm", dpi=300)
+              coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12)) 
+          tiff("{output}", res=300, units="cm", height=3.5, width=10)
+          grid.draw(p)
+          grid.text("b", x=0.05, y=0.96)
+          dev.off()
           """)
