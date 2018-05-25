@@ -1,7 +1,7 @@
 """Combine evaluations by disease."""
 
 rule mk_panel_eval_figure_data:
-    input:  i = WORK + 'roc_df_panel/{features}'
+    input:  i = WORK + 'clinvar/roc_df_panel/{features}'
     output: o = DATA + 'interim/pred_panel_eval/{features}'
     run:
         df = pd.read_csv(input.i, sep='\t')
@@ -29,26 +29,30 @@ rule mk_panel_eval_figure_data:
 
 rule plot_panel_eval:
     input:  i = DATA + 'interim/pred_panel_eval/' + C_FEATS
-    output: o = DOCS + 'paper_plts/fig4_panelEval.pdf'
+    output: o = DOCS + 'paper_plts/fig4_panelEval.tiff'
     run:
         plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) ) +
-                      geom_text(data=label_df, colour="white", aes(x=x, y=y, label=label), hjust="left")"""
-        df = pd.read_csv(input.i, sep='\t')[['disease_name', 'benign_size', 'pathogenic_size']].drop_duplicates().melt(id_vars=['disease_name'], var_name='var_type')
-        df.loc[:, 'label'] = df.apply(lambda row: row['var_type'].split('_')[0] + '=%d' % (row['value']), axis=1)
-        df.loc[:, 'x'] = df.apply(lambda row: 'Missense badness' if 'benign' in row['label'] else 'FATHMM', axis=1)
+                      geom_text(data=label_df, size=2, colour="white", aes(x=x, y=y, label=label), hjust="left")"""
+        df_main = pd.read_csv(input.i, sep='\t')
+        crit = df_main.apply(lambda row: row['features'] != 'REVEL', axis=1)
+        df_main[crit].to_csv(output.o + '.main_df', index=False, sep='\t')
+        df = df_main[crit][['disease_name', 'benign_size', 'pathogenic_size']].drop_duplicates().melt(id_vars=['disease_name'], var_name='var_type')
+        df.loc[:, 'label'] = df.apply(lambda row: row['var_type'].split('_')[0][0] + '=%d' % (row['value']), axis=1)
+        df.loc[:, 'x'] = df.apply(lambda row: 'Missense badness' if 'b' in row['label'] else 'FATHMM', axis=1)
         df['y'] = 0.01
+
         df.to_csv(output.o + '.tmp.panel.labels', index=False, sep='\t')
 
         R("""
           require(ggplot2)
           label_df = read.csv('{output}.tmp.panel.labels', sep='\t')
-          d = read.delim("{input}", sep='\t', header=TRUE)
+          d = read.delim("{output}.main_df", sep='\t', header=TRUE)
           d$disease_name = factor(d$disease_name, levels=unique( d[order(d$disease_order),]$disease_name ))
           p = ggplot(data=d) + {plot_cmd} +
-              facet_grid(.~disease_name) + theme_bw(base_size=18) +
-              theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12)) +
+              facet_grid(.~disease_name) + theme_bw(base_size=11) +
+              theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10)) +
               ylab('Average precision') +
               xlab('') + coord_flip()
-          ggsave("{output}", p, width=20)
+          ggsave("{output}", p, dpi=300, width=19.05, height=4.5, units="cm")
           """)
         shell('rm {output}.tmp.panel.labels')
