@@ -13,13 +13,13 @@ rule mk_disease_gene_exon_bed:
     shell:    '{CRUZ_PY} {SCRIPTS}generate_disease_vcf_with_all_vars.py {input.dat} {output}'
 
 rule uniq_bed:
-    input: DATA + 'interim/manuscript/disease.bed'
+    input:  DATA + 'interim/manuscript/disease.bed'
     output: DATA + 'interim/manuscript/disease.sort.bed'
-    shell: 'cut -f1-3 {input} | sort -u > {output}'
+    shell:  'cut -f1-3 {input} | sort -u > {output}'
 
 rule get_exon_seq:
-    input: bed = DATA + 'interim/manuscript/disease.sort.bed',
-           fasta ="/mnt/isilon/cbmi/variome/reference/human/hg19/hg19NoChr.fa"
+    input:  bed = DATA + 'interim/manuscript/disease.sort.bed',
+            fasta ="/mnt/isilon/cbmi/variome/reference/human/hg19/hg19NoChr.fa"
     output: DATA + 'interim/manuscript/disease.fa'
     shell: 'bedtools getfasta -fi {input.fasta} -bed {input.bed} > {output}'
 
@@ -42,7 +42,7 @@ rule mk_disease_gene_vcf:
             for r in rd:
                 chrom = r.split(':')[0]
                 st, end = r.split(':')[1].split('-')
-                st = int(st)
+                st = int(st)+1
                 for nuc in str(rd[r].seq):
                     for n2 in ('A', 'C', 'G', 'T'):
                         if nuc != n2:
@@ -50,10 +50,21 @@ rule mk_disease_gene_vcf:
                             print('\t'.join(ls), file=fout)
                     st += 1
 
-rule snpeff_mock_disease:
+rule sort_all_vcf:
     input:  DATA + 'interim/manuscript/disease.vcf'
+    output: DATA + 'interim/manuscript/disease.sort.vcf'
+    shell:  'cat {input} | vcf-sort > {output}'
+
+rule snpeff_mock_disease:
+    input:  DATA + 'interim/manuscript/disease.sort.vcf'
     output: DATA + 'interim/man/man.eff.vcf'
     shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff -dataDir {DATA}raw/snpeff/data/ \
                -strict -noStats GRCh37.75 -c {EFF_CONFIG} \
                {input} > {output}"""
 
+# do not filter this like the panel and others
+rule predict_all_panel_missense:
+    input:  DATA + 'interim/man/no_limit/man.eff.dbnsfp.anno.dat.limit.xls',
+            DATA + 'interim/full/panel.dat',
+    output: DATA + 'interim/table_s2/predicitons'
+    shell:  'python {SCRIPTS}predict_general.py {input} {output}'

@@ -192,6 +192,9 @@ rule limit_eval_general:
         elif wildcards.dir == 'gnomad':
             df.loc[:, 'class'] = 'B'
             df.loc[:, 'Disease'] = 'gnomad'
+        elif wildcars.dir == 'man':
+            # do not need disease for table s2 all panel gene predictions
+            pass
         else:
             i = 1/0
 
@@ -219,6 +222,8 @@ rule limit_eval_general:
                             and not (row['class'] == 'P' and row['in_hgmd_dm'])
                             and not (row['class']=='B' and row['in_uniprot_benign'])
                             and not row['Disease'] in ('Connective tissue disorders', 'Hearing Loss', ''), axis=1)
+        elif wildcards.limit_type == 'no_limit':
+            crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['ccr']>-1, axis=1)
 
         df[crit].dropna().drop_duplicates(subset=['chrom', 'pos', 'ref', 'alt', 'Disease']).to_csv(output.o, index=False, sep='\t')
 #        if wildcards.dir == 'gnomad':

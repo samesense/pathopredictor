@@ -7,7 +7,7 @@ def mk_vcf(genes, g, out):
         for r in g.refGene.all():
             if r.name2 in genes:
                 for st, end in r.exons:
-                    ls = (r.chrom[3:], str(st), str(end), r.name2 + '::' + r.name)
+                    ls = (r.chrom[3:], str(st-1), str(end+1), r.name2 + '::' + r.name)
                     print >> fout, '\t'.join(ls)
 
 def main(args):
