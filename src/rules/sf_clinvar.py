@@ -1,6 +1,10 @@
 """Annotate clinvar"""
 
 def parse_vcf_data(line):
+    chrom, pos, j1, ref, alt = line.strip().split('\t')[:5]
+    if ref == alt:
+        return {}
+
     chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
     #c_dot = info.split('INIT_VAR=')[1].split(';')[0]
     if ref == alt:

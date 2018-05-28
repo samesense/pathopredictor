@@ -164,7 +164,7 @@ rule limit_eval_general:
             df['Disease'] = 'EPI'
         elif wildcards.dir == 'clinvar':
             df = load_clinvar(input.i)
-        elif wildcards.dir == 'gnomad':
+        elif wildcards.dir in ('man', 'gnomad'):
             df = pd.read_csv(input.i, sep='\t')
         elif wildcards.dir == 'ndenovo':
             df = pd.read_csv(input.i, sep='\t')
@@ -192,7 +192,7 @@ rule limit_eval_general:
         elif wildcards.dir == 'gnomad':
             df.loc[:, 'class'] = 'B'
             df.loc[:, 'Disease'] = 'gnomad'
-        elif wildcars.dir == 'man':
+        elif wildcards.dir == 'man':
             # do not need disease for table s2 all panel gene predictions
             pass
         else:
@@ -200,8 +200,10 @@ rule limit_eval_general:
 
         df.loc[:, 'in_hgmd_dm'] = df.apply(lambda row: str(row['chrom']) + ':' + str(row['pos']) in hgmd, axis=1)
         df.loc[:, 'is_domain'] = df.apply(lambda row: 0 if 'none' in row['pfam'] else 1, axis=1)
-        df.loc[:, 'y'] = df.apply(lambda row: 1 if row['class']=='P' else 0, axis=1)
-        df.loc[:, 'in_uniprot_benign'] = df.apply(lambda row: str(row['chrom']) + ':' + str(row['pos']) in uniprot_benign, axis=1)
+        if wildcards.dir != 'man':
+            df.loc[:, 'y'] = df.apply(lambda row: 1 if row['class']=='P' else 0, axis=1)
+            df.loc[:, 'in_uniprot_benign'] = df.apply(lambda row: str(row['chrom']) + ':' + str(row['pos']) in uniprot_benign, axis=1)
+
         if wildcards.limit_type=='full':
             crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['class'] != 'V' and row['ccr']>-1
                             and not (row['class'] == 'P' and row['in_hgmd_dm'])
@@ -225,7 +227,10 @@ rule limit_eval_general:
         elif wildcards.limit_type == 'no_limit':
             crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['ccr']>-1, axis=1)
 
-        df[crit].dropna().drop_duplicates(subset=['chrom', 'pos', 'ref', 'alt', 'Disease']).to_csv(output.o, index=False, sep='\t')
+        if wildcards.dir == 'man':
+            df[crit].dropna().drop_duplicates(subset=['chrom', 'pos', 'ref', 'alt']).to_csv(output.o, index=False, sep='\t')
+        else:
+            df[crit].dropna().drop_duplicates(subset=['chrom', 'pos', 'ref', 'alt', 'Disease']).to_csv(output.o, index=False, sep='\t')
 #        if wildcards.dir == 'gnomad':
             # esp not removed, hgmd will not be removed, and uniprot benign will not be removed b/c vest and fathmm will not be used
             # I must do this to have enough training data per gene

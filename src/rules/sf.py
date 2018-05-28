@@ -38,5 +38,5 @@ rule all_paper_plots:
 rule upload_all:
     input: expand(DBox.remote('ahmad_predictor/{fig}.tiff'), fig=FIGS),
            expand(DBox.remote('ahmad_predictor/{table}.csv'), table=TABLES)
-rule s2:
-    input: DATA + 'interim/man/man.eff.dbnsfp.anno.dat.xls',
+# rule s2:
+#     input: DATA + 'interim/man/man.eff.dbnsfp.anno.dat.xls',

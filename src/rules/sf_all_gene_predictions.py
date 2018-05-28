@@ -66,5 +66,14 @@ rule snpeff_mock_disease:
 rule predict_all_panel_missense:
     input:  DATA + 'interim/man/no_limit/man.eff.dbnsfp.anno.dat.limit.xls',
             DATA + 'interim/full/panel.dat',
-    output: DATA + 'interim/table_s2/predicitons'
-    shell:  'python {SCRIPTS}predict_general.py {input} {output}'
+    output: DATA + 'interim/table_s2/predicitons.{cols}'
+    shell:  'python {SCRIPTS}predict_general.py {wildcards.cols} {input} {output}'
+
+rule table_preds_s2:
+    input:  i = DATA + 'interim/table_s2/predicitons.' + C_FEATS
+    output: o = DATA + 'processed/dryad/S2_predictions_hg19.csv'
+    run:
+        df = pd.read_csv(input.i, sep='\t')
+        cols = ['chrom', 'pos', 'ref', 'alt', 'pathopredictor_score', 'pathopredictor_class']
+        df[cols].to_csv(output.o, index=False, sep=',')
+
