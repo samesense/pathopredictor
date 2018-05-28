@@ -225,7 +225,8 @@ rule limit_eval_general:
                             and not (row['class']=='B' and row['in_uniprot_benign'])
                             and not row['Disease'] in ('Connective tissue disorders', 'Hearing Loss', ''), axis=1)
         elif wildcards.limit_type == 'no_limit':
-            crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['ccr']>-1, axis=1)
+            crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['ccr']>-1
+                            and not row['Disease'] in ('Connective tissue disorders', 'Hearing Loss', ''), axis=1)
 
         if wildcards.dir == 'man':
             df[crit].dropna().drop_duplicates(subset=['chrom', 'pos', 'ref', 'alt']).to_csv(output.o, index=False, sep='\t')

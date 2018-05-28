@@ -71,9 +71,10 @@ rule predict_all_panel_missense:
 
 rule table_preds_s2:
     input:  i = DATA + 'interim/table_s2/predicitons.' + C_FEATS
-    output: o = DATA + 'processed/dryad/S2_predictions_hg19.csv'
+    output: o = DATA + 'processed/dryad/S2_missensePredictions_hg19.csv'
     run:
         df = pd.read_csv(input.i, sep='\t')
-        cols = ['chrom', 'pos', 'ref', 'alt', 'pathopredictor_score', 'pathopredictor_class']
+        cols = ['chrom', 'pos', 'ref', 'alt', 'Disease', 'pathopredictor_score', 'pathopredictor_class']
+        df.loc[:, 'Disease'] = df.apply(lambda row: 'Epilepsy' if row['Disease']=='EPI' else row['Disease'], axis=1)
         df[cols].to_csv(output.o, index=False, sep=',')
 

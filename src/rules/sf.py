@@ -30,7 +30,7 @@ include: "sf_eval_roc.py"
 FIGS = ('fig1_countPlot', 'fig2_featureImportance', 'fig3_featureCor',
         'fig5_panelEval', 'fig6_evalClinvar', 'fig7_byGene_and_evalDenovo',)
 
-TABLES = ('S1_trainingData_hg19', 'S2_predictions_hg19',)
+TABLES = ('S1_missenseDiseaseVariants_hg19', 'S2_missensePredictions_hg19',)
 
 rule all_paper_plots:
     input: expand(DOCS + 'paper_plts/{fig}.pdf', fig=FIGS)
