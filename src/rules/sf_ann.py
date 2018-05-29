@@ -239,12 +239,14 @@ rule limit_eval_general:
 
 rule limit_clinvar:
     input:  c = DATA + 'interim/{clinvar}/{limit_type}/{clinvar}.eff.dbnsfp.anno.dat.limit.xls',
-            p = DATA + 'interim/{limit_type}/panel.dat'
+            p = DATA + 'interim/{limit_type}/panel.dat',
+            genes = DATA + 'interim/panel_genes/panel.tab'
     output: o = DATA + 'interim/{limit_type}/{clinvar,clinvar|ndenovo}.dat'
     run:
         cols = ['chrom', 'pos', 'ref', 'alt']
         panel = pd.read_csv(input.p, sep='\t')
-        panel_genes = set(panel['gene'])
+        panel_gene_df = pd.read_csv(input.genes, sep='\t')
+        panel_genes = set(panel['gene']) | set(panel_gene_df['gene'])
         panel = panel[cols]
         clinvar = pd.read_csv(input.c, sep='\t')
         crit = clinvar.apply(lambda row: row['gene'] in panel_genes, axis=1)
@@ -260,5 +262,5 @@ rule all_panels:
         pd.concat(dfs).to_csv(output.o, index=False, sep='\t')
 
 rule parse_dat:
-    input: expand(DATA + 'interim/{limit}/{dat}.dat', limit=('full','vus','no_esp'), dat=('panel', 'clinvar', 'ndenovo', 'man'))
+    input: expand(DATA + 'interim/{limit}/{dat}.dat', limit=('full','vus','no_esp'), dat=('panel', 'clinvar', 'ndenovo',))
 
