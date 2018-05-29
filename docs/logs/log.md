@@ -1,3 +1,6 @@
+### 2018_05_29
+* If I add all panel genes for epi, how many more? 68 epi genes initially. 52 for panel evaluation
+
 ### 2018_05_23
 * finish count table
 * test auc. I already have it. It looks good! use proc test.roc

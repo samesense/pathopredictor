@@ -5,7 +5,7 @@ rule count_plot_data:
             clinvar = WORK + 'clinvar/roc_df_clinvar/' + C_FEATS
     output: o = WORK + 'paper_plot_data/count_plot'
     run:
-        diseases = {'genedx-epi-limitGene':'Epilepsy (dominant genes)',
+        diseases = {'genedx-epi-limitGene':'Epilepsy (dominant)',
                     'Rasopathies':'Rasopathies',
                     'EPI':'Epilepsy',
                     'Cardiomyopathy':'Cardiomyopathy'}

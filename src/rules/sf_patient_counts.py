@@ -42,13 +42,12 @@ rule other_panel_counts:
                 return 'VUS'
             else:
                 print(row['Cat (Dis)'])
-                
+
         def eval_disease(df, disease):
             print(df.columns)
             genes = len( set([x for x in df['gene'] if x.strip()]) )
             df.loc[:, 'c'] = df.apply(calc_epi_class, axis=1)
             g = df[['c']].groupby('c').size().reset_index()
-            print(g)
             benign = g[g.c=='Benign'][0].values[0]
             path = g[g.c=='Pathogenic'][0].values[0]
             vus = g[g.c=='VUS'][0].values[0]
@@ -64,7 +63,7 @@ rule other_panel_counts:
             ls.append(eval_disease(df[df.Disease==disease], disease))
         df = pd.merge(pd.concat(ls), pat_count_df, on='Disease', how='left')
         df.to_csv(output.o, index=False, sep='\t')
-        
+
 rule concat_patient_counts:
     input: expand(DATA + 'interim/patient_counts/{d}', d=('other', 'epi'))
     output: o = DATA + 'interim/patient_counts/panel.tab'
