@@ -33,7 +33,7 @@ FIGS = ('fig1_countPlot', 'fig2_featureImportance', 'fig3_featureCor',
 TABLES = ('S1_missenseDiseaseVariants_hg19', 'S2_missensePredictions_hg19',)
 
 rule all_paper_plots:
-    input: expand(DOCS + 'paper_plts/{fig}.pdf', fig=FIGS)
+    input: expand(DOCS + 'paper_plts/{fig}.tiff', fig=FIGS)
 
 rule upload_all:
     input: expand(DBox.remote('ahmad_predictor/{fig}.tiff'), fig=FIGS),

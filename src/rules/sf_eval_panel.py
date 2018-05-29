@@ -3,6 +3,7 @@
 rule eval_panel_global:
     input:  DATA + 'interim/full/{eval_set}.dat',
             DATA + 'interim/full/panel.dat',
+            DATA + 'interim/panel_genes/panel.tab'
     output: WORK + '{eval_set}/roc_df_panel/{cols}',
             WORK + '{eval_set}/roc_df_clinvar/{cols}'
     shell:  'python {SCRIPTS}score_panel_global_model.py {wildcards.cols} {input} {output}'

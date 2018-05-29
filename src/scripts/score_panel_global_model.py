@@ -86,13 +86,19 @@ def eval_disease(disease, data, reg_cols, col_names):
     """data contains clinvar and panel data.
        cols has useless col names from poly.
        col_names has real col names, but not for regression use.
+       First iterate all panel genes, and check clinvar.
+       The eval untested clinvar genes.
     """
     disease_df = data[data.dataset=='panel']
+    clinvar_df_all = data[data.dataset=='clinvar']
+    clinvar_genes = set(clinvar_df_all['gene'])
+
     # one gene at a time
     acc_df_ls = []
     clinvar_acc = []
     genes = set(disease_df['gene'])
-
+    seen_clinvar = {}
+    pred_col = '-'.join(col_names) + '_pred_lm'
     for test_gene in genes:
         sub_train_df = disease_df[disease_df.gene != test_gene]
         X, y = sub_train_df[reg_cols], sub_train_df['y']
@@ -103,15 +109,11 @@ def eval_disease(disease, data, reg_cols, col_names):
         test_df = disease_df[disease_df.gene == test_gene]
         X_test = test_df[reg_cols]
         lm_preds = lm.predict(X_test)
-        pred_col = '-'.join(col_names) + '_pred_lm'
         test_df.loc[:, pred_col] = lm_preds
         lm_proba = [x[1] for x in lm.predict_proba(X_test) ]
         test_df.loc[:, '-'.join(col_names) + '_probaPred'] = lm_proba
         test_df.insert(2, 'PredictionStatus', test_df.apply(lambda row: eval_pred(row, pred_col), axis=1) )
-
         acc_df_ls.append(test_df)
-
-        clinvar_df_all = data[data.dataset=='clinvar']
 
         # limit to gene
         clinvar_df = clinvar_df_all[clinvar_df_all.gene==test_gene]
@@ -124,6 +126,23 @@ def eval_disease(disease, data, reg_cols, col_names):
             clinvar_df.loc[:, '-'.join(col_names) + '_probaPred'] = lm_proba
             clinvar_df.loc[:, 'PredictionStatus'] = clinvar_df.apply(lambda row: eval_pred(row, pred_col), axis=1)
             clinvar_acc.append(clinvar_df)
+            seen_clinvar[test_gene] = True
+
+    for clinvar_gene in clinvar_genes - set(seen_clinvar):
+        # genes not in panel training data
+        X, y = disease_df[reg_cols], disease_df['y']
+        lm =  linear_model.LogisticRegression(fit_intercept=True, penalty='l2', C=1.0, n_jobs=5)
+        lm.fit(X, y)
+        clinvar_df = clinvar_df_all[clinvar_df_all.gene==clinvar_gene]
+        clinvar_df['Disease'] = disease
+        X = clinvar_df[reg_cols]
+        lm_preds = lm.predict(X)
+        clinvar_df.loc[:, pred_col] = lm_preds
+        lm_proba = [x[1] for x in lm.predict_proba(X) ]
+        clinvar_df.loc[:, '-'.join(col_names) + '_probaPred'] = lm_proba
+        clinvar_df.loc[:, 'PredictionStatus'] = clinvar_df.apply(lambda row: eval_pred(row, pred_col), axis=1)
+        clinvar_acc.append(clinvar_df)
+
     test_df = pd.concat(acc_df_ls)
     if clinvar_acc:
         clinvar_result_df = pd.concat(clinvar_acc)
@@ -152,13 +171,13 @@ def mk_standard(data_unstd, score_cols):
         data[disease] = standardize(data_unstd[disease], score_cols)
     return data
 
-def mk_panel_clinvar_data(disease_df, clinvar_df):
+def mk_panel_clinvar_data(disease_df, clinvar_df, all_disease_genes):
     """Grab clinvar genes in disease.
        dataset splits clinvar|panel
        is_single applies to clinvar and flags those w/ single evidence
     """
-    genes = set(disease_df['gene'])
-    if 'clinvar_subet' in clinvar_df.columns.values:
+    genes = set(disease_df['gene']) | set(all_disease_genes)
+    if 'confidence' in list(clinvar_df.columns.values):
         crit = clinvar_df.apply(lambda row: row['clinvar_subset'] == 'clinvar_tot' and row['gene'] in genes, axis=1)
         crit_single = clinvar_df.apply(lambda row: row['clinvar_subset'] == 'clinvar_single' and row['gene'] in genes, axis=1)
         clinvar_subset = clinvar_df[crit]
@@ -179,7 +198,7 @@ def mk_panel_clinvar_data(disease_df, clinvar_df):
     disease_df.loc[:, 'dataset'] = 'panel'
     return pd.concat([disease_df, clinvar_subset], ignore_index=True)
 
-def load_data(args):
+def load_data(args, disease_to_gene):
     FOCUS_GENES = ('SCN1A','SCN2A','KCNQ2', 'KCNQ3', 'CDKL5',
                    'PCDH19', 'SCN1B', 'SCN8A', 'SLC2A1',
                    'SPTAN1', 'STXBP1', 'TSC1')
@@ -196,12 +215,28 @@ def load_data(args):
     diseases = set(disease_df['Disease'])
     data = {}
     for disease in diseases:
-        data[disease] = mk_panel_clinvar_data(disease_df[disease_df.Disease==disease], clinvar_df)
+        data[disease] = mk_panel_clinvar_data(disease_df[disease_df.Disease==disease], clinvar_df, disease_to_gene[disease])
     return data
+
+def load_disease_genes(eval_genes):
+    """These genes are all on the panel, but might not have misense vars.
+       They will still be evaluated.
+    """
+    df = pd.read_csv(eval_genes, sep='\t')
+    disease_to_gene = defaultdict(dict)
+    for _, row in df.iterrows():
+        disease_to_gene[row['Disease']][row['gene']] = True
+
+    FOCUS_GENES = ('SCN1A','SCN2A','KCNQ2', 'KCNQ3', 'CDKL5',
+                   'PCDH19', 'SCN1B', 'SCN8A', 'SLC2A1',
+                   'SPTAN1', 'STXBP1', 'TSC1')
+    disease_to_gene['genedx-epi-limitGene'] = FOCUS_GENES
+    return disease_to_gene
 
 def main(args):
     score_cols = args.score_cols.split('-')
-    data_unstandardized = load_data(args)
+    disease_to_gene = load_disease_genes(args.eval_genes)
+    data_unstandardized = load_data(args, disease_to_gene)
     data = mk_standard(data_unstandardized, score_cols)
 
     eval_df_ls, eval_df_clinvar_ls = [], []
@@ -216,7 +251,7 @@ def main(args):
 if __name__ == "__main__":
     desc = 'Eval combinations of features on panel and clinvar'
     parser = argparse.ArgumentParser(description=desc)
-    argLs = ('score_cols', 'clinvar', 'panel',
+    argLs = ('score_cols', 'clinvar', 'panel', 'eval_genes',
              'out_df', 'out_df_clinvar_eval')
     for param in argLs:
         parser.add_argument(param)

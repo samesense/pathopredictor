@@ -12,18 +12,18 @@ rule count_plot_data:
         clin_labels = {'single':'ClinVar w/ Evidence',
                        'tot': 'Total ClinVar'}
         df_panel = pd.read_csv(input.panel, sep='\t')
-        panel = df_panel.groupby(['Disease','y']).size().reset_index().rename(columns={0:'count'})
+        panel = df_panel.groupby(['Disease', 'y']).size().reset_index().rename(columns={0:'count'})
         panel['eval_type'] = 'Panel'
         panel.loc[:, 'Disease'] = panel.apply(lambda row: diseases[row['Disease']], axis=1)
 
         df_clinvar = pd.read_csv(input.clinvar, sep='\t')
         df_clinvar_single = df_clinvar[df_clinvar.is_single]
 
-        clinvar = df_clinvar.groupby(['Disease','y']).size().reset_index().rename(columns={0:'count'})
+        clinvar = df_clinvar.groupby(['Disease', 'y']).size().reset_index().rename(columns={0:'count'})
         clinvar.loc[:, 'eval_type'] = clin_labels['tot']
         clinvar.loc[:, 'Disease'] = clinvar.apply(lambda row: diseases[row['Disease']], axis=1)
 
-        s_clinvar = df_clinvar_single.groupby(['Disease','y']).size().reset_index().rename(columns={0:'count'})
+        s_clinvar = df_clinvar_single.groupby(['Disease', 'y']).size().reset_index().rename(columns={0:'count'})
         s_clinvar.loc[:, 'eval_type'] = clin_labels['single']
         s_clinvar.loc[:, 'Disease'] = s_clinvar.apply(lambda row: diseases[row['Disease']], axis=1)
 
