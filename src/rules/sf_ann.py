@@ -104,13 +104,14 @@ rule fix_dbnsfp_general:
 # /mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/hg19.pfam.ucscgenes.enum.bed.gz
 # ann fixed pfam
 # parse genes
+# sf_predict and base pipeline need to split here to handle diff annotations
 rule vcfanno_general:
     input:   vcf = DATA + 'interim/{dir}/{lab}.eff.dbnsfp.vcf',
-             conf = CONFIG + 'vcfanno.conf',
+             conf = CONFIG + 'vcfanno.predict.conf',
              lua = VCFANNO_LUA_FILE
     output:  DATA + 'interim/{dir}/{lab}.eff.dbnsfp.anno.vcf'
     threads: 10
-    shell:   """vcfanno -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
+    shell:   """vcfanno -p {threads} -base-path /data/vcfanno/ -lua {input.lua} \
                 {input.conf} {input.vcf} > {output}"""
 
 # neg fam counts ppl
