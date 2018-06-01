@@ -75,15 +75,15 @@ rule bgzipVcf_general:
 
 rule snpeff_general:
     input:  DATA + 'interim/{lab_dir}/{lab}.vcf.gz'
-    output: DATA + 'interim/{lab_dir,epi|other}/{lab}.eff.vcf'
-    shell:  """{JAVA} -Xmx32g -Xms16g -jar {EFF} eff -dataDir {DATA}raw/snpeff/data/ \
+    output: DATA + 'interim/{lab_dir,epi|other|user_preds}/{lab}.eff.vcf'
+    shell:  """java -Xmx32g -Xms16g -jar {EFF} eff -dataDir {DOCKER_DATA}snpeff/data/ \
                -strict -noStats GRCh37.75 -c {EFF_CONFIG} \
                {input} > {output}"""
 
 rule annotateDbnsfp_general:
     input:  DATA + 'interim/{dir}/{lab}.eff.vcf'
     output: DATA + 'interim/{dir}/{lab}.eff.dbnsfp.tmp.vcf'
-    shell:  """{JAVA} -Xmx32g -Xms16g -jar {SIFT} dbnsfp \
+    shell:  """java -Xmx32g -Xms16g -jar {SIFT} dbnsfp \
                -db {SIFT_DBNSFP} -f {DBNSFP_FIELDS} {input} > {output}"""
 
 rule fix_dbnsfp_general:
