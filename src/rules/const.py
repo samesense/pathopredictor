@@ -58,8 +58,8 @@ EFF = '/opt/conda/envs/pathopredictor/share/snpeff-4.3.1t-0/snpEff.jar'
 EFF_CONFIG = '/opt/conda/envs/pathopredictor/share/snpeff-4.3.1t-0/snpEff.config'
 
 #EFF = '/home/evansj/me/condas/miniconda3/envs/mahdi_epi/share/snpeff-4.3.1t-0/snpEff.jar'
-SIFT = '/home/evansj/me/condas/miniconda3/envs/mahdi_epi/share/snpsift-4.3-2/SnpSift.jar'
-SIFT_DBNSFP = DATA + 'raw/snpsift/dbNSFP.txt.gz'
+SIFT = '/opt/conda/envs/pathopredictor/share/snpsift-4.3-2/SnpSift.jar'
+#SIFT_DBNSFP = DATA + 'raw/snpsift/dbNSFP.txt.gz'
 
 CLINVAR = '/mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/clinvar_20180225.tidy.vcf.gz'
 GNOMAD = '/home/evansj/me/projects/me/tidy-gnomad/data/raw/gnomad.exomes.r2.0.2.sites.tidy.vcf.gz'

@@ -11,4 +11,4 @@ include: 'sf_ann.py'
 #     shell:  'cp {input} {output}'
 
 rule all_predictions:
-    input: expand(DATA + 'interim/user_preds/{name}.eff.vcf', name=config['vcf_name_ls'])
+    input: expand(DATA + 'interim/user_preds/{name}.eff.dbnsfp.vcf', name=config['vcf_name_ls'])
