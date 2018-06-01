@@ -119,7 +119,7 @@ rule vcfanno_general:
 # need to convert hom to a count of two
 rule parse_vcf_general:
    input:  i = DATA + 'interim/{dir}/{lab}.eff.dbnsfp.anno.vcf'
-   output: o = DATA + 'interim/{dir,man|epi|other}/{lab}.eff.dbnsfp.anno.dat.xls',
+   output: o = DATA + 'interim/{dir,user_preds|man|epi|other}/{lab}.eff.dbnsfp.anno.dat.xls',
    run:
        with open(input.i) as f, open(output.o, 'w') as fout:
            fields = ['chrom', 'pos', 'ref', 'alt',
@@ -166,7 +166,7 @@ rule limit_eval_general:
             df['Disease'] = 'EPI'
         elif wildcards.dir == 'clinvar':
             df = load_clinvar(input.i)
-        elif wildcards.dir in ('man', 'gnomad'):
+        elif wildcards.dir in ('man', 'gnomad', 'user_preds'):
             df = pd.read_csv(input.i, sep='\t')
         elif wildcards.dir == 'ndenovo':
             df = pd.read_csv(input.i, sep='\t')
@@ -194,7 +194,7 @@ rule limit_eval_general:
         elif wildcards.dir == 'gnomad':
             df.loc[:, 'class'] = 'B'
             df.loc[:, 'Disease'] = 'gnomad'
-        elif wildcards.dir == 'man':
+        elif wildcards.dir in ('man', 'user_preds',):
             # do not need disease for table s2 all panel gene predictions
             pass
         else:
@@ -202,7 +202,7 @@ rule limit_eval_general:
 
         df.loc[:, 'in_hgmd_dm'] = df.apply(lambda row: str(row['chrom']) + ':' + str(row['pos']) in hgmd, axis=1)
         df.loc[:, 'is_domain'] = df.apply(lambda row: 0 if 'none' in row['pfam'] else 1, axis=1)
-        if wildcards.dir != 'man':
+        if not wildcards.dir in ('man', 'user_preds'):
             df.loc[:, 'y'] = df.apply(lambda row: 1 if row['class']=='P' else 0, axis=1)
             df.loc[:, 'in_uniprot_benign'] = df.apply(lambda row: str(row['chrom']) + ':' + str(row['pos']) in uniprot_benign, axis=1)
 
@@ -227,10 +227,13 @@ rule limit_eval_general:
                             and not (row['class']=='B' and row['in_uniprot_benign'])
                             and not row['Disease'] in ('Connective tissue disorders', 'Hearing Loss', ''), axis=1)
         elif wildcards.limit_type == 'no_limit':
-            crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['ccr']>-1
-                            and not row['Disease'] in ('Connective tissue disorders', 'Hearing Loss', ''), axis=1)
+            if wildcards.dir == 'user_preds':
+                crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['ccr']>-1, axis=1)
+            else:
+                crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['ccr']>-1
+                                and not row['Disease'] in ('Connective tissue disorders', 'Hearing Loss', ''), axis=1)
 
-        if wildcards.dir == 'man':
+        if wildcards.dir in ('user_preds', 'man'):
             df[crit].dropna().drop_duplicates(subset=['chrom', 'pos', 'ref', 'alt']).to_csv(output.o, index=False, sep='\t')
         else:
             df[crit].dropna().drop_duplicates(subset=['chrom', 'pos', 'ref', 'alt', 'Disease']).to_csv(output.o, index=False, sep='\t')
