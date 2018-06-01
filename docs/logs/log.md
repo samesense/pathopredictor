@@ -1,3 +1,10 @@
+### 2018_06_01
+* Finish prediction pipeline
+* where to put vcfanno data?
+
+### 2018_05_30
+* submitted
+
 ### 2018_05_29
 * If I add all panel genes for epi, how many more? 68 epi genes initially. 52 for panel evaluation
 * I've updated all the figures. Next update paper numbers and results. Yes! Automate numbers.

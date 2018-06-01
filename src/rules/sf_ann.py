@@ -63,15 +63,15 @@ rule mk_vcf_epi:
     output: DATA + 'interim/{lab}.pre.vcf'
     shell:  'python {SCRIPTS}mk_vcf.py {input} {output}'
 
-rule sort_vcf_epi:
+rule sort_vcf_general:
     input:  DATA + 'interim/{lab}.pre.vcf'
     output: DATA + 'interim/epi/{lab}.vcf'
     shell:  'cat {input} | vcf-sort > {output}'
 
-rule bgzipVcf_epi:
+rule bgzipVcf_general:
     input:  DATA + 'interim/{dir}/{lab}.vcf'
     output: DATA + 'interim/{dir}/{lab}.vcf.gz'
-    shell:  '{BGZ} -c {input} > {output}'
+    shell:  'bgzip -c {input} > {output}'
 
 rule snpeff_general:
     input:  DATA + 'interim/{lab_dir}/{lab}.vcf.gz'
