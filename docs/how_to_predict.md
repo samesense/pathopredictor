@@ -4,7 +4,7 @@ Predicting w/ PathoPredictor
 Use docker container [samesense/pathopredictor](https://hub.docker.com/r/samesense/pathopredictor/) to make predictions. The container includes all software, but annotation datasets need to be downloaded. You need to specify a data directory mount when using docker. Your input and output files will live here.
 
 ```
-docker run -e USER=$USER -e USERID=$UI --user $(id -u) -it -v /local/data/:/opt/pathopredictor/data/
+docker run -e USER=$USER -e USERID=$UI --user $(id -u) -it -v /local/data/:/opt/pathopredictor/data/ samesense/pathopredictor /bin/bash
 ```
 
 Put your vcf file(s) in `/local/data/interim/user_preds/`. Usinf the `interim/user_preds/` directory is required, but only use the path to data when envoking docker `-v /local/data/`.
