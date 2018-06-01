@@ -11,7 +11,7 @@ Put your vcf file(s) in `/absolute/local/data/interim/user_preds/`. Usinf the `i
 
 Edit `/opt/pathopredictor/configs/sm_predict_ex_config.json` so that it contains the names (w/ no vcf suffix) of your vcf files.
 
-While in the docker container, navigate to `/opt/pathopredictor/src/rules/`. The prediction pipeline is run with Snakemake, after updating the container's path:
+While in the docker container, navigate to `/opt/pathopredictor/src/rules/`. The prediction pipeline requires 32G of ram. The prediction pipeline is run with Snakemake, after updating the container's path:
 
 ```
 export PATH=/opt/conda/envs/pathopredictor/bin/:$PATH
