@@ -7,7 +7,7 @@ Use docker container [samesense/pathopredictor](https://hub.docker.com/r/samesen
 docker run -e USER=$USER -e USERID=$UI --user $(id -u) -it -v /absolute/local/data/:/opt/pathopredictor/data/ samesense/pathopredictor /bin/bash
 ```
 
-Put your vcf file(s) in `/absolute/local/data/interim/user_preds/`. Usinf the `interim/user_preds/` directory is required, but only use the path to data when envoking docker `-v /absolute/local/data/`.
+Put your vcf file(s) in `/absolute/local/data/interim/user_preds/`. Using the `interim/user_preds/` directory is required, but only use the first part of the path to data when envoking docker, like this `-v /absolute/local/data/`.
 
 Edit `/opt/pathopredictor/configs/sm_predict_ex_config.json` so that it contains the names (w/ no vcf suffix) of your vcf files.
 
