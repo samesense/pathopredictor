@@ -73,7 +73,11 @@ rule fig7:
     shell:  'convert -append {input} {output}'
 
 rule upload_paper_plot:
-    input:  DOCS + 'paper_plts/{fig}.tiff'
-    output: DBox.remote('ahmad_predictor/{fig}.tiff')
+    input:  DOCS + 'paper_plts/{fig}.{suf}'
+    output: DBox.remote('ahmad_predictor/{fig}.{suf,tiff|png}')
     shell:  'cp {input} {output}'
 
+rule convert_tiff_to_png:
+    input:  DOCS + 'paper_plts/{afile}.tiff'
+    output: DOCS + 'paper_plts/{afile}.png'
+    shell:  'convert {input} {output}'
