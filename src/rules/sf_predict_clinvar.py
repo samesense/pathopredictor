@@ -2,6 +2,35 @@
    evaluate on clinvar
 """
 
+def eval_pr_curve(df, disease, acc_ls, out, use_revel=True):
+    """Dump pr curve data."""
+    scores = [x for x in df.columns.values if '_probaPred' in x or x in FEATS or x == 'revel']
+    if not use_revel:
+        scores = [x for x in df.columns.values if '_probaPred' in x or x in FEATS]
+    feat_names = {'Combination':'PathoPredictor', 'ccr':'CCR', 'fathmm':'FATHMM', 'revel':'REVEL',
+                  'vest':'VEST', 'missense_badness':'Missense badness', 'missense_depletion':'Missense depletion'}
+    disease_order = {'genedx-epi-limitGene':3,
+                         'Rasopathies':4,
+                         'EPI':2,
+                         'Cardiomyopathy':1}
+
+    diseases = {'genedx-epi-limitGene':'Epilepsy (dominant)',
+                    'Rasopathies':'Rasopathies',
+                    'EPI':'Epilepsy',
+                    'Cardiomyopathy':'Cardiomyopathy'}
+
+    for score in scores:
+        precision, recall, thresholds = precision_recall_curve(df['y'], df[score], pos_label=1)
+        feature = score
+        if '-' in feature:
+            feature = 'Combination'
+        disease_name = diseases[disease]
+        order = disease_order[disease]
+        for pre, rec in zip(precision, recall):
+            ls = [str(x) for x in (feat_names[feature], disease, pre, rec, disease_name, order)]
+            print('\t'.join(ls), file=out)
+
+
 def eval_pr(df, disease, acc_ls):
     scores = [x for x in df.columns.values if '_probaPred' in x or x in FEATS or x == 'revel']
     feat_names = {'Combination':'PathoPredictor', 'ccr':'CCR', 'fathmm':'FATHMM', 'revel':'REVEL',

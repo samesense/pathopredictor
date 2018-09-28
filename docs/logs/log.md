@@ -1,6 +1,8 @@
 ### 2018_06_21
 * Rejected from plos machine learning edition
 * Trying genome research. Gotta mk png, and smaller images to imbed in gdocs. Pngs done.
+* fix ref format
+* make cover letter match reqs
 
 ### 2018_06_01
 * Finish prediction pipeline

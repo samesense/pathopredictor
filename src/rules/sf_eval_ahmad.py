@@ -56,3 +56,32 @@ rule plot_panel_eval:
           ggsave("{output}", p, dpi=300, width=16, height=4.5, units="cm")
           """)
         shell('rm {output}.tmp.panel.labels')
+
+rule plot_panel_eval_pr:
+    input:  i = WORK + 'clinvar/roc_df_panel/{features}'
+    output: o = DATA + 'interim/pred_panel_eval_curve/{features}'
+    run:
+        df = pd.read_csv(input.i, sep='\t')
+        acc_ls = []
+        with open(output.o, 'w') as fout:
+            print('features\tDisease\tPrecision\tRecall\tdisease_name\tdisease_order', file=fout)
+            for dis in set(df['Disease']):
+                eval_pr_curve(df[df.Disease==dis], dis, acc_ls, fout, use_revel=False)
+ 
+rule plot_panel_pr_curve:
+    input:  i = DATA + 'interim/pred_panel_eval_curve/' + C_FEATS
+    output: o = DOCS + 'paper_plts/fig5_curve.tiff'
+    run:
+        plot_cmd = """geom_line( aes(y=Precision, x=Recall,colour=features, group=features, fill=features))"""
+
+        R("""
+          require(ggplot2)
+          d = read.delim("{input}", sep='\t', header=TRUE)
+          d$disease_name = factor(d$disease_name, levels=unique( d[order(d$disease_order),]$disease_name ))
+          p = ggplot(data=d) + {plot_cmd} +
+              facet_grid(.~disease_name) + theme_bw(base_size=10) +
+              theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10)) +
+              ylab('Precision') + labs(colour = "", fill="") +
+              xlab('Recall')
+          ggsave("{output}", p, dpi=300, width=16, height=4.5, units="cm")
+          """)
