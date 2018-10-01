@@ -1,6 +1,34 @@
 """Trained with panels,
    evaluate on clinvar
 """
+def eval_pr_curve_clinvar(df, disease, acc_ls, out, clinvar_type, use_revel=True):
+    """Dump pr curve data."""
+    scores = [x for x in df.columns.values if '_probaPred' in x or x in FEATS or x == 'revel']
+    if not use_revel:
+        scores = [x for x in df.columns.values if '_probaPred' in x or x in FEATS]
+    feat_names = {'Combination':'PathoPredictor', 'ccr':'CCR', 'fathmm':'FATHMM', 'revel':'REVEL',
+                  'vest':'VEST', 'missense_badness':'Missense badness', 'missense_depletion':'Missense depletion'}
+    disease_order = {'genedx-epi-limitGene':3,
+                         'Rasopathies':4,
+                         'EPI':2,
+                         'Cardiomyopathy':1}
+
+    diseases = {'genedx-epi-limitGene':'Epilepsy (dominant)',
+                    'Rasopathies':'Rasopathies',
+                    'EPI':'Epilepsy',
+                    'Cardiomyopathy':'Cardiomyopathy'}
+
+    for score in scores:
+        precision, recall, thresholds = precision_recall_curve(df['y'], df[score], pos_label=1)
+        feature = score
+        if '-' in feature:
+            feature = 'Combination'
+        disease_name = diseases[disease]
+        order = disease_order[disease]
+        for pre, rec in zip(precision, recall):
+            ls = [str(x) for x in (feat_names[feature], disease, pre, rec, disease_name, order, clinvar_type,) ]
+            print('\t'.join(ls), file=out)
+
 
 def eval_pr_curve(df, disease, acc_ls, out, use_revel=True):
     """Dump pr curve data."""
@@ -79,6 +107,46 @@ rule eval_by_gene_clinvar:
         m.loc[:, 'disease_order'] = m.apply(lambda row: disease_order[row['Disease']], axis=1)
         m.to_csv(output.o, index=False, sep='\t')
 
+rule plot_clinvar_eval_pr:
+    input:  i = WORK + 'clinvar/roc_df_clinvar/{features}'
+    output: o = DATA + 'interim/EVAL_{eval_set}/pred_clinvar_eval_curve/{eval_source}.{features}'
+    run:
+        df_pre = pd.read_csv(input.i, sep='\t')
+        if wildcards.eval_source == 'clinvar_single':
+            df = df_pre[df_pre.is_single]
+        else:
+            df = df_pre
+
+        clinvar_names  = {'clinvar_tot': 'Total ClinVar',
+                          'clinvar_single': 'ClinVar w/ Evidence'}
+
+
+        acc_ls = []
+        with open(output.o, 'w') as fout:
+            print('features\tDisease\tPrecision\tRecall\tdisease_name\tdisease_order\tclinvar_type', file=fout)
+            for dis in set(df['Disease']):
+                eval_pr_curve_clinvar(df[df.Disease==dis], dis, acc_ls, fout, clinvar_names[wildcards.eval_source], use_revel=False)
+ 
+rule plot_clinvar_pr_curve:
+    input:  i = expand(DATA + 'interim/EVAL_clinvar/pred_clinvar_eval_curve/{clinvar_set}.' + C_FEATS, clinvar_set=('clinvar_tot', 'clinvar_single'))
+    output: o = DOCS + 'paper_plts/fig6_curve.tiff'
+    run:
+        plot_cmd = """geom_line( aes(y=Precision, x=Recall,colour=features, group=features, fill=features))"""
+        df_tot = pd.concat([pd.read_csv(afile, sep='\t') for afile in input])
+        df_tot.to_csv(output.o + '.df', index=False, sep='\t')
+
+        R("""
+          require(ggplot2)
+          d = read.delim("{output}.df", sep='\t', header=TRUE)
+          d$disease_name = factor(d$disease_name, levels=unique( d[order(d$disease_order),]$disease_name ))
+          p = ggplot(data=d) + {plot_cmd} +
+              facet_grid(clinvar_type~disease_name) + theme_bw(base_size=10) +
+              theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10)) +
+              ylab('Precision') + labs(colour = "", fill="") +
+              xlab('Recall')
+          ggsave("{output}", p, dpi=300, width=18, height=7.5, units="cm")
+          """)
+
 rule plot_clinvar_eval_paper:
     input:  expand(DATA + 'interim/EVAL_clinvar/pred_clinvar_eval/{clinvar_set}.' + C_FEATS, clinvar_set=('clinvar_tot', 'clinvar_single'))
     output: o = DOCS + 'paper_plts/fig6_evalClinvar.tiff'
@@ -106,7 +174,7 @@ rule plot_clinvar_eval_paper:
           p = ggplot(data=d) + {plot_cmd} + guides(fill=FALSE) +
               ylab('Average precision') + xlab('') + theme_bw(base_size=10.5) + facet_grid(clinvar_type~disease_name) +
               coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10))
-          ggsave("{output}", p, height=8, width=18, units="cm", dpi=300)
+          ggsave("{output}", p, height=7.5, width=18, units="cm", dpi=300)
           """)
         shell('rm {output}.tmp.clinvar.labels')
 
