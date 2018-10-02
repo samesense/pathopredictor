@@ -125,7 +125,7 @@ rule plot_clinvar_eval_pr:
         with open(output.o, 'w') as fout:
             print('features\tDisease\tPrecision\tRecall\tdisease_name\tdisease_order\tclinvar_type', file=fout)
             for dis in set(df['Disease']):
-                eval_pr_curve_clinvar(df[df.Disease==dis], dis, acc_ls, fout, clinvar_names[wildcards.eval_source], use_revel=False)
+                eval_pr_curve_clinvar(df[df.Disease==dis], dis, acc_ls, fout, clinvar_names[wildcards.eval_source], use_revel=True)
  
 rule plot_clinvar_pr_curve:
     input:  i = expand(DATA + 'interim/EVAL_clinvar/pred_clinvar_eval_curve/{clinvar_set}.' + C_FEATS, clinvar_set=('clinvar_tot', 'clinvar_single'))
@@ -178,9 +178,44 @@ rule plot_clinvar_eval_paper:
           """)
         shell('rm {output}.tmp.clinvar.labels')
 
+rule plot_ndenovo_pr_curve_paper:
+    input:  i = DATA + 'interim/EVAL_ndenovo/pred_clinvar_eval_curve/clinvar_tot.' + C_FEATS
+    output: o = DOCS + 'paper_plts/fig7b_evalDenovoCurve.tiff'
+    run:
+        plot_cmd = """geom_line( aes(y=Precision, x=Recall,colour=features, group=features, fill=features))"""
+        df_tot = pd.read_csv(input.i, sep='\t')
+        crit = df_tot.apply(lambda row: 'Epi' in row['disease_name'] and ('REVEL'==row['features'] or 'PathoPredictor'==row['features']), axis=1)
+        df_tot[crit].to_csv(output.o + '.df', index=False, sep='\t')
+
+        R("""
+          require(ggplot2)
+          d = read.delim("{output}.df", sep='\t', header=TRUE)
+          d$disease_name = factor(d$disease_name, levels=unique( d[order(d$disease_order),]$disease_name ))
+          p = ggplot(data=d) + {plot_cmd} +
+              facet_grid(.~disease_name) + theme_bw(base_size=10) +
+              theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10)) +
+              ylab('Precision') + labs(colour = "", fill="") +
+              xlab('Recall')
+          ggsave("{output}", p, dpi=300, width=10, height=3.5, units="cm")
+          """)
+
+        # R("""
+        #   require(ggplot2)
+        #   require(grid)
+        #   feature_palette <- c("#D4ED91", "grey")
+        #   d = read.delim("{output}.df", sep='\t', header=TRUE)
+        #   p = ggplot(data=d) + {plot_cmd} + guides(fill=FALSE) +
+        #       ylab('Average precision') + xlab('') + theme_bw(base_size=12) + facet_grid(.~disease_name) +
+        #       coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12)) 
+        #   tiff("{output}", res=300, units="cm", height=3.5, width=10)
+        #   grid.draw(p)
+        #   grid.text("b", x=0.05, y=0.96)
+        #   dev.off()
+        #   """)
+
 rule plot_ndenovo_eval_paper:
     input:  i = DATA + 'interim/EVAL_ndenovo/pred_clinvar_eval/clinvar_tot.' + C_FEATS
-    output: o = DOCS + 'paper_plts/fig8_evalDenovo.tiff'
+    output: o = DOCS + 'paper_plts/fig7c_evalDenovo.tiff'
     run:
         plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) )"""
 
