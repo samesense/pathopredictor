@@ -39,7 +39,7 @@ rule eval_avg_pr_train_clinvar_test_panel:
 
 rule plot_avg_pr_train_clinvar_test_panel_paper:
     input:  expand(DATA + 'interim/train_clinvar_test_panel_single{single}/EVAL/pred_panel_eval/' + C_FEATS, single=(True, False))
-    output: o = DOCS + 'paper_plts/fig9_trainClinvarAvgPr.tiff'
+    output: o = DOCS + 'paper_plts/fig7b_trainClinvarAvgPr.tiff'
     run:
         plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) ) +
                       geom_text(size=2, hjust="left", colour="white", data=label_df, aes(x=x, y=y, label=label))"""
@@ -57,6 +57,7 @@ rule plot_avg_pr_train_clinvar_test_panel_paper:
 
         R("""
           require(ggplot2)
+          require(grid)
           feature_palette <- c("#D4ED91", "grey")
           d = read.delim("{output}.df", sep='\t', header=TRUE)
           label_df = read.delim("{output}.tmp.clinvar.labels", sep="\t", header=TRUE)
@@ -64,7 +65,11 @@ rule plot_avg_pr_train_clinvar_test_panel_paper:
           p = ggplot(data=d) + {plot_cmd} + guides(fill=FALSE) +
               ylab('Average precision') + xlab('') + theme_bw(base_size=10.5) + facet_grid(clinvar_type~disease_name) +
               coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10))
-          ggsave("{output}", p, height=7.5, width=18, units="cm", dpi=300)
+          tiff("{output}", res=300, units="cm", height=7.75, width=18)
+          grid.draw(p)
+          grid.text("b", x=0.05, y=0.96)
+          dev.off()
+
           """)
         shell('rm {output}.tmp.clinvar.labels')
 
@@ -86,7 +91,7 @@ rule curve_avg_pr_train_clinvar_test_panel:
 
 rule plot_clinvar_pr_curve_train_clinvar_test_panel:
     input:  i = expand(DATA + 'interim/train_clinvar_test_panel_single{single}/EVAL/pred_panel_curve/' + C_FEATS, single=(True, False))
-    output: o = DOCS + 'paper_plts/fig9_trainClinvarTestPanelCurve.tiff'
+    output: o = DOCS + 'paper_plts/fig7a_trainClinvarTestPanelCurve.tiff'
     run:
         plot_cmd = """geom_line( aes(y=Precision, x=Recall,colour=features, group=features, fill=features))"""
         df_tot = pd.concat([pd.read_csv(afile, sep='\t') for afile in input])
@@ -94,16 +99,27 @@ rule plot_clinvar_pr_curve_train_clinvar_test_panel:
 
         R("""
           require(ggplot2)
+          require(grid)
           d = read.delim("{output}.df", sep='\t', header=TRUE)
           d$disease_name = factor(d$disease_name, levels=unique( d[order(d$disease_order),]$disease_name ))
+          d$clinvar_type = factor(d$clinvar_type, levels=c("Total ClinVar", "ClinVar w/ Evidence"))
           p = ggplot(data=d) + {plot_cmd} +
               facet_grid(clinvar_type~disease_name) + theme_bw(base_size=10) +
               theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10)) +
               ylab('Precision') + labs(colour = "", fill="") +
               xlab('Recall')
-          ggsave("{output}", p, dpi=300, width=18, height=7.5, units="cm")
+          tiff("{output}", res=300, units="cm", height=7.5, width=18)
+          grid.draw(p)
+          grid.text("a", x=0.05, y=0.96)
+          dev.off()
           """)
 
 
-rule tmp_c:
-    input: expand(DATA + 'interim/train_clinvar_test_panel_single{single}/EVAL/pred_panel_eval/{cols}', single=(True, False), cols=COMBO_FEATS)
+rule combine_figs_train_clinvar_test_panel:
+    input:  DOCS + 'paper_plts/fig7a_trainClinvarTestPanelCurve.tiff',
+            DOCS + 'paper_plts/fig7b_trainClinvarAvgPr.tiff'
+    output: o = DOCS + 'paper_plts/fig7_trainClinvarTestPanel.tiff'
+    singularity:
+        'docker://ncsapolyglot/converters-imagemagick'
+    shell:  'convert -append {input} {output}'
+
