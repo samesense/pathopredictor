@@ -29,7 +29,7 @@ rule mk_panel_eval_figure_data:
 
 rule plot_panel_eval:
     input:  i = DATA + 'interim/pred_panel_eval/' + C_FEATS
-    output: o = DOCS + 'paper_plts/fig5_panelEval.tiff'
+    output: o = temp(DOCS + 'paper_plts/fig5b_panelEval.tiff')
     run:
         plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) ) +
                       geom_text(data=label_df, size=2, colour="white", aes(x=x, y=y, label=label), hjust="left")"""
@@ -45,6 +45,7 @@ rule plot_panel_eval:
 
         R("""
           require(ggplot2)
+          require(grid)
           label_df = read.csv('{output}.tmp.panel.labels', sep='\t')
           d = read.delim("{output}.main_df", sep='\t', header=TRUE)
           d$disease_name = factor(d$disease_name, levels=unique( d[order(d$disease_order),]$disease_name ))
@@ -53,7 +54,10 @@ rule plot_panel_eval:
               theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10)) +
               ylab('Average precision') +
               xlab('') + coord_flip()
-          ggsave("{output}", p, dpi=300, width=16, height=4.5, units="cm")
+          tiff("{output}", res=300, units="cm", height=4.5, width=16)
+          grid.draw(p)
+          grid.text("b", x=0.05, y=0.96)
+          dev.off()
           """)
         shell('rm {output}.tmp.panel.labels')
 
@@ -67,15 +71,16 @@ rule plot_panel_eval_pr:
             print('features\tDisease\tPrecision\tRecall\tdisease_name\tdisease_order', file=fout)
             for dis in set(df['Disease']):
                 eval_pr_curve(df[df.Disease==dis], dis, acc_ls, fout, use_revel=False)
- 
+
 rule plot_panel_pr_curve:
     input:  i = DATA + 'interim/pred_panel_eval_curve/' + C_FEATS
-    output: o = DOCS + 'paper_plts/fig5_curve.tiff'
+    output: o = temp(DOCS + 'paper_plts/fig5a_curve.tiff')
     run:
         plot_cmd = """geom_line( aes(y=Precision, x=Recall,colour=features, group=features, fill=features))"""
 
         R("""
           require(ggplot2)
+          require(grid)
           d = read.delim("{input}", sep='\t', header=TRUE)
           d$disease_name = factor(d$disease_name, levels=unique( d[order(d$disease_order),]$disease_name ))
           p = ggplot(data=d) + {plot_cmd} +
@@ -83,5 +88,17 @@ rule plot_panel_pr_curve:
               theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10)) +
               ylab('Precision') + labs(colour = "", fill="") +
               xlab('Recall')
-          ggsave("{output}", p, dpi=300, width=16, height=4.5, units="cm")
+          tiff("{output}", res=300, units="cm", height=4.5, width=16)
+          grid.draw(p)
+          grid.text("a", x=0.05, y=0.96)
+          dev.off()
           """)
+
+rule combine_figs_within_panel:
+    input:  DOCS + 'paper_plts/fig5a_curve.tiff',
+            DOCS + 'paper_plts/fig5b_panelEval.tiff'
+    output: o = DOCS + 'paper_plts/fig5_withinPanel.tiff'
+    singularity:
+        'docker://ncsapolyglot/converters-imagemagick'
+    shell:  'convert -append {input} {output}'
+
