@@ -70,7 +70,8 @@ def eval_pr(df, disease, acc_ls):
         feature = score
         if '-' in feature:
             feature = 'Combination'
-        acc_ls.append((auc, avg_pr, feat_names[feature], disease))
+        if feature in feat_names:
+            acc_ls.append((auc, avg_pr, feat_names[feature], disease))
 
 rule eval_by_gene_clinvar:
     input:  i = WORK + '{eval_set}/roc_df_clinvar/{features}'
