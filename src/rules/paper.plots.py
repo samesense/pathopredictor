@@ -70,6 +70,8 @@ rule fig7:
     input:  DOCS + 'paper_plts/fig7_byGene.tiff',
             DOCS + 'paper_plts/fig8_evalDenovo.tiff'
     output: o = DOCS + 'paper_plts/fig7_byGene_and_evalDenovo.tiff'
+    singularity:
+        'docker://ncsapolyglot/converters-imagemagick'
     shell:  'convert -append {input} {output}'
 
 rule upload_paper_plot:
@@ -80,4 +82,6 @@ rule upload_paper_plot:
 rule convert_tiff_to_png:
     input:  DOCS + 'paper_plts/{afile}.tiff'
     output: DOCS + 'paper_plts/{afile}.png'
+    singularity:
+        'docker://ncsapolyglot/converters-imagemagick'
     shell:  'convert {input} {output}'

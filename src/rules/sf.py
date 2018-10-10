@@ -24,12 +24,14 @@ include: "paper.plots.py"
 include: "sf_predict_clinvar.py"
 include: "sf_feature_importances.py"
 include: "sf_feature_cor.py"
+include: "sf_feature_vals.py"
 include: "sf_all_gene_predictions.py"
 include: "sf.rank.eval.py"
 include: "sf_eval_roc.py"
 
 FIGS = ('fig1_countPlot', 'fig2_featureImportance', 'fig3_featureCor',
-        'fig5_panelEval', 'fig6_evalClinvar', 'fig7_byGene_and_evalDenovo',)
+        'fig5_withinPanel', 'fig6_evalClinvar','fig7_trainClinvarTestPanel',
+       'fig8_byGene_and_evalDenovo',)
 
 TABLES = ('S1_missenseDiseaseVariants_hg19', 'S2_missensePredictions_hg19',)
 
@@ -38,7 +40,7 @@ rule all_paper_plots:
            expand(DOCS + 'paper_plts/{fig}.png', fig=FIGS)
 
 rule upload_all:
-    input: #expand(DBox.remote('ahmad_predictor/{fig}.tiff'), fig=FIGS),
+    input: 
            expand(DBox.remote('ahmad_predictor/{fig}.png'), fig=FIGS),
            #expand(DBox.remote('ahmad_predictor/{table}.csv'), table=TABLES)
 # rule s2:
