@@ -26,6 +26,7 @@ def write_feature_importance(
 
 def run_ensemble(df, eval_set, disease_col, out):
     cols = [
+        'mtr',
         "ccr",
         "fathmm",
         "vest",
@@ -34,6 +35,7 @@ def run_ensemble(df, eval_set, disease_col, out):
         "is_domain",
     ]
     col_names = [
+        'MTR',
         "CCR",
         "FATHMM",
         "VEST",

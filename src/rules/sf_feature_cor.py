@@ -11,9 +11,9 @@ rule mk_cor_data:
     input:  i = DATA + 'interim/full/panel.dat'
     output: o = DATA + 'interim/feature_cor/plot_data'
     run:
-        cols = ['ccr', 'fathmm', 'vest', 'missense_badness',
+        cols = ['mtr', 'ccr', 'fathmm', 'vest', 'missense_badness',
                 'missense_depletion']
-        col_names = ['CCR', 'FATHMM', 'VEST', 'Missense badness', 'Missense depletion']
+        col_names = ['MTR', 'CCR', 'FATHMM', 'VEST', 'Missense badness', 'Missense depletion']
         name_dict = {col:name for col, name in zip(cols, col_names)}
         df = pd.read_csv(input.i, sep='\t').rename(columns=name_dict)
         df_ls = []

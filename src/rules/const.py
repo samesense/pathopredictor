@@ -79,7 +79,7 @@ def powerset(iterable):
     s = list(iterable)
     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
-FEATS = ['ccr', 'vest', 'fathmm', 'missense_badness', 'missense_depletion']
+FEATS = ['ccr', 'vest', 'fathmm', 'missense_badness', 'missense_depletion', 'mtr']
 FEATS_SINGLE = ['ccr', 'missense_badness', 'missense_depletion']
 C_FEATS = '-'.join(FEATS + ['is_domain'])
 C_FEATS_SINGLE = '-'.join(FEATS_SINGLE + ['is_domain'])

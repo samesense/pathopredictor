@@ -34,11 +34,11 @@ rule plot_panel_eval:
         plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) ) +
                       geom_text(data=label_df, size=2, colour="white", aes(x=x, y=y, label=label), hjust="left")"""
         df_main = pd.read_csv(input.i, sep='\t')
-        crit = df_main.apply(lambda row: row['features'] != 'REVEL', axis=1)
+        crit = df_main.apply(lambda row: row['features'] != 'REVEL' and row['features'] != 'MPC', axis=1)
         df_main[crit].to_csv(output.o + '.main_df', index=False, sep='\t')
         df = df_main[crit][['disease_name', 'benign_size', 'pathogenic_size']].drop_duplicates().melt(id_vars=['disease_name'], var_name='var_type')
         df.loc[:, 'label'] = df.apply(lambda row: row['var_type'].split('_')[0][0] + '=%d' % (row['value']), axis=1)
-        df.loc[:, 'x'] = df.apply(lambda row: 'Missense badness' if 'b' in row['label'] else 'FATHMM', axis=1)
+        df.loc[:, 'x'] = df.apply(lambda row: 'Missense badness' if 'p' in row['label'] else 'MTR', axis=1)
         df['y'] = 0.01
 
         df.to_csv(output.o + '.tmp.panel.labels', index=False, sep='\t')

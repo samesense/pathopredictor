@@ -22,7 +22,7 @@ rule parse_ndenovo_vcf:
        with open(input.i) as f, open(output.o, 'w') as fout:
            fields = ['chrom', 'pos', 'ref', 'alt',
                      'clin_class', 'pfam', 'eff', 'gene',
-                     'esp_af_max', 'revel',
+                     'esp_af_max', 'revel', 'mpc', 'mtr',
                      'ccr', 'fathmm', 'vest', 'missense_badness', 'missense_depletion',
                      'clinSig']
            print('\t'.join(fields), file=fout)

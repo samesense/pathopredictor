@@ -28,6 +28,7 @@ include: "sf_feature_vals.py"
 include: "sf_all_gene_predictions.py"
 include: "sf.rank.eval.py"
 include: "sf_eval_roc.py"
+include: "sf_eval_ndenovo.py"
 
 FIGS = ('fig1_countPlot', 'fig2_featureImportance', 'fig3_featureCor',
         'fig5_withinPanel', 'fig6_evalClinvar','fig7_trainClinvarTestPanel',

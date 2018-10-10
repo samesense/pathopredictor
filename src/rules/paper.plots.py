@@ -68,8 +68,9 @@ rule count_plot:
 # combine revel comparison w/ single gene eval
 rule fig7:
     input:  DOCS + 'paper_plts/fig7_byGene.tiff',
-            DOCS + 'paper_plts/fig8_evalDenovo.tiff'
-    output: o = DOCS + 'paper_plts/fig7_byGene_and_evalDenovo.tiff'
+            DOCS + 'paper_plts/fig8b_evalDenovoCurve.tiff',
+            DOCS + 'paper_plts/fig8c_evalDenovoAvgPr.tiff'
+    output: o = DOCS + 'paper_plts/fig8_byGene_and_evalDenovo.tiff'
     singularity:
         'docker://ncsapolyglot/converters-imagemagick'
     shell:  'convert -append {input} {output}'

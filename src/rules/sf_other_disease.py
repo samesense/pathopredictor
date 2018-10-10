@@ -70,75 +70,75 @@ rule sort_vcf_other:
 # neg fam counts ppl
 # pos fam counts ppl
 # need to convert hom to a count of two
-rule parse_vcf_other:
-   input:  i = DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.vcf'
-   output: o = DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.dat.xls',
-           o2 = DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.splitPfam.dat'
-   run:
-       with open(input.i) as f, open(output.o, 'w') as fout, open(output.o2, 'w') as fout_split_pfam:
-           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tgene\tmpc\tmtr\trevel\texac_af\texac_ac\texac_an\texac_cov_frac\tkaviar_af\tnm\tProtein_Change\tHugo_Symbol\tccr', file=fout)
-           print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tgene\tmpc\tmtr\trevel\tccr',
-                 file=fout_split_pfam)
-           for line in f:
-               if not line[0] == '#':
-                   chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
+# rule parse_vcf_other:
+#    input:  i = DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.vcf'
+#    output: o = DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.dat.xls',
+#            o2 = DATA + 'interim/other/{lab}.eff.dbnsfp.anno.hHack.splitPfam.dat'
+#    run:
+#        with open(input.i) as f, open(output.o, 'w') as fout, open(output.o2, 'w') as fout_split_pfam:
+#            print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tgene\tmpc\tmtr\trevel\texac_af\texac_ac\texac_an\texac_cov_frac\tkaviar_af\tnm\tProtein_Change\tHugo_Symbol\tccr', file=fout)
+#            print('chrom\tpos\tref\talt\tclin_class\tpfam\taf_1kg_all\teff\tgene\tmpc\tmtr\trevel\tccr',
+#                  file=fout_split_pfam)
+#            for line in f:
+#                if not line[0] == '#':
+#                    chrom, pos, j1, ref, alt, j2, j3, info = line.strip().split('\t')
 
-                   exac_af = '0'
-                   kv_af = '0'
-                   exac_cov_frac = '0'
-                   exac_ac = '0'
-                   exac_an = '0'
-                   if 'af_exac_all=' in info:
-                       exac_af = info.split('af_exac_all=')[1].split(';')[0]
-                   if 'kv_af=' in info:
-                       kv_af = info.split('kv_af=')[1].split(';')[0]
-                   if 'totExacCov_10=' in info:
-                       exac_cov_frac = info.split('totExacCov_10=')[1].split(';')[0]
-                   if 'an_exac_all' in info:
-                       exac_an = info.split('an_exac_all=')[1].split(';')[0]
-                   if 'ac_exac_all' in info:
-                       exac_ac = info.split('ac_exac_all=')[1].split(';')[0]
+#                    exac_af = '0'
+#                    kv_af = '0'
+#                    exac_cov_frac = '0'
+#                    exac_ac = '0'
+#                    exac_an = '0'
+#                    if 'af_exac_all=' in info:
+#                        exac_af = info.split('af_exac_all=')[1].split(';')[0]
+#                    if 'kv_af=' in info:
+#                        kv_af = info.split('kv_af=')[1].split(';')[0]
+#                    if 'totExacCov_10=' in info:
+#                        exac_cov_frac = info.split('totExacCov_10=')[1].split(';')[0]
+#                    if 'an_exac_all' in info:
+#                        exac_an = info.split('an_exac_all=')[1].split(';')[0]
+#                    if 'ac_exac_all' in info:
+#                        exac_ac = info.split('ac_exac_all=')[1].split(';')[0]
 
-                   ccr = '-1'
-                   if 'ccr_pct' in info:
-                       ccr = info.split('ccr_pct=')[1].split(';')[0]
+#                    ccr = '-1'
+#                    if 'ccr_pct' in info:
+#                        ccr = info.split('ccr_pct=')[1].split(';')[0]
 
-                   mpc = '0'
-                   if 'mpc=' in info:
-                       mpc = info.split('mpc=')[1].split(';')[0]
+#                    mpc = '0'
+#                    if 'mpc=' in info:
+#                        mpc = info.split('mpc=')[1].split(';')[0]
 
-                   mtr = '0'
-                   if 'mtr=' in info:
-                       mtr = info.split('mtr=')[1].split(';')[0]
+#                    mtr = '0'
+#                    if 'mtr=' in info:
+#                        mtr = -1 * float(info.split('mtr=')[1].split(';')[0])
 
-                   revel = '-1'
-                   if 'REVEL=' in info:
-                       revel = info.split('REVEL=')[1].split(';')[0]
+#                    revel = '-1'
+#                    if 'REVEL=' in info:
+#                        revel = info.split('REVEL=')[1].split(';')[0]
 
 
-                   clin = info.split('CLIN_CLASS=')[1].split(';')[0]
+#                    clin = info.split('CLIN_CLASS=')[1].split(';')[0]
 
-                   if 'pfam_domain' in info:
-                       pfam = info.split('pfam_domain=')[1].split(';')[0]
-                   else:
-                       pfam = 'fuck'
+#                    if 'pfam_domain' in info:
+#                        pfam = info.split('pfam_domain=')[1].split(';')[0]
+#                    else:
+#                        pfam = 'fuck'
 
-                   if 'af_1kg_all=' in info:
-                       onekg = info.split('af_1kg_all=')[1].split(';')[0]
-                   else:
-                       onekg = '0'
-                   if ref != alt:
-                       ann = info.split('ANN=')[1].split(';')[0]
-                       eff, gene, protein_change_pre, nm = find_missense_cv_eff(pos, ann)
-                       protein_change = convert_protein_change(protein_change_pre)
-                       ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff,
-                             gene, mpc, mtr, revel, exac_af, exac_ac, exac_an,
-                             exac_cov_frac, kv_af, nm, protein_change, gene, ccr)
-                       print('\t'.join(ls), file=fout)
+#                    if 'af_1kg_all=' in info:
+#                        onekg = info.split('af_1kg_all=')[1].split(';')[0]
+#                    else:
+#                        onekg = '0'
+#                    if ref != alt:
+#                        ann = info.split('ANN=')[1].split(';')[0]
+#                        eff, gene, protein_change_pre, nm = find_missense_cv_eff(pos, ann)
+#                        protein_change = convert_protein_change(protein_change_pre)
+#                        ls = (chrom, pos, ref, alt, clin, pfam, onekg, eff,
+#                              gene, mpc, mtr, revel, exac_af, exac_ac, exac_an,
+#                              exac_cov_frac, kv_af, nm, protein_change, gene, ccr)
+#                        print('\t'.join(ls), file=fout)
 
-                       for p in pfam.split(','):
-                           ls = (chrom, pos, ref, alt, clin, p, onekg, eff, gene, mpc, mtr, revel, ccr)
-                           print('\t'.join(ls), file=fout_split_pfam)
+#                        for p in pfam.split(','):
+#                            ls = (chrom, pos, ref, alt, clin, p, onekg, eff, gene, mpc, mtr, revel, ccr)
+#                            print('\t'.join(ls), file=fout_split_pfam)
 
 def mk_class_other(row):
     cc = str(row['clin_class'])

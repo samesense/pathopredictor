@@ -124,7 +124,7 @@ rule parse_vcf_general:
        with open(input.i) as f, open(output.o, 'w') as fout:
            fields = ['chrom', 'pos', 'ref', 'alt',
                      'clin_class', 'pfam', 'eff', 'gene',
-                     'esp_af_max', 'revel',
+                     'esp_af_max', 'revel', 'mpc', 'mtr',
                      'ccr', 'fathmm', 'vest', 'missense_badness', 'missense_depletion']
            print('\t'.join(fields), file=fout)
            for line in f:
@@ -256,7 +256,7 @@ rule limit_clinvar:
         clinvar = pd.read_csv(input.c, sep='\t')
         crit = clinvar.apply(lambda row: row['gene'] in panel_genes, axis=1)
         m = pd.merge(clinvar[crit], panel, on=cols, how='outer', indicator=True)
-        m[m._merge=='left_only'].drop(['_merge'], axis=1).to_csv(output.o, index=False, sep='\t')
+        m[m._merge=='left_only'].drop(['_merge'], axis=1).dropna(subset=['revel', 'is_domain']+FEATS).to_csv(output.o, index=False, sep='\t')
 
 rule all_panels:
     input:  expand(DATA + 'interim/epi/{{limit_type}}/{lab}.eff.dbnsfp.anno.dat.limit.xls', lab=('EPIv6', )),
@@ -264,7 +264,7 @@ rule all_panels:
     output: o = DATA + 'interim/{limit_type}/panel.dat'
     run:
         dfs = [pd.read_csv(afile, sep='\t') for afile in input]
-        pd.concat(dfs).to_csv(output.o, index=False, sep='\t')
+        pd.concat(dfs).dropna(subset=['revel', 'is_domain']+FEATS).to_csv(output.o, index=False, sep='\t')
 
 rule parse_dat:
     input: expand(DATA + 'interim/{limit}/{dat}.dat', limit=('full','vus','no_esp'), dat=('panel', 'clinvar', 'ndenovo',))

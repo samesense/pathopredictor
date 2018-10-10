@@ -3,10 +3,10 @@
 """
 def eval_pr_curve_clinvar(df, disease, acc_ls, out, clinvar_type, use_revel=True):
     """Dump pr curve data."""
-    scores = [x for x in df.columns.values if '_probaPred' in x or x in FEATS or x == 'revel']
+    scores = [x for x in df.columns.values if '_probaPred' in x or x in FEATS or x == 'revel' or x == 'mpc']
     if not use_revel:
         scores = [x for x in df.columns.values if '_probaPred' in x or x in FEATS]
-    feat_names = {'Combination':'PathoPredictor', 'ccr':'CCR', 'fathmm':'FATHMM', 'revel':'REVEL',
+    feat_names = {'Combination':'PathoPredictor', 'ccr':'CCR', 'fathmm':'FATHMM', 'revel':'REVEL', 'mtr':'MTR', 'mpc':'MPC',
                   'vest':'VEST', 'missense_badness':'Missense badness', 'missense_depletion':'Missense depletion'}
     disease_order = {'genedx-epi-limitGene':3,
                          'Rasopathies':4,
@@ -32,10 +32,10 @@ def eval_pr_curve_clinvar(df, disease, acc_ls, out, clinvar_type, use_revel=True
 
 def eval_pr_curve(df, disease, acc_ls, out, use_revel=True):
     """Dump pr curve data."""
-    scores = [x for x in df.columns.values if '_probaPred' in x or x in FEATS or x == 'revel']
+    scores = [x for x in df.columns.values if '_probaPred' in x or x in FEATS or x == 'revel' or x == 'mpc']
     if not use_revel:
         scores = [x for x in df.columns.values if '_probaPred' in x or x in FEATS]
-    feat_names = {'Combination':'PathoPredictor', 'ccr':'CCR', 'fathmm':'FATHMM', 'revel':'REVEL',
+    feat_names = {'Combination':'PathoPredictor', 'ccr':'CCR', 'fathmm':'FATHMM', 'revel':'REVEL','revel':'REVEL', 'mtr':'MTR', 'mpc':'MPC',
                   'vest':'VEST', 'missense_badness':'Missense badness', 'missense_depletion':'Missense depletion'}
     disease_order = {'genedx-epi-limitGene':3,
                          'Rasopathies':4,
@@ -60,8 +60,8 @@ def eval_pr_curve(df, disease, acc_ls, out, use_revel=True):
 
 
 def eval_pr(df, disease, acc_ls):
-    scores = [x for x in df.columns.values if '_probaPred' in x or x in FEATS or x == 'revel']
-    feat_names = {'Combination':'PathoPredictor', 'ccr':'CCR', 'fathmm':'FATHMM', 'revel':'REVEL',
+    scores = [x for x in df.columns.values if '_probaPred' in x or x in FEATS or x == 'revel' or x == 'mpc']
+    feat_names = {'Combination':'PathoPredictor', 'ccr':'CCR', 'fathmm':'FATHMM', 'revel':'REVEL', 'mpc':'MPC', 'mtr':'MTR',
                   'vest':'VEST', 'missense_badness':'Missense badness', 'missense_depletion':'Missense depletion'}
     for score in scores:
         fpr, tpr, _ = metrics.roc_curve(df['y'], df[score], pos_label=1)
@@ -130,7 +130,7 @@ rule plot_clinvar_eval_pr:
  
 rule plot_clinvar_pr_curve:
     input:  i = expand(DATA + 'interim/EVAL_clinvar/pred_clinvar_eval_curve/{clinvar_set}.' + C_FEATS, clinvar_set=('clinvar_tot', 'clinvar_single'))
-    output: o = DOCS + 'paper_plts/fig6a_curve.tiff'
+    output: o = temp(DOCS + 'paper_plts/fig6a_curve.tiff')
     run:
         plot_cmd = """geom_line( aes(y=Precision, x=Recall,colour=features, group=features, fill=features))"""
         df_tot = pd.concat([pd.read_csv(afile, sep='\t') for afile in input])
@@ -154,19 +154,19 @@ rule plot_clinvar_pr_curve:
 
 rule plot_clinvar_eval_paper:
     input:  expand(DATA + 'interim/EVAL_clinvar/pred_clinvar_eval/{clinvar_set}.' + C_FEATS, clinvar_set=('clinvar_tot', 'clinvar_single'))
-    output: o = DOCS + 'paper_plts/fig6b_bar.tiff'
+    output: o = temp(DOCS + 'paper_plts/fig6b_bar.tiff')
     run:
         plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) ) +
                       geom_text(size=2, hjust="left", colour="white", data=label_df, aes(x=x, y=y, label=label))"""
 
         df_tot = pd.concat([pd.read_csv(afile, sep='\t') for afile in input])
-        crit = df_tot.apply(lambda row: row['features'] != 'REVEL', axis=1)
+        crit = df_tot.apply(lambda row: row['features'] != 'REVEL' and row['features'] != 'MPC', axis=1)
         # df_tot.loc[:, 'feature_color'] = df_tot.apply(lambda row: 'bomdo' if row['features']=='Combination' else 'feat', axis=1)
         df_tot[crit].to_csv(output.o + '.df', index=False, sep='\t')
 
         df = df_tot[['clinvar_type', 'disease_name', 'benign_size', 'pathogenic_size']].drop_duplicates().melt(id_vars=['clinvar_type', 'disease_name'], var_name='var_type')
         df.loc[:, 'label'] = df.apply(lambda row: row['var_type'].split('_')[0][0] + '=%d' % (row['value']), axis=1)
-        df.loc[:, 'x'] = df.apply(lambda row: 'Missense badness' if 'b' in row['label'] else 'Missense depletion', axis=1)
+        df.loc[:, 'x'] = df.apply(lambda row: 'Missense badness' if 'p' in row['label'] else 'MTR', axis=1)
         df['y'] = .01
         df.to_csv(output.o + '.tmp.clinvar.labels', index=False, sep='\t')
 
@@ -180,7 +180,7 @@ rule plot_clinvar_eval_paper:
           p = ggplot(data=d) + {plot_cmd} + guides(fill=FALSE) +
               ylab('Average precision') + xlab('') + theme_bw(base_size=10.5) + facet_grid(clinvar_type~disease_name) +
               coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10))
-          tiff("{output}", res=300, units="cm", height=7.5, width=18)
+          tiff("{output}", res=300, units="cm", height=7.75, width=18)
           grid.draw(p)
           grid.text("b", x=0.05, y=0.96)
           dev.off()
@@ -189,15 +189,16 @@ rule plot_clinvar_eval_paper:
 
 rule plot_ndenovo_pr_curve_paper:
     input:  i = DATA + 'interim/EVAL_ndenovo/pred_clinvar_eval_curve/clinvar_tot.' + C_FEATS
-    output: o = DOCS + 'paper_plts/fig7b_evalDenovoCurve.tiff'
+    output: o = DOCS + 'paper_plts/fig8b_evalDenovoCurve.tiff'
     run:
         plot_cmd = """geom_line( aes(y=Precision, x=Recall,colour=features, group=features, fill=features))"""
         df_tot = pd.read_csv(input.i, sep='\t')
-        crit = df_tot.apply(lambda row: 'Epi' in row['disease_name'] and ('REVEL'==row['features'] or 'PathoPredictor'==row['features']), axis=1)
+        crit = df_tot.apply(lambda row: 'Epi' in row['disease_name'] and ('MPC' == row['features'] or 'REVEL'==row['features'] or 'PathoPredictor'==row['features']), axis=1)
         df_tot[crit].to_csv(output.o + '.df', index=False, sep='\t')
 
         R("""
           require(ggplot2)
+          require(grid)
           d = read.delim("{output}.df", sep='\t', header=TRUE)
           d$disease_name = factor(d$disease_name, levels=unique( d[order(d$disease_order),]$disease_name ))
           p = ggplot(data=d) + {plot_cmd} +
@@ -205,7 +206,10 @@ rule plot_ndenovo_pr_curve_paper:
               theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10)) +
               ylab('Precision') + labs(colour = "", fill="") +
               xlab('Recall')
-          ggsave("{output}", p, dpi=300, width=10, height=3.5, units="cm")
+          tiff("{output}", res=300, units="cm", height=3.5, width=10)
+          grid.draw(p)
+          grid.text("b", x=0.05, y=0.96)
+          dev.off()
           """)
 
         # R("""
@@ -224,12 +228,12 @@ rule plot_ndenovo_pr_curve_paper:
 
 rule plot_ndenovo_eval_paper:
     input:  i = DATA + 'interim/EVAL_ndenovo/pred_clinvar_eval/clinvar_tot.' + C_FEATS
-    output: o = DOCS + 'paper_plts/fig7c_evalDenovo.tiff'
+    output: o = DOCS + 'paper_plts/fig8c_evalDenovoAvgPr.tiff'
     run:
         plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) )"""
 
         df_tot = pd.read_csv(input.i, sep='\t')
-        crit = df_tot.apply(lambda row: 'Epi' in row['disease_name'] and ('REVEL'==row['features'] or 'PathoPredictor'==row['features']), axis=1)
+        crit = df_tot.apply(lambda row: 'Epi' in row['disease_name'] and ('MPC'==row['features'] or 'REVEL'==row['features'] or 'PathoPredictor'==row['features']), axis=1)
         # df_tot.loc[:, 'feature_color'] = df_tot.apply(lambda row: 'bomdo' if row['features']=='Combination' else 'feat', axis=1)
         df_tot[crit].to_csv(output.o + '.df', index=False, sep='\t')
 
@@ -243,7 +247,7 @@ rule plot_ndenovo_eval_paper:
               coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12)) 
           tiff("{output}", res=300, units="cm", height=3.5, width=10)
           grid.draw(p)
-          grid.text("b", x=0.05, y=0.96)
+          grid.text("c", x=0.05, y=0.96)
           dev.off()
           """)
 

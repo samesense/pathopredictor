@@ -30,7 +30,7 @@ def parse_vcf_data(line):
     if 'af_esp_all' in info:
         esp_ls.extend( [float(x) for x in info.split('af_esp_all=')[1].split(';')[0].split(',')] )
 
-    ccr = '-1'
+    ccr = 'NA'
     if 'ccr_pct' in info:
         ccr = info.split('ccr_pct=')[1].split(';')[0]
 
@@ -58,13 +58,13 @@ def parse_vcf_data(line):
         if ls:
             vest = min(ls)
 
-    mtr = '0'
+    mtr = 'NA'
     if 'mtr=' in info:
         mtr = info.split('mtr=')[1].split(';')[0]
 
-    revel = '-1'
-    if 'REVEL=' in info:
-        revel = info.split('REVEL=')[1].split(';')[0]
+    mpc = 'NA'
+    if 'mpc=' in info:
+        mpc = info.split('mpc=')[1].split(';')[0]
 
     if 'CLIN_CLASS=' in info:
         clin = info.split('CLIN_CLASS=')[1].split(';')[0]
@@ -91,7 +91,7 @@ def parse_vcf_data(line):
     ann = info.split('ANN=')[1].split(';')[0]
     eff, gene, protein_change_pre, nm = find_missense_cv_eff(pos, ann)
     #protein_change = convert_protein_change(protein_change_pre)
-    return {'chrom':chrom, 'pos':pos, 'ref':ref, 'alt':alt, 'eff':eff, 'gene':gene, 'revel':revel,
+    return {'chrom':chrom, 'pos':pos, 'ref':ref, 'alt':alt, 'eff':eff, 'gene':gene, 'revel':revel, 'mtr':mtr, 'mpc':mpc,
             'clin_class':clin, 'pfam':pfam, 'missense_badness':missense_badness, 'ccr':ccr, 'vest':str(vest),
             'missense_depletion':missense_depletion, 'fathmm':str(fathmm), 'esp_af_max':str(max(esp_ls))}
 
@@ -127,7 +127,7 @@ rule parse_clinvar_vcf:
        with open(input.i) as f, open(output.o, 'w') as fout:
            fields = ['chrom', 'pos', 'ref', 'alt',
                      'clin_class', 'pfam', 'eff', 'gene',
-                     'esp_af_max', 'revel',
+                     'esp_af_max', 'revel','mpc', 'mtr',
                      'ccr', 'fathmm', 'vest', 'missense_badness', 'missense_depletion',
                      'clinSig', 'confidence']
            print('\t'.join(fields), file=fout)

@@ -1,4 +1,8 @@
-### 2018_06_21
+### 2018_10_08
+* add mtr to feature ls
+* add mpc to final eval
+
+G## 2018_06_21
 * Rejected from plos machine learning edition
 * Trying genome research. Gotta mk png, and smaller images to imbed in gdocs. Pngs done.
 * fix ref format
