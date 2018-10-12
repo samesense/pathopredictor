@@ -265,18 +265,29 @@ rule limit_ndenovo:
             genes = DATA + 'interim/panel_genes/panel.tab'
     output: o = DATA + 'interim/{limit_type}/ndenovo.dat'
     run:
-        cols = ['chrom', 'pos', 'ref', 'alt']
+        cols = ['chrom', 'pos',]
         panel = pd.read_csv(input.p, sep='\t')
         clinvar = pd.read_csv(input.c, sep='\t')
         clinvar = clinvar[clinvar.y==1]
         panel_gene_df = pd.read_csv(input.genes, sep='\t')
-        panel_genes = set(panel['gene']) | set(panel_gene_df['gene'])
+        panel_genes = set(panel_gene_df[panel_gene_df.Disease=='EPI']['gene'])
         panel = panel[cols]
         nd = pd.read_csv(input.n, sep='\t')
-        m = pd.merge(nd, panel[cols], on=cols, how='outer', indicator=True)
-        m2 = pd.merge(m[m._merge=='left_only'].drop(['_merge'], axis=1),
-                      clinvar[cols], on=cols, how='outer', indicator=True)
-        m2[m2._merge=='left_only'].drop(['_merge'], axis=1).dropna(subset=['mpc', 'revel', 'is_domain']+FEATS).to_csv(output.o, index=False, sep='\t')
+        print(len(nd))
+        # rm panel
+        m = pd.merge(nd, panel[cols], on=cols, how='left', indicator=True)
+        mcut = m[m._merge=='left_only'].drop(['_merge'], axis=1)
+        print(len(mcut))
+        # rm clinvar
+        m2 = pd.merge(mcut, clinvar[cols], on=cols, how='outer', indicator=True)
+        mcut = m2[m2._merge=='left_only'].drop(['_merge'], axis=1)
+        print(len(mcut))
+        p = mcut[mcut.y==1]
+        crit = p.apply(lambda row: row['gene'] in panel_genes, axis=1)
+        b = mcut[mcut.y==0]
+        crit_b = b.apply(lambda row: row['gene'] in panel_genes, axis=1)
+        extra_b = len(p[crit]) - len(b[crit_b])
+        pd.concat([p[crit], b[crit_b], b[~crit_b].sample(extra_b)]).dropna(subset=['mpc', 'revel', 'is_domain']+FEATS).to_csv(output.o, index=False, sep='\t')
 
 rule all_panels:
     input:  expand(DATA + 'interim/epi/{{limit_type}}/{lab}.eff.dbnsfp.anno.dat.limit.xls', lab=('EPIv6', )),

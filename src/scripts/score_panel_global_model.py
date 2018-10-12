@@ -239,8 +239,10 @@ def mk_panel_clinvar_data(disease_df, clinvar_df, all_disease_genes):
     else:
         crit = clinvar_df.apply(lambda row: row["gene"] in genes, axis=1)
         clinvar_subset = clinvar_df[crit]
-        clinvar_subset.loc[:, "dataset"] = "clinvar"
-        clinvar_subset.loc[:, "is_single"] = False
+        print(len(clinvar_subset), len(clinvar_df))
+        if len(clinvar_subset):
+            clinvar_subset.loc[:, "dataset"] = "clinvar"
+            clinvar_subset.loc[:, "is_single"] = False
     disease_df.loc[:, "dataset"] = "panel"
     return pd.concat([disease_df, clinvar_subset], ignore_index=True)
 
