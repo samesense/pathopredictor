@@ -109,7 +109,7 @@ rule eval_by_gene_clinvar:
         m.to_csv(output.o, index=False, sep='\t')
 
 rule plot_clinvar_eval_pr:
-    input:  i = WORK + 'clinvar/roc_df_clinvar/{features}'
+    input:  i = WORK + '{eval_set}/roc_df_clinvar/{features}'
     output: o = DATA + 'interim/EVAL_{eval_set}/pred_clinvar_eval_curve/{eval_source}.{features}'
     run:
         df_pre = pd.read_csv(input.i, sep='\t')
@@ -122,11 +122,14 @@ rule plot_clinvar_eval_pr:
                           'clinvar_single': 'ClinVar w/ Evidence'}
 
 
+        ur = False
+        if wildcards.eval_set=='ndenovo':
+            ur = True
         acc_ls = []
         with open(output.o, 'w') as fout:
             print('features\tDisease\tPrecision\tRecall\tdisease_name\tdisease_order\tclinvar_type', file=fout)
             for dis in set(df['Disease']):
-                eval_pr_curve_clinvar(df[df.Disease==dis], dis, acc_ls, fout, clinvar_names[wildcards.eval_source], use_revel=True)
+                eval_pr_curve_clinvar(df[df.Disease==dis], dis, acc_ls, fout, clinvar_names[wildcards.eval_source], use_revel=ur)
  
 rule plot_clinvar_pr_curve:
     input:  i = expand(DATA + 'interim/EVAL_clinvar/pred_clinvar_eval_curve/{clinvar_set}.' + C_FEATS, clinvar_set=('clinvar_tot', 'clinvar_single'))
@@ -191,11 +194,14 @@ rule plot_ndenovo_pr_curve_paper:
     input:  i = DATA + 'interim/EVAL_ndenovo/pred_clinvar_eval_curve/clinvar_tot.' + C_FEATS
     output: o = DOCS + 'paper_plts/fig8b_evalDenovoCurve.tiff'
     run:
-        plot_cmd = """geom_line( aes(y=Precision, x=Recall,colour=features, group=features, fill=features))"""
+        plot_cmd = """geom_line( aes(y=Precision, x=Recall,colour=features))"""
         df_tot = pd.read_csv(input.i, sep='\t')
+        #crit = df_tot.apply(lambda row: 'Epi' in row['disease_name'] and 'MPC'==row['features'], axis=1)
+        #crit = df_tot.apply(lambda row: 'Epi' in row['disease_name'] and 'PathoPredictor'==row['features'], axis=1)
         crit = df_tot.apply(lambda row: 'Epi' in row['disease_name'] and ('MPC' == row['features'] or 'REVEL'==row['features'] or 'PathoPredictor'==row['features']), axis=1)
+        #crit = df_tot.apply(lambda row: 'Epi' in row['disease_name'] and ('MPC' == row['features'] or 'PathoPredictor'==row['features']), axis=1)
+        #crit = df_tot.apply(lambda row: 'Epi' in row['disease_name'] and ('REVEL'==row['features'] or 'PathoPredictor'==row['features']), axis=1)
         df_tot[crit].to_csv(output.o + '.df', index=False, sep='\t')
-
         R("""
           require(ggplot2)
           require(grid)
@@ -206,20 +212,20 @@ rule plot_ndenovo_pr_curve_paper:
               theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10)) +
               ylab('Precision') + labs(colour = "", fill="") +
               xlab('Recall')
-          tiff("{output}", res=300, units="cm", height=3.5, width=10)
-          grid.draw(p)
-          grid.text("b", x=0.05, y=0.96)
-          dev.off()
+          ggsave("{output}", dpi=300, units="cm", height=3.5, width=10)
           """)
+
 
         # R("""
         #   require(ggplot2)
         #   require(grid)
-        #   feature_palette <- c("#D4ED91", "grey")
         #   d = read.delim("{output}.df", sep='\t', header=TRUE)
-        #   p = ggplot(data=d) + {plot_cmd} + guides(fill=FALSE) +
-        #       ylab('Average precision') + xlab('') + theme_bw(base_size=12) + facet_grid(.~disease_name) +
-        #       coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12)) 
+        #   d$disease_name = factor(d$disease_name, levels=unique( d[order(d$disease_order),]$disease_name ))
+        #   p = ggplot(data=d) + {plot_cmd} +
+        #       facet_grid(.~disease_name) + theme_bw(base_size=10) +
+        #       theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10)) +
+        #       ylab('Precision') + labs(colour = "", fill="") +
+        #       xlab('Recall')
         #   tiff("{output}", res=300, units="cm", height=3.5, width=10)
         #   grid.draw(p)
         #   grid.text("b", x=0.05, y=0.96)

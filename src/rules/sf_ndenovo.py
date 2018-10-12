@@ -1,5 +1,16 @@
 """Neuro de novos"""
 
+def parse_ndenovo_exac(info, clinSig):
+    """Rm benign variants greater than 1% bc these were used to train mpc"""
+    if clinSig == 'Benign':
+        if 'ANN=' in info:
+            if 'af_exac_all' in info:
+                exac = info.split('af_exac_all=')[1].split(';')[0]
+                if float(exac) > 0.01:
+                    return False
+    return True
+
+
 def parse_ndenovo_dat(info):
     dat = {}
     if 'ANN=' in info:
@@ -33,8 +44,22 @@ rule parse_ndenovo_vcf:
                    dat = init_dat.copy()
                    dat.update(clin_dat)
                    if clin_dat:
-                       ls = [ dat[x] for x in fields]
-                       print('\t'.join(ls), file=fout)
+                       if parse_ndenovo_exac(line, dat['clinSig']):
+                           ls = [ dat[x] for x in fields]
+                           print('\t'.join(ls), file=fout)
+
+rule mk_ndenovo_genes:
+    input:
+        i = DATA + 'interim/ndenovo/ndenovo.eff.dbnsfp.anno.dat.xls'
+    output:
+        o = DATA + 'interim/panel_genes/ndenovo.tab'
+    run:
+        df = pd.read_csv(input.i, sep='\t')
+        with open(output.o, 'w') as fout:
+            print('Disease\tgene', file=fout)
+            for gene in set(df['gene']):
+                print('EPI\t%s' % (gene,), file=fout)
+                print('genedx-epi-limitGene\t%s' % (gene,), file=fout)
 
 def calc_final_sig_ndenovo(row):
     if 'Pathogenic' == row['clinSig']:
@@ -43,4 +68,3 @@ def calc_final_sig_ndenovo(row):
         return 'B'
     else:
         i = 1/0
-       

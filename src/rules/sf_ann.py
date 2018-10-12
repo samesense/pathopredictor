@@ -243,10 +243,10 @@ rule limit_eval_general:
 #        else:
 
 rule limit_clinvar:
-    input:  c = DATA + 'interim/{clinvar}/{limit_type}/{clinvar}.eff.dbnsfp.anno.dat.limit.xls',
+    input:  c = DATA + 'interim/clinvar/{limit_type}/clinvar.eff.dbnsfp.anno.dat.limit.xls',
             p = DATA + 'interim/{limit_type}/panel.dat',
             genes = DATA + 'interim/panel_genes/panel.tab'
-    output: o = DATA + 'interim/{limit_type}/{clinvar,clinvar|ndenovo}.dat'
+    output: o = DATA + 'interim/{limit_type}/clinvar.dat'
     run:
         cols = ['chrom', 'pos', 'ref', 'alt']
         panel = pd.read_csv(input.p, sep='\t')
@@ -256,7 +256,27 @@ rule limit_clinvar:
         clinvar = pd.read_csv(input.c, sep='\t')
         crit = clinvar.apply(lambda row: row['gene'] in panel_genes, axis=1)
         m = pd.merge(clinvar[crit], panel, on=cols, how='outer', indicator=True)
-        m[m._merge=='left_only'].drop(['_merge'], axis=1).dropna(subset=['revel', 'is_domain']+FEATS).to_csv(output.o, index=False, sep='\t')
+        m[m._merge=='left_only'].drop(['_merge'], axis=1).dropna(subset=['mpc', 'revel', 'is_domain']+FEATS).to_csv(output.o, index=False, sep='\t')
+
+rule limit_ndenovo:
+    input:  n = DATA + 'interim/ndenovo/{limit_type}/ndenovo.eff.dbnsfp.anno.dat.limit.xls',
+            p = DATA + 'interim/{limit_type}/panel.dat',
+            c = DATA + 'interim/{limit_type}/clinvar.dat',
+            genes = DATA + 'interim/panel_genes/panel.tab'
+    output: o = DATA + 'interim/{limit_type}/ndenovo.dat'
+    run:
+        cols = ['chrom', 'pos', 'ref', 'alt']
+        panel = pd.read_csv(input.p, sep='\t')
+        clinvar = pd.read_csv(input.c, sep='\t')
+        clinvar = clinvar[clinvar.y==1]
+        panel_gene_df = pd.read_csv(input.genes, sep='\t')
+        panel_genes = set(panel['gene']) | set(panel_gene_df['gene'])
+        panel = panel[cols]
+        nd = pd.read_csv(input.n, sep='\t')
+        m = pd.merge(nd, panel[cols], on=cols, how='outer', indicator=True)
+        m2 = pd.merge(m[m._merge=='left_only'].drop(['_merge'], axis=1),
+                      clinvar[cols], on=cols, how='outer', indicator=True)
+        m2[m2._merge=='left_only'].drop(['_merge'], axis=1).dropna(subset=['mpc', 'revel', 'is_domain']+FEATS).to_csv(output.o, index=False, sep='\t')
 
 rule all_panels:
     input:  expand(DATA + 'interim/epi/{{limit_type}}/{lab}.eff.dbnsfp.anno.dat.limit.xls', lab=('EPIv6', )),

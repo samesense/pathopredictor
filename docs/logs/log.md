@@ -1,3 +1,9 @@
+### 2018_10_12
+* ndenovo test w/ all denovo shows epi limited is a bit better than mpc/revel
+
+### 2018_10_10
+* ndenovo has few benign
+
 ### 2018_10_08
 * add mtr to feature ls
 * add mpc to final eval

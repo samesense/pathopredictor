@@ -3,10 +3,18 @@
 rule eval_panel_global:
     input:  DATA + 'interim/full/{eval_set}.dat',
             DATA + 'interim/full/panel.dat',
-            DATA + 'interim/panel_genes/panel.tab'
+            DATA + 'interim/panel_genes/{eval_set}.tab'
     output: WORK + '{eval_set}/roc_df_panel/{cols}',
             WORK + '{eval_set}/roc_df_clinvar/{cols}'
     shell:  'python {SCRIPTS}score_panel_global_model.py {wildcards.cols} {input} {output}'
+
+# rule eval_panel_global:
+#     input:  DATA + 'interim/full/{eval_set}.dat',
+#             DATA + 'interim/full/panel.dat',
+#             DATA + 'interim/panel_genes/ndenovo.tab'
+#     output: WORK + '{eval_set}/roc_df_panel/{cols}',
+#             WORK + '{eval_set}/roc_df_clinvar/{cols}'
+#    shell:  'python {SCRIPTS}score_panel_global_model.py {wildcards.cols} {input} {output}'
 
 rule plot_gene_heatmap:
     input:  DATA + 'interim/{eval_source}.by_gene_feat_combo.{var_cutoff}'

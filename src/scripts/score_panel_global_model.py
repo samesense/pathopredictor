@@ -308,7 +308,8 @@ def load_disease_genes(eval_genes):
         "STXBP1",
         "TSC1",
     )
-    disease_to_gene["genedx-epi-limitGene"] = FOCUS_GENES
+    for g in FOCUS_GENES:
+        disease_to_gene["genedx-epi-limitGene"][g] = True 
     return disease_to_gene
 
 
