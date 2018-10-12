@@ -23,6 +23,7 @@ rule compare_roc:
         use_features = FEATS
         if wildcards.eval_set == 'ndenovo':
             use_features.append('revel')
+            use_features.append('mpc')
         with open(output.o, 'w') as fout:
             for disease in diseases:
                 for feature in use_features:

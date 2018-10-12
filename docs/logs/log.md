@@ -2,6 +2,7 @@
 * ndenovo test w/ all denovo shows epi limited is a bit better than mpc/revel
 * use path from epi genes w/ all ndenovo looks good for pp
 * sample = number of ndenovo benign is better
+* pvals do not completely reflext this
 
 ### 2018_10_10
 * ndenovo has few benign
