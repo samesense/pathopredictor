@@ -169,7 +169,7 @@ rule plot_clinvar_eval_paper:
 
         df = df_tot[['clinvar_type', 'disease_name', 'benign_size', 'pathogenic_size']].drop_duplicates().melt(id_vars=['clinvar_type', 'disease_name'], var_name='var_type')
         df.loc[:, 'label'] = df.apply(lambda row: row['var_type'].split('_')[0][0] + '=%d' % (row['value']), axis=1)
-        df.loc[:, 'x'] = df.apply(lambda row: 'Missense badness' if 'p' in row['label'] else 'MTR', axis=1)
+        df.loc[:, 'x'] = df.apply(lambda row: 'Missense badness' if 'b' in row['label'] else 'Missense depletion', axis=1)
         df['y'] = .01
         df.to_csv(output.o + '.tmp.clinvar.labels', index=False, sep='\t')
 

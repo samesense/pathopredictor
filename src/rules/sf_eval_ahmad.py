@@ -38,7 +38,7 @@ rule plot_panel_eval:
         df_main[crit].to_csv(output.o + '.main_df', index=False, sep='\t')
         df = df_main[crit][['disease_name', 'benign_size', 'pathogenic_size']].drop_duplicates().melt(id_vars=['disease_name'], var_name='var_type')
         df.loc[:, 'label'] = df.apply(lambda row: row['var_type'].split('_')[0][0] + '=%d' % (row['value']), axis=1)
-        df.loc[:, 'x'] = df.apply(lambda row: 'Missense badness' if 'p' in row['label'] else 'MTR', axis=1)
+        df.loc[:, 'x'] = df.apply(lambda row: 'FATHMM' if 'p' in row['label'] else 'Missense badness', axis=1)
         df['y'] = 0.01
 
         df.to_csv(output.o + '.tmp.panel.labels', index=False, sep='\t')
