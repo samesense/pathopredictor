@@ -44,7 +44,7 @@ PLOTS = PWD + 'docs/plots/'
 
 EXAC_DIR = '/home/evansj/me/projects/diskin/target_exac_setup/data/'
 EXAC_PED = '/home/evansj/me/projects/diskin/target_exac_setup/files/JUNK_PED.ped'
-VCFANNO_LUA_FILE = '/opt/vcfanno_lua/scripts/target.lua'
+VCFANNO_LUA_FILE = '/home/evansj/me/projects/me/vcfanno_lua/scripts/target.lua' #/opt/vcfanno_lua/scripts/target.lua'
 
 ISILON = '/mnt/isilon/cbmi/variome/perry/'
 TABIX = ISILON + 'bin/tabix'

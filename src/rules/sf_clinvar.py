@@ -60,7 +60,7 @@ def parse_vcf_data(line):
 
     mtr = 'NA'
     if 'mtr=' in info:
-        mtr = info.split('mtr=')[1].split(';')[0]
+        mtr = -1*float(info.split('mtr=')[1].split(';')[0])
 
     mpc = 'NA'
     if 'mpc=' in info:
@@ -91,9 +91,9 @@ def parse_vcf_data(line):
     ann = info.split('ANN=')[1].split(';')[0]
     eff, gene, protein_change_pre, nm = find_missense_cv_eff(pos, ann)
     #protein_change = convert_protein_change(protein_change_pre)
-    return {'chrom':chrom, 'pos':pos, 'ref':ref, 'alt':alt, 'eff':eff, 'gene':gene, 'revel':revel, 'mtr':mtr, 'mpc':mpc,
+    return {'chrom':chrom, 'pos':pos, 'ref':ref, 'alt':alt, 'eff':eff, 'gene':gene, 'revel':revel, 'mtr':str(mtr), 'mpc':mpc,
             'clin_class':clin, 'pfam':pfam, 'missense_badness':missense_badness, 'ccr':ccr, 'vest':str(vest),
-            'missense_depletion':missense_depletion, 'fathmm':str(fathmm), 'esp_af_max':str(max(esp_ls))}
+            'missense_depletion':missense_depletion, 'fathmm':str(fathmm), 'esp_af_max':str(max(esp_ls)), 'exac_af':str(exac_af)}
 
 rule snpeff_clinvar:
     input:  CLINVAR

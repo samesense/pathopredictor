@@ -58,10 +58,10 @@ rule add_uc_chroms:
 #     output: DATA + 'interim/EPIv6.tab'
 #     shell:  'python {SCRIPTS}mk_tab.py {input} {output}'
 
-rule mk_vcf_epi:
-    input:  DATA + 'interim/{lab}.tab'
-    output: DATA + 'interim/{lab}.pre.vcf'
-    shell:  'python {SCRIPTS}mk_vcf.py {input} {output}'
+# rule mk_vcf_epi:
+#     input:  DATA + 'interim/{lab}.tab'
+#     output: DATA + 'interim/{lab}.pre.vcf'
+#     shell:  'python {SCRIPTS}mk_vcf.py {input} {output}'
 
 rule sort_vcf_general:
     input:  DATA + 'interim/{lab}.pre.vcf'
@@ -111,7 +111,7 @@ rule vcfanno_general:
              lua = VCFANNO_LUA_FILE
     output:  DATA + 'interim/{dir}/{lab}.eff.dbnsfp.anno.vcf'
     threads: 10
-    shell:   """vcfanno -p {threads} -base-path /data/vcfanno/ -lua {input.lua} \
+    shell:   """vcfanno -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
                 {input.conf} {input.vcf} > {output}"""
 
 # neg fam counts ppl
@@ -162,7 +162,7 @@ rule limit_eval_general:
             disease_df = pd.read_excel(input.d, skiprows=[0,1,2]).rename(columns={'Gene':'gene'})
             df = pd.merge(pd.read_csv(input.i, sep='\t'), disease_df, on='gene', how='left')
         elif wildcards.dir == 'epi':
-            df = pd.read_csv(input.i, sep='\t').dropna()
+            df = pd.read_csv(input.i, sep='\t')#.dropna()
             df['Disease'] = 'EPI'
         elif wildcards.dir == 'clinvar':
             df = load_clinvar(input.i)
@@ -248,7 +248,7 @@ rule limit_clinvar:
             genes = DATA + 'interim/panel_genes/panel.tab'
     output: o = DATA + 'interim/{limit_type}/clinvar.dat'
     run:
-        cols = ['chrom', 'pos', 'ref', 'alt']
+        cols = ['chrom', 'pos',]
         panel = pd.read_csv(input.p, sep='\t')
         panel_gene_df = pd.read_csv(input.genes, sep='\t')
         panel_genes = set(panel['gene']) | set(panel_gene_df['gene'])
@@ -287,6 +287,8 @@ rule limit_ndenovo:
         b = mcut[mcut.y==0]
         crit_b = b.apply(lambda row: row['gene'] in panel_genes, axis=1)
         extra_b = len(p[crit]) - len(b[crit_b])
+        print('ndenovo epi b', len(b[crit_b]))
+        print(wildcards.limit_type, 'ndenovo extra b', len(b[~crit_b]))
         pd.concat([p[crit], b[crit_b], b[~crit_b].sample(extra_b)]).dropna(subset=['mpc', 'revel', 'is_domain']+FEATS).to_csv(output.o, index=False, sep='\t')
 
 rule all_panels:
@@ -298,5 +300,4 @@ rule all_panels:
         pd.concat(dfs).dropna(subset=['revel', 'is_domain']+FEATS).to_csv(output.o, index=False, sep='\t')
 
 rule parse_dat:
-    input: expand(DATA + 'interim/{limit}/{dat}.dat', limit=('full','vus','no_esp'), dat=('panel', 'clinvar', 'ndenovo',))
-
+    input: expand(DATA + 'interim/{limit}/{dat}.dat', limit=('full',), dat=('panel', 'clinvar', 'ndenovo',))
