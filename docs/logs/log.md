@@ -1,3 +1,6 @@
+### 2018_10_26
+* update methods for mtr
+
 ### 2018_10_12
 * ndenovo test w/ all denovo shows epi limited is a bit better than mpc/revel
 * use path from epi genes w/ all ndenovo looks good for pp

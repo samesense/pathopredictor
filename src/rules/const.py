@@ -1,9 +1,14 @@
-import Bio.SeqIO
+#import Bio.SeqIO, rpy2
 import pandas as pd
 from functools import reduce
 from itertools import combinations, chain
-from sklearn.metrics import precision_recall_curve, roc_curve
-from sklearn import metrics
+#from sklearn.metrics import precision_recall_curve, roc_curve
+#from sklearn import metrics
+# import textwrap
+# import rpy2.robjects as robjects
+# def R(code):
+#     robjects.r(format(textwrap.dedent(code), stepout=2))
+
 from snakemake.utils import R
 from collections import defaultdict
 from snakemake.remote.dropbox import RemoteProvider as DropboxRemoteProvider
