@@ -24,8 +24,8 @@ rule calc_roc_curve:
         pd.concat(ls).to_csv(output.o, index=False, sep='\t')
 
 rule plot_single_gene_roc_curve:
-    input: p = DATA + 'interim/gene_roc/panel.' + C_FEATS,
-           c = DATA + 'interim/gene_roc/clinvar.' + C_FEATS
+    input:  p = DATA + 'interim/gene_roc/panel.' + C_FEATS,
+            c = DATA + 'interim/gene_roc/clinvar.' + C_FEATS
     output: o = DOCS + 'paper_plts/fig7_byGene_roc.tiff'
     run:
         genes = ['KCNQ2', 'STXBP1',
@@ -51,8 +51,8 @@ rule plot_single_gene_roc_curve:
           """)
 
 rule plot_single_gene_pr_curve:
-    input: p = DATA + 'interim/gene_pr/panel.' + C_FEATS,
-           c = DATA + 'interim/gene_pr/clinvar.' + C_FEATS
+    input:  p = DATA + 'interim/gene_pr/panel.' + C_FEATS,
+            c = DATA + 'interim/gene_pr/clinvar.' + C_FEATS
     output: o = DOCS + 'paper_plts/fig8a_byGene_pr.tiff'
     run:
         genes = ['KCNQ2', 'STXBP1',
@@ -77,3 +77,24 @@ rule plot_single_gene_pr_curve:
             dev.off()
           """)
 
+def calc_single_gene_accuracy(rows):
+    pathogenic = len(rows[rows.y==1])
+    benign = len(rows[rows.y==0])
+    label = 'p=%d,b=%d' % (pathogenic, benign)
+    correct = len(rows[ (rows.PredictionStatus=='CorrectBenign') | (rows.PredictionStatus=='CorrectPath') ])
+    accuracy = float(correct)/(benign + pathogenic)
+    dat = {'count_label':label, 'accuracy':accuracy}
+    s = pd.Series(dat, index=['count_label', 'accuracy'])
+    return s
+
+rule single_gene_accuracy:
+    input:
+        i = WORK + 'clinvar/roc_df_{dat}/{cols}'
+    output:
+        o = DATA + 'interim/single_gene_stats/{dat}.{cols}'
+    run:
+        df = pd.read_csv(input.i, sep='\t')
+        df.groupby(['Disease', 'gene']).apply(calc_single_gene_accuracy).reset_index().to_csv(output.o, index=False, sep='\t')
+
+rule single_gene_stats:
+    input: expand(DATA + 'interim/single_gene_stats/{dat}.{cols}', dat=('panel', 'clinvar'), cols=(C_FEATS,))

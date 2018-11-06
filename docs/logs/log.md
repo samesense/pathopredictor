@@ -1,5 +1,6 @@
 ### 2018_10_26
 * update methods for mtr
+* mtr score parsing was fixed. It performs well now.
 
 ### 2018_10_12
 * ndenovo test w/ all denovo shows epi limited is a bit better than mpc/revel
