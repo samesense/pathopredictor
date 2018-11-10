@@ -2,8 +2,9 @@
 import pandas as pd
 from functools import reduce
 from itertools import combinations, chain
-#from sklearn.metrics import precision_recall_curve, roc_curve
-#from sklearn import metrics
+from sklearn.metrics import precision_recall_curve, roc_curve
+from sklearn import metrics
+from sklearn import preprocessing
 # import textwrap
 # import rpy2.robjects as robjects
 # def R(code):

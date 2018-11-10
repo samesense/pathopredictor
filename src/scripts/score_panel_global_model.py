@@ -184,6 +184,11 @@ def eval_disease(disease, data, reg_cols, col_names):
 
 
 def standardize(df, cols):
+    print(len(df))
+    cc = df[cols]
+    df1 = cc[cc.isnull().any(axis=1)]
+    print(df1)
+    print(len(df1), cols)
     if len(cols) > 1:
         poly = preprocessing.PolynomialFeatures(
             2, interaction_only=True, include_bias=False
@@ -204,6 +209,10 @@ def standardize(df, cols):
 def mk_standard(data_unstd, score_cols):
     data = {}
     for disease in data_unstd:
+        cc = data_unstd[disease][['chrom', 'pos'] + score_cols]
+        cc = cc[cc.isnull().any(axis=1)]
+        print(disease, len(cc))
+        print(cc)
         data[disease] = standardize(data_unstd[disease], score_cols)
     return data
 
@@ -227,15 +236,33 @@ def mk_panel_clinvar_data(disease_df, clinvar_df, all_disease_genes):
         clinvar_subset = clinvar_df[crit]
         cols = ["chrom", "pos", "ref", "alt"]
         clinvar_single = clinvar_df[crit_single][cols]
+
+
         if len(clinvar_single):
             m = pd.merge(
                 clinvar_subset, clinvar_single, on=cols, how="outer", indicator=True
             )
+
+            # just found in single
+            tmp_s = m[m._merge == 'right_only']
+            if len(tmp_s):
+                only_single = tmp_s[cols]
+                add_single = pd.merge(clinvar_df[crit_single], only_single, how='inner', on=cols)
+                add_single.loc[:, 'is_single'] = True
+
             m.loc[:, "is_single"] = m.apply(lambda row: row["_merge"] == "both", axis=1)
-            clinvar_subset = m
+            if len(tmp_s):
+                clinvar_subset = pd.concat([m[m._merge != 'right_only'], add_single]).drop(columns=['_merge'])
+            else:
+                clinvar_subset = m.drop(columns=['_merge'])
         else:
             clinvar_subset.loc[:, "is_single"] = False
         clinvar_subset.loc[:, "dataset"] = "clinvar"
+        cc = clinvar_subset
+        cc = cc[cc.isnull().any(axis=1)]
+        print('load cv', len(cc))
+        print(cc)
+
     else:
         crit = clinvar_df.apply(lambda row: row["gene"] in genes, axis=1)
         clinvar_subset = clinvar_df[crit]

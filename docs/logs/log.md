@@ -1,3 +1,6 @@
+### 2018_11_09
+* duplicate clinvars. 115256528
+
 ### 2018_10_26
 * update methods for mtr
 * mtr score parsing was fixed. It performs well now.

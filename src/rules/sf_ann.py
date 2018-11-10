@@ -234,9 +234,9 @@ rule limit_eval_general:
                                 and not row['Disease'] in ('Connective tissue disorders', 'Hearing Loss', ''), axis=1)
 
         if wildcards.dir in ('user_preds', 'man'):
-            df[crit].dropna().drop_duplicates(subset=['chrom', 'pos', 'ref', 'alt']).to_csv(output.o, index=False, sep='\t')
+            df[crit].dropna().drop_duplicates(['chrom', 'pos',]).to_csv(output.o, index=False, sep='\t')
         else:
-            df[crit].dropna().drop_duplicates(subset=['chrom', 'pos', 'ref', 'alt', 'Disease']).to_csv(output.o, index=False, sep='\t')
+            df[crit].dropna().drop_duplicates(['chrom', 'pos', 'Disease']).to_csv(output.o, index=False, sep='\t')
 #        if wildcards.dir == 'gnomad':
             # esp not removed, hgmd will not be removed, and uniprot benign will not be removed b/c vest and fathmm will not be used
             # I must do this to have enough training data per gene
@@ -298,6 +298,7 @@ rule all_panels:
     run:
         dfs = [pd.read_csv(afile, sep='\t') for afile in input]
         pd.concat(dfs).dropna(subset=['revel', 'is_domain']+FEATS).to_csv(output.o, index=False, sep='\t')
+#dat=('panel', 'clinvar', 'ndenovo',))
 
 rule parse_dat:
-    input: expand(DATA + 'interim/{limit}/{dat}.dat', limit=('full',), dat=('panel', 'clinvar', 'ndenovo',))
+    input: expand(DATA + 'interim/{limit}/{dat}.dat', limit=('full',), dat=('clinvar', 'panel', 'ndenovo' ))

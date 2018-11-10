@@ -1,6 +1,14 @@
 """How to features correlate for different diseases?"""
 
 def mk_cor_data(df, cols, disease):
+    p = df[df.y==1]
+    b = df[df.y==0]
+    ps = preprocessing.scale(p[cols])
+    p.loc[:, cols] = ps
+    bs = preprocessing.scale(b[cols])
+    b.loc[:, cols] = bs
+
+    df = pd.concat([b, p])
     c = df[cols].corr(method='pearson')
     c.loc[:, 'feat1'] = c.index
     m = pd.melt(c, id_vars=['feat1'], var_name=['feat2'], value_name='pcor')
@@ -8,8 +16,8 @@ def mk_cor_data(df, cols, disease):
     return m
 
 rule mk_cor_data:
-    input:  i = DATA + 'interim/full/panel.dat'
-    output: o = DATA + 'interim/feature_cor/plot_data'
+    input:  i = DATA + 'interim/full/{dat}.dat'
+    output: o = DATA + 'interim/feature_cor/{dat}.plot_data'
     run:
         cols = ['mtr', 'ccr', 'fathmm', 'vest', 'missense_badness',
                 'missense_depletion']
@@ -30,8 +38,26 @@ rule mk_cor_data:
         pd.concat(df_ls).to_csv(output.o, index=False, sep='\t')
 
 rule plot_feature_cor:
-    input:  DATA + 'interim/feature_cor/plot_data'
+    input:  DATA + 'interim/feature_cor/panel.plot_data'
     output: DOCS + 'paper_plts/fig3_featureCor.tiff'
+    run:
+        R("""
+          require(ggplot2)
+          d = read.delim("{input}", header=TRUE, sep="\t")
+          p = ggplot(data=d, aes(x=feat1, y=feat2)) +
+          geom_tile(aes(fill=pcor), colour="white") +
+          geom_text(aes(label=round(pcor,2))) +
+          scale_fill_distiller(palette = "Spectral") +
+          facet_grid(disease~.) + labs(fill="Correlation", x="", y="") +
+          theme_bw(base_size=16) + scale_x_discrete(expand = c(0, 0)) +
+          scale_y_discrete(expand = c(0, 0)) +
+          theme(axis.ticks = element_blank(),
+          axis.text.x = element_text(size = 18 * 0.8, angle=330, hjust=0, colour="black"))
+          ggsave("{output}", p, height=22.22, width=17, units="cm", dpi=300)
+          """)
+rule plot_feature_cor_cv:
+    input:  DATA + 'interim/feature_cor/clinvar.plot_data'
+    output: DOCS + 'paper_plts/fig3_featureCor_cv.tiff'
     run:
         R("""
           require(ggplot2)
