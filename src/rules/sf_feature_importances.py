@@ -1,5 +1,25 @@
 """Compare feature importances for disease and panel vs clinvar"""
 
+rule prep_varimpact:
+    input:  i = DATA + 'interim/full/panel.dat'
+    output: x = DATA + 'interim/varimpact_pre/panel.{disease}.x',
+            y = DATA + 'interim/varimpact_pre/panel.{disease}.y'
+    run:
+        df = pd.read_csv(input.i, delimiter='\t')
+        df.loc[:, 'ccr'] = df.apply(lambda row: row['ccr'] if row['ccr'] != 0 else random.uniform(0, 0.5), axis=1)
+        df[df.Disease==wildcards.disease][FEATS + ['is_domain']].to_csv(output.x, sep='\t', header=True, index=False)
+        df[df.Disease==wildcards.disease][['y']].to_csv(output.y, sep='\t', header=True, index=False)
+
+rule varimpact:
+    input:  DATA + 'interim/varimpact_pre/panel.{disease}.x',
+            DATA + 'interim/varimpact_pre/panel.{disease}.y'
+    output: DATA + 'interim/varimpact/panel.{disease}'
+    singularity: "docker://samesense/varimpact-docker"
+    shell:  'Rscript {SCRIPTS}varimpact.R {input} {output}'
+
+rule tt:
+    input: expand(DATA + 'interim/varimpact/panel.{d}', d=('EPI', 'Cardiomyopathy', 'Rasopathies',) )
+
 rule feature_importance:
     input:  expand(DATA + 'interim/full/{eval_set}.dat', eval_set=('panel', 'clinvar') )
     output: DATA + 'interim/plot_data/importances'
