@@ -42,13 +42,32 @@ rule varimpact:
     singularity: "docker://samesense/varimpact-docker"
     shell:  'Rscript {SCRIPTS}varimpact.R {input} {output}'
 
-rule tt:
-    input: expand(DATA + 'interim/varimpact/{dat}.{d}', dat=('both', 'panel', 'clinvar'), d=('EPI', 'Cardiomyopathy', 'Rasopathies',) )
+rule combine_varimpact:
+    input:
+        expand(DATA + 'interim/varimpact/{dat}.{d}', dat=('both',), d=('EPI', 'Cardiomyopathy', 'Rasopathies',) )
+    output:
+        o = DATA + 'interim/plot_data/importances'
+    run:
+        feats = {'fathmm':'FATHMM', 'ccr':'CCR', 'vest':'VEST', 'is_domain':'Domain', 'missense_badness':'Missense badness', 'missense_depletion': 'Missense depletion', 'mtr':'MTR'}
+        dis = {'Cardiomyopathy':'Cardiomyopathy', 'Rasopathies':'Rasopathies', 'EPI':'Epilepsy'}
+#str(row['Consistent'])=='TRUE'
+        def read_varimpact(afile):
+           df = pd.read_csv(afile, sep='\t', index_col=0).reset_index()
+           df.loc[:, 'importance'] = df.apply(lambda row: max([0, row['Estimate']]), axis=1)
+           df.loc[:, 'feature'] = df.apply(lambda row: feats[row[0]], axis=1)
+           df.loc[:, 'is_sig'] = df.apply(lambda row: row['Consistent'] and row['Adj. p-value']<0.1, axis=1)
+           df.loc[:, 'lower_ci'] = df.apply(lambda row: max([0, float(row['CI95'].split('(')[1].split(' - ')[0])]), axis=1)
+           df.loc[:, 'upper_ci'] = df.apply(lambda row: max([0, float(row['CI95'].split('(')[1].split(' - ')[1].split(')')[0])]), axis=1)
+           df.loc[:, 'disease'] = dis[afile.split('.')[-1]]
+           return df
 
-rule feature_importance:
-    input:  expand(DATA + 'interim/full/{eval_set}.dat', eval_set=('panel', 'clinvar') )
-    output: DATA + 'interim/plot_data/importances'
-    shell:  'python {SCRIPTS}feature_importance.py {input} {output}'
+        dfs = [read_varimpact(afile) for afile in input]
+        pd.concat(dfs).to_csv(output.o, index=False, sep='\t')
+
+# rule feature_importance:
+#     input:  expand(DATA + 'interim/full/{eval_set}.dat', eval_set=('panel', 'clinvar') )
+#     output: DATA + 'interim/plot_data/importances'
+#     shell:  'python {SCRIPTS}feature_importance.py {input} {output}'
 
 rule plot_feature_importance:
     input:  DATA + 'interim/plot_data/importances'
@@ -57,13 +76,12 @@ rule plot_feature_importance:
         R("""
           require(ggplot2)
           d = read.delim("{input}", header=TRUE, sep="\t")
-          dp = d[d$eval_set=="panel",]
-          p = ggplot(data=dp, aes(y=importance, x=reorder(feature, importance, mean))) + \
-              geom_col(colour="black", fill="gray") + \
-              geom_errorbar(aes(ymin=importance-eb, ymax=importance+eb), size=.3, width=.2) + \
+          p = ggplot(data=d, aes(y=importance, fill=is_sig, x=reorder(feature, importance, mean))) + \
+              geom_col(colour="black") + \
+              geom_errorbar(aes(ymin=lower_ci, ymax=upper_ci), size=.3, width=.2) + \
               facet_grid(disease~.) + coord_flip() + theme_bw(base_size=18) + \
-              xlab('') + ylab('Feature importance')
-          ggsave("{output}", p, dpi=300, height=22, width=10, units="cm")
+              xlab('') + ylab('Feature importance estimate') +  labs(fill= "Significant and \nconsistent") + theme(legend.position="bottom")
+          ggsave("{output}", p, dpi=300, height=18, width=15, units="cm")
           """)
 # rule collapse_feature_importance:
 #     input: expand(DATA + 'interim/importances/{eval_set}.feat_importance', eval_set=('panel',))
