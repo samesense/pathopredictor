@@ -29,7 +29,7 @@ rule mk_impact_data_clinvar:
         data_unstandardized = score_panel_global_model.load_data(input.p, input.c, disease_to_gene)
         df_ls = []
         df = data_unstandardized[wildcards.disease]
-        df.loc[:, 'ccr'] = df.apply(lambda row: -1*row['ccr'] if row['ccr'] != 0 else -1*random.uniform(0, 0.5), axis=1)
+        df.loc[:, 'ccr'] = df.apply(lambda row: row['ccr'] if row['ccr'] != 0 else random.uniform(0, 0.5), axis=1)
         df[df.dataset=='clinvar'][FEATS + ['is_domain']].to_csv(output.xc, sep='\t', header=True, index=False)
         df[df.dataset=='clinvar'][['y']].to_csv(output.yc, sep='\t', header=True, index=False)
         df[FEATS + ['is_domain']].to_csv(output.xb, sep='\t', header=True, index=False)
