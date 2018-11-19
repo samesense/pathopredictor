@@ -53,7 +53,7 @@ rule plot_single_gene_roc_curve:
 rule plot_single_gene_pr_curve:
     input:  p = DATA + 'interim/gene_pr/panel.' + C_FEATS,
             c = DATA + 'interim/gene_pr/clinvar.' + C_FEATS
-    output: o = DOCS + 'paper_plts/fig8a_byGene_pr.tiff'
+    output: o = DOCS + 'paper_plts/fig7a_byGene_pr.tiff'
     run:
         genes = ['KCNQ2', 'STXBP1',
                  'SCN2A', 'SCN5A', 'RAF1']

@@ -31,9 +31,9 @@ include: "sf.rank.eval.py"
 include: "sf_eval_roc.py"
 include: "sf_eval_ndenovo.py"
 
-FIGS = ('fig1_countPlot', 'fig2_featureImportance', 'fig3_featureCor',
-        'fig5_withinPanel', 'fig6_evalClinvar','fig7_trainClinvarTestPanel',
-       'fig8_byGene_and_evalDenovo',)
+FIGS = ('fig1_countPlot', 'fig2_featureImportance', 
+        'fig4_withinPanel', 'fig5_evalClinvar','fig6_trainClinvarTestPanel',
+       'fig7_byGene_and_evalDenovo',)
 
 TABLES = ('S1_missenseDiseaseVariants_hg19', 'S2_missensePredictions_hg19',)
 

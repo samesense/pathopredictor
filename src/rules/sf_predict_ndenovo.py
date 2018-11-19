@@ -1,6 +1,6 @@
 rule plot_ndenovo_eval_paper:
     input:  i = DATA + 'interim/EVAL_ndenovo/pred_clinvar_eval/clinvar_tot.' + C_FEATS
-    output: o = DOCS + 'paper_plts/fig8c_evalDenovoAvgPr.tiff'
+    output: o = DOCS + 'paper_plts/fig7c_evalDenovoAvgPr.tiff'
     run:
         plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(new_feat_name, avg_pr)) ) +
                       geom_text(size=2, hjust="left", colour="white", data=label_df, aes(x=x, y=y, label=label))"""
@@ -36,7 +36,7 @@ rule plot_ndenovo_eval_paper:
 
 rule plot_ndenovo_pr_curve_paper:
     input:  i = DATA + 'interim/EVAL_ndenovo/pred_clinvar_eval_curve/clinvar_tot.' + C_FEATS
-    output: o = DOCS + 'paper_plts/fig8b_evalDenovoCurve.tiff'
+    output: o = DOCS + 'paper_plts/fig7b_evalDenovoCurve.tiff'
     run:
         plot_cmd = """geom_line( aes(y=Precision, x=Recall, colour=new_feat_name))"""
         df_tot = pd.read_csv(input.i, sep='\t')

@@ -39,7 +39,7 @@ rule eval_avg_pr_train_clinvar_test_panel:
 
 rule plot_avg_pr_train_clinvar_test_panel_paper:
     input:  expand(DATA + 'interim/train_clinvar_test_panel_single{single}/EVAL/pred_panel_eval/' + C_FEATS, single=(True, False))
-    output: o = DOCS + 'paper_plts/fig7b_trainClinvarAvgPr.tiff'
+    output: o = DOCS + 'paper_plts/fig6b_trainClinvarAvgPr.tiff'
     run:
         plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) ) +
                       geom_text(size=2, hjust="left", colour="white", data=label_df, aes(x=x, y=y, label=label))"""
@@ -91,7 +91,7 @@ rule curve_avg_pr_train_clinvar_test_panel:
 
 rule plot_clinvar_pr_curve_train_clinvar_test_panel:
     input:  i = expand(DATA + 'interim/train_clinvar_test_panel_single{single}/EVAL/pred_panel_curve/' + C_FEATS, single=(True, False))
-    output: o = DOCS + 'paper_plts/fig7a_trainClinvarTestPanelCurve.tiff'
+    output: o = DOCS + 'paper_plts/fig6a_trainClinvarTestPanelCurve.tiff'
     run:
         plot_cmd = """geom_line( aes(y=Precision, x=Recall,colour=features, group=features, fill=features))"""
         df_tot = pd.concat([pd.read_csv(afile, sep='\t') for afile in input])
@@ -116,9 +116,9 @@ rule plot_clinvar_pr_curve_train_clinvar_test_panel:
 
 
 rule combine_figs_train_clinvar_test_panel:
-    input:  DOCS + 'paper_plts/fig7a_trainClinvarTestPanelCurve.tiff',
-            DOCS + 'paper_plts/fig7b_trainClinvarAvgPr.tiff'
-    output: o = DOCS + 'paper_plts/fig7_trainClinvarTestPanel.tiff'
+    input:  DOCS + 'paper_plts/fig6a_trainClinvarTestPanelCurve.tiff',
+            DOCS + 'paper_plts/fig6b_trainClinvarAvgPr.tiff'
+    output: o = DOCS + 'paper_plts/fig6_trainClinvarTestPanel.tiff'
     singularity:
         'docker://ncsapolyglot/converters-imagemagick'
     shell:  'convert -append {input} {output}'

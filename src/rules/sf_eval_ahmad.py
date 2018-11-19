@@ -29,7 +29,7 @@ rule mk_panel_eval_figure_data:
 
 rule plot_panel_eval:
     input:  i = DATA + 'interim/pred_panel_eval/' + C_FEATS
-    output: o = temp(DOCS + 'paper_plts/fig5b_panelEval.tiff')
+    output: o = temp(DOCS + 'paper_plts/fig4b_panelEval.tiff')
     run:
         plot_cmd = """geom_col( aes(y=avg_pr, x=reorder(features, avg_pr)) ) +
                       geom_text(data=label_df, size=2, colour="white", aes(x=x, y=y, label=label), hjust="left")"""
@@ -74,7 +74,7 @@ rule plot_panel_eval_pr:
 
 rule plot_panel_pr_curve:
     input:  i = DATA + 'interim/pred_panel_eval_curve/' + C_FEATS
-    output: o = temp(DOCS + 'paper_plts/fig5a_curve.tiff')
+    output: o = temp(DOCS + 'paper_plts/fig4a_curve.tiff')
     run:
         plot_cmd = """geom_line( aes(y=Precision, x=Recall,colour=features, group=features, fill=features))"""
 
@@ -95,9 +95,9 @@ rule plot_panel_pr_curve:
           """)
 
 rule combine_figs_within_panel:
-    input:  DOCS + 'paper_plts/fig5a_curve.tiff',
-            DOCS + 'paper_plts/fig5b_panelEval.tiff'
-    output: o = DOCS + 'paper_plts/fig5_withinPanel.tiff'
+    input:  DOCS + 'paper_plts/fig4a_curve.tiff',
+            DOCS + 'paper_plts/fig4b_panelEval.tiff'
+    output: o = DOCS + 'paper_plts/fig4_withinPanel.tiff'
     singularity:
         'docker://ncsapolyglot/converters-imagemagick'
     shell:  'convert -append {input} {output}'
