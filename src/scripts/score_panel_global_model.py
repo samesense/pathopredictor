@@ -274,7 +274,7 @@ def mk_panel_clinvar_data(disease_df, clinvar_df, all_disease_genes):
     return pd.concat([disease_df, clinvar_subset], ignore_index=True)
 
 
-def load_data(args, disease_to_gene):
+def load_data(panel, clinvar, disease_to_gene):
     FOCUS_GENES = (
         "SCN1A",
         "SCN2A",
@@ -290,12 +290,12 @@ def load_data(args, disease_to_gene):
         "TSC1",
     )
 
-    clinvar_df = pd.read_csv(args.clinvar, sep="\t").rename(
+    clinvar_df = pd.read_csv(clinvar, sep="\t").rename(
         columns={"Disease": "clinvar_subset"}
     )
 
     # load panels
-    panel_df = pd.read_csv(args.panel, sep="\t")
+    panel_df = pd.read_csv(panel, sep="\t")
     crit = panel_df.apply(
         lambda row: row["Disease"] == "EPI" and row["gene"] in FOCUS_GENES, axis=1
     )
@@ -345,7 +345,7 @@ def load_disease_genes(eval_genes):
 def main(args):
     score_cols = args.score_cols.split("-")
     disease_to_gene = load_disease_genes(args.eval_genes)
-    data_unstandardized = load_data(args, disease_to_gene)
+    data_unstandardized = load_data(args.panel, args.clinvar, disease_to_gene)
     data = mk_standard(data_unstandardized, score_cols)
 
     eval_df_ls, eval_df_clinvar_ls = [], []

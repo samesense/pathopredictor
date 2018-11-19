@@ -15,9 +15,42 @@ def mk_cor_data(df, cols, disease):
     m.loc[:, 'disease'] = disease
     return m
 
+rule mk_cor_data_clinvar:
+    input:  p = DATA + 'interim/full/panel.dat',
+            c = DATA + 'interim/full/clinvar.dat',
+            g = DATA + 'interim/panel_genes/clinvar.tab'
+    output: o = DATA + 'interim/feature_cor/clinvar.plot_data'
+    run:
+        cols = ['mtr', 'ccr', 'fathmm', 'vest', 'missense_badness',
+                'missense_depletion']
+        col_names = ['MTR', 'CCR', 'FATHMM', 'VEST', 'Missense badness', 'Missense depletion']
+        name_dict = {col:name for col, name in zip(cols, col_names)}
+        sys.path.append(SCRIPTS)
+        import score_panel_global_model
+        disease_to_gene = score_panel_global_model.load_disease_genes(input.g)
+        data_unstandardized = score_panel_global_model.load_data(input.p, input.c, disease_to_gene)
+        df_ls = []
+        for disease in data_unstandardized:
+            df = data_unstandardized[disease]
+            df = df[df.dataset=='clinvar'].rename(columns=name_dict)
+            df_ls.append(mk_cor_data(df, col_names, disease))
+        # df_ls = []
+        # for disease in set(df['Disease']):
+        #     dis = disease
+        #     if 'EPI' == dis:
+        #         dis = 'Epilepsy'
+        #     df_ls.append(mk_cor_data(df[df.Disease==disease], col_names, dis))
+        # FOCUS_GENES = ('SCN1A','SCN2A','KCNQ2', 'KCNQ3', 'CDKL5',
+        #                'PCDH19', 'SCN1B', 'SCN8A', 'SLC2A1',
+        #                'SPTAN1', 'STXBP1', 'TSC1')
+        # crit = df.apply(lambda row: row['Disease'] == 'EPI' and row['gene'] in FOCUS_GENES, axis=1)
+        # df_ls.append(mk_cor_data(df[crit], col_names, 'Epilepsy (dominant)'))
+        pd.concat(df_ls).to_csv(output.o, index=False, sep='\t')
+
+
 rule mk_cor_data:
-    input:  i = DATA + 'interim/full/{dat}.dat'
-    output: o = DATA + 'interim/feature_cor/{dat}.plot_data'
+    input:  i = DATA + 'interim/full/panel.dat'
+    output: o = DATA + 'interim/feature_cor/panel.plot_data'
     run:
         cols = ['mtr', 'ccr', 'fathmm', 'vest', 'missense_badness',
                 'missense_depletion']
@@ -55,6 +88,7 @@ rule plot_feature_cor:
           axis.text.x = element_text(size = 18 * 0.8, angle=330, hjust=0, colour="black"))
           ggsave("{output}", p, height=22.22, width=17, units="cm", dpi=300)
           """)
+
 rule plot_feature_cor_cv:
     input:  DATA + 'interim/feature_cor/clinvar.plot_data'
     output: DOCS + 'paper_plts/fig3_featureCor_cv.tiff'
