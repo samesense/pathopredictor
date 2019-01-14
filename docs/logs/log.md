@@ -1,3 +1,6 @@
+### 2018_11_14
+* dropped training vars that were at same position, but w/ diff alt alleles
+
 ### 2018_11_09
 * duplicate clinvars. 115256528
 
