@@ -53,6 +53,8 @@ rule mk_disease_gene_vcf:
 rule sort_all_vcf:
     input:  DATA + 'interim/manuscript/disease.vcf'
     output: DATA + 'interim/manuscript/disease.sort.vcf'
+    singularity:
+        "docker://biocontainers/vcftools:0.1.14"
     shell:  'cat {input} | vcf-sort > {output}'
 
 rule snpeff_mock_disease:

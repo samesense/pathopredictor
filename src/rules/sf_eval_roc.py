@@ -59,7 +59,6 @@ rule compare_roc:
                     ls = (disease, feature, proc_pval)
                     print('\t'.join([str(x) for x in ls]), file=fout)
 
-
 rule all_proc:
     input: expand(DATA + 'interim/auc_cmp/{dataset}.' + C_FEATS, dataset=('clinvar.panel', 'clinvar.clinvar', 'ndenovo.clinvar')),
            expand(DATA + 'interim/auc_cmp_train_clinvar_test_panel/single{single}.{features}', single=(True, False), features=(C_FEATS,))

@@ -118,7 +118,7 @@ rule plot_clinvar_pr_curve_train_clinvar_test_panel:
 rule combine_figs_train_clinvar_test_panel:
     input:  DOCS + 'paper_plts/fig6a_trainClinvarTestPanelCurve.tiff',
             DOCS + 'paper_plts/fig6b_trainClinvarAvgPr.tiff'
-    output: o = DOCS + 'paper_plts/fig6_trainClinvarTestPanel.tiff'
+    output: o = DOCS + 'paper_plts/fig5_trainClinvarTestPanel.tiff'
     singularity:
         'docker://ncsapolyglot/converters-imagemagick'
     shell:  'convert -append {input} {output}'

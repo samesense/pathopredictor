@@ -97,7 +97,7 @@ rule plot_panel_pr_curve:
 rule combine_figs_within_panel:
     input:  DOCS + 'paper_plts/fig4a_curve.tiff',
             DOCS + 'paper_plts/fig4b_panelEval.tiff'
-    output: o = DOCS + 'paper_plts/fig4_withinPanel.tiff'
+    output: o = DOCS + 'paper_plts/fig3_withinPanel.tiff'
     singularity:
         'docker://ncsapolyglot/converters-imagemagick'
     shell:  'convert -append {input} {output}'

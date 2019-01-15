@@ -31,9 +31,10 @@ include: "sf.rank.eval.py"
 include: "sf_eval_roc.py"
 include: "sf_eval_ndenovo.py"
 
-FIGS = ('fig1_countPlot', 'fig2_featureImportance', 
-        'fig4_withinPanel', 'fig5_evalClinvar','fig6_trainClinvarTestPanel',
-       'fig7_byGene_and_evalDenovo',)
+FIGS = ('fig1_countPlot',
+        'fig3_withinPanel', 'fig4_evalClinvar',
+        'fig5_trainClinvarTestPanel',
+        'fig6_byGene_and_evalDenovo',)
 
 TABLES = ('S1_missenseDiseaseVariants_hg19', 'S2_missensePredictions_hg19',)
 
@@ -42,8 +43,8 @@ rule all_paper_plots:
            expand(DOCS + 'paper_plts/{fig}.png', fig=FIGS)
 
 rule upload_all:
-    input: 
-           expand(DBox.remote('ahmad_predictor/{fig}.png'), fig=FIGS),
-           #expand(DBox.remote('ahmad_predictor/{table}.csv'), table=TABLES)
+    input:
+           #expand(DBox.remote('ahmad_predictor/{fig}.png'), fig=FIGS),
+           expand(DBox.remote('ahmad_predictor/{table}.csv'), table=TABLES)
 # rule s2:
 #     input: DATA + 'interim/man/man.eff.dbnsfp.anno.dat.xls',

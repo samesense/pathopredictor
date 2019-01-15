@@ -193,7 +193,7 @@ rule plot_clinvar_eval_paper:
 rule combine_figs_train_panel_test_clinvar:
     input:  DOCS + 'paper_plts/fig5a_curve.tiff',
             DOCS + 'paper_plts/fig5b_bar.tiff'
-    output: o = DOCS + 'paper_plts/fig5_evalClinvar.tiff'
+    output: o = DOCS + 'paper_plts/fig4_evalClinvar.tiff'
     singularity:
         'docker://ncsapolyglot/converters-imagemagick'
     shell:  'convert -append {input} {output}'

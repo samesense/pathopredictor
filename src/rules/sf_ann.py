@@ -111,6 +111,7 @@ rule vcfanno_general:
              lua = VCFANNO_LUA_FILE
     output:  DATA + 'interim/{dir}/{lab}.eff.dbnsfp.anno.vcf'
     threads: 10
+    singularity: 'docker://szilvajuhos/sarek-vcfanno'
     shell:   """vcfanno -p {threads} -base-path {GEMINI_ANNO} -lua {input.lua} \
                 {input.conf} {input.vcf} > {output}"""
 
@@ -229,12 +230,15 @@ rule limit_eval_general:
         elif wildcards.limit_type == 'no_limit':
             if wildcards.dir == 'user_preds':
                 crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['ccr']>-1, axis=1)
+            elif wildcards.dir == 'man':
+                crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['ccr']>-1, axis=1)
             else:
                 crit = df.apply(lambda row: row['eff'] == 'missense_variant' and row['ccr']>-1
                                 and not row['Disease'] in ('Connective tissue disorders', 'Hearing Loss', ''), axis=1)
 
+
         if wildcards.dir in ('user_preds', 'man'):
-            df[crit].dropna().drop_duplicates(['chrom', 'pos',]).to_csv(output.o, index=False, sep='\t')
+            df[crit].dropna().drop_duplicates(['chrom', 'pos', 'ref', 'alt']).to_csv(output.o, index=False, sep='\t')
         else:
             df[crit].dropna().drop_duplicates(['chrom', 'pos', 'Disease']).to_csv(output.o, index=False, sep='\t')
 #        if wildcards.dir == 'gnomad':

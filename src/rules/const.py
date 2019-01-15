@@ -1,4 +1,4 @@
-#import Bio.SeqIO, rpy2
+import Bio.SeqIO#, rpy2
 import pandas as pd
 from functools import reduce
 from itertools import combinations, chain
@@ -51,7 +51,7 @@ PLOTS = PWD + 'docs/plots/'
 
 EXAC_DIR = '/home/evansj/me/projects/diskin/target_exac_setup/data/'
 EXAC_PED = '/home/evansj/me/projects/diskin/target_exac_setup/files/JUNK_PED.ped'
-VCFANNO_LUA_FILE = '/home/evansj/me/projects/me/vcfanno_lua/scripts/target.lua' #/opt/vcfanno_lua/scripts/target.lua'
+VCFANNO_LUA_FILE = '/mnt/isilon/dbhi_bfx/perry/projects/me/vcfanno_lua/scripts/target.lua' #/opt/vcfanno_lua/scripts/target.lua'
 
 ISILON = '/mnt/isilon/cbmi/variome/perry/'
 TABIX = ISILON + 'bin/tabix'
@@ -61,11 +61,13 @@ PY27_T = '~/me/condas/miniconda3/envs/testPy27/bin/python'
 PY27 = '~/me/condas/miniconda3/envs/py27/bin/python'
 JAVA = '/nas/is1/bin/java'
 
-EFF = '/opt/conda/envs/pathopredictor/share/snpeff-4.3.1t-0/snpEff.jar'
-EFF_CONFIG = '/opt/conda/envs/pathopredictor/share/snpeff-4.3.1t-0/snpEff.config'
+#EFF = '/opt/conda/envs/pathopredictor/share/snpeff-4.3.1t-0/snpEff.jar'
+#EFF_CONFIG = '/opt/conda/envs/pathopredictor/share/snpeff-4.3.1t-0/snpEff.config'
 
-#EFF = '/home/evansj/me/condas/miniconda3/envs/mahdi_epi/share/snpeff-4.3.1t-0/snpEff.jar'
-SIFT = '/opt/conda/envs/pathopredictor/share/snpsift-4.3-2/SnpSift.jar'
+EFF = '/home/evansj/me/condas/miniconda3/envs/mahdi_epi/share/snpeff-4.3.1t-0/snpEff.jar'
+EFF_CONFIG = '/home/evansj/me/condas/miniconda3/envs/mahdi_epi/share/snpeff-4.3.1t-0/snpEff.config'
+#SIFT = '/opt/conda/envs/pathopredictor/share/snpsift-4.3-1t-1/SnpSift.jar'
+SIFT = '/home/evansj/me/condas/miniconda3/envs/mahdi_epi/share/snpsift-4.3.1t-1/SnpSift.jar'
 #SIFT_DBNSFP = DATA + 'raw/snpsift/dbNSFP.txt.gz'
 
 CLINVAR = '/mnt/isilon/cbmi/variome/bin/gemini/data/gemini_data/clinvar_20180225.tidy.vcf.gz'
