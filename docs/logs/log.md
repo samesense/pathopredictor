@@ -1,3 +1,7 @@
+### 2019_04_08
+* source activate PP4
+* sm -s sf.py -j60 --use-singularity --singularity-args "-B /mnt/isilon/:/mnt/isilon" upload_all
+
 ### 2018_11_14
 * dropped training vars that were at same position, but w/ diff alt alleles
 
