@@ -1,6 +1,6 @@
 ### 2019_04_09
 
-#### final variant count stats
+#### variant count stats
 ```
 $ cd /mnt/isilon/dbhi_bfx/perry/projects/sarmadi/mahdi_epi/data/interim/full
 # subtract one from each count for header
@@ -9,12 +9,61 @@ $ cat clinvar.dat | cut -f 1,2,3,4 | sc | wc -l
 $ cat panel.dat | cut -f 7,22,23,5 | sc | wc -l
 ```
 
-#### fig6
+### results: within panel
+```
+# pval auc cmp
+$ cd /mnt/isilon/dbhi_bfx/perry/projects/sarmadi/mahdi_epi/data/interim/auc_cmp
+$ cat clinvar.panel.ccr-vest-fathmm-missense_badness-missense_depletion-mtr-is_domain | sort -k3gr
+# worst avg pre
+$ cd /mnt/isilon/dbhi_bfx/perry/projects/sarmadi/mahdi_epi/data/interim/pred_panel_eval
+$  cat ccr-vest-fathmm-missense_badness-missense_depletion-mtr-is_domain | grep Path | cut -f 2
+```
+
+### results: eval clinvar
+```
+# pvals
+$ cd /mnt/isilon/dbhi_bfx/perry/projects/sarmadi/mahdi_epi/data/interim/auc_cmp
+$ sort -k3gr clinvar.clinvar.ccr-vest-fathmm-missense_badness-missense_depletion-mtr-is_domain
+# avg pre
+$ cd /mnt/isilon/dbhi_bfx/perry/projects/sarmadi/mahdi_epi/data/interim/EVAL_clinvar/pred_clinvar_eval
+$ grep Path clinvar_*.ccr-vest-fathmm-missense_badness-missense_depletion-mtr-is_domain | sort -k2gr
+```
+
+#### results: clinvar train; test panel
+```
+$ cd /mnt/isilon/dbhi_bfx/perry/projects/sarmadi/mahdi_epi/data/interim/train_clinvar_test_panel_singleTrue/EVAL/pred_panel_eval
+$ grep Path ccr-vest-fathmm-missense_badness-missense_depletion-mtr-is_domain 
+$ cd /mnt/isilon/dbhi_bfx/perry/projects/sarmadi/mahdi_epi/data/interim/train_clinvar_test_panel_singleFalse/EVAL/pred_panel_eval
+# same grep
+```
+
+#### fig5 clinvar train; test panel
+```
+$ cd /mnt/isilon/dbhi_bfx/perry/projects/sarmadi/mahdi_epi/data/interim/auc_cmp_train_clinvar_test_panel
+# some evidence in clinvar; sort by pval
+$ sort -k3gr singleTrue.ccr-vest-fathmm-missense_badness-missense_depletion-mtr-is_domain
+$ sort -k3gr singleFalse.ccr-vest-fathmm-missense_badness-missense_depletion-mtr-is_domain
+```
+
+#### fig6a single gene eval and results
 ```
 $ cd /mnt/isilon/dbhi_bfx/perry/projects/sarmadi/mahdi_epi/data/interim/single_gene_stats
 # KCNQ2 accuracy for within panel and clinvar
 $ grep KCNQ2 panel.ccr-vest-fathmm-missense_badness-missense_depletion-mtr-is_domain
 $ grep KCNQ2 clinvar.ccr-vest-fathmm-missense_badness-missense_depletion-mtr-is_domain
+```
+
+#### fig6c pp vs mpc/revel
+```
+$ cd /mnt/isilon/dbhi_bfx/perry/projects/sarmadi/mahdi_epi/data/interim/auc_cmp
+$ grep mpc ndenovo.clinvar.ccr-vest-fathmm-missense_badness-missense_depletion-mtr-is_domain
+$ grep revel ndenovo.clinvar.ccr-vest-fathmm-missense_badness-missense_depletion-mtr-is_domain
+```
+
+### revel vs pp results
+```
+$ cd /mnt/isilon/dbhi_bfx/perry/projects/sarmadi/mahdi_epi/data/interim/EVAL_ndenovo/pred_clinvar_eval
+$ grep Path clinvar_tot.ccr-vest-fathmm-missense_badness-missense_depletion-mtr-is_domain
 ```
 
 ### 2019_04_08
