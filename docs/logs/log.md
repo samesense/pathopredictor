@@ -1,3 +1,15 @@
+### 2019_04_09
+
+#### final variant count stats
+```
+$ cd /mnt/isilon/dbhi_bfx/perry/projects/sarmadi/mahdi_epi/data/interim/full
+# subtract one from each count for header
+$ cat ndenovo.dat | cut -f 1,2,3,5 | sc | wc -l
+$ cat clinvar.dat | cut -f 1,2,3,4 | sc | wc -l
+$ cat panel.dat | cut -f 7,22,23,5 | sc | wc -l
+```
+
+
 ### 2019_04_08
 * source activate PP4
 * sm -s sf.py -j60 --use-singularity --singularity-args "-B /mnt/isilon/:/mnt/isilon" upload_all
