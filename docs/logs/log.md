@@ -11,7 +11,10 @@ $ cat panel.dat | cut -f 7,22,23,5 | sc | wc -l
 
 #### fig6
 ```
-
+$ cd /mnt/isilon/dbhi_bfx/perry/projects/sarmadi/mahdi_epi/data/interim/single_gene_stats
+# KCNQ2 accuracy for within panel and clinvar
+$ grep KCNQ2 panel.ccr-vest-fathmm-missense_badness-missense_depletion-mtr-is_domain
+$ grep KCNQ2 clinvar.ccr-vest-fathmm-missense_badness-missense_depletion-mtr-is_domain
 ```
 
 ### 2019_04_08
