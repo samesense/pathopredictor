@@ -9,6 +9,10 @@ $ cat clinvar.dat | cut -f 1,2,3,4 | sc | wc -l
 $ cat panel.dat | cut -f 7,22,23,5 | sc | wc -l
 ```
 
+#### fig6
+```
+
+```
 
 ### 2019_04_08
 * source activate PP4
