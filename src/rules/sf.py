@@ -44,7 +44,17 @@ rule all_paper_plots:
 
 rule upload_all:
     input:
-           #expand(DBox.remote('ahmad_predictor/{fig}.png'), fig=FIGS),
+           expand(DBox.remote('ahmad_predictor/{fig}.png'), fig=FIGS),
            expand(DBox.remote('ahmad_predictor/{table}.csv'), table=TABLES)
 # rule s2:
 #     input: DATA + 'interim/man/man.eff.dbnsfp.anno.dat.xls',
+
+rule paper_stats:
+    input:
+        expand(DATA + 'interim/single_gene_stats/{dat}.{cols}',
+               dat=('panel', 'clinvar'), cols=(C_FEATS,)),
+        expand(DATA + 'interim/auc_cmp/{dataset}.' + C_FEATS,
+               dataset=('clinvar.panel', 'clinvar.clinvar', 'ndenovo.clinvar')),
+        expand(DATA + 'interim/auc_cmp_train_clinvar_test_panel/single{single}.{features}',
+               single=(True, False), features=(C_FEATS,))
+

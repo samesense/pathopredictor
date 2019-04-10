@@ -19,7 +19,7 @@ rule plot_box_feature_vals:
               facet_wrap(feature~Disease, scale="free", ncol=3) +
           tiff("{output}", res=300, units="cm", height=30, width=30)
           grid.draw(p)
-          grid.text("c", x=0.05, y=0.96)
+          grid.text("C", x=0.05, y=0.96)
           dev.off()
           """)
 

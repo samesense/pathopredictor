@@ -67,7 +67,7 @@ rule plot_avg_pr_train_clinvar_test_panel_paper:
               coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10))
           tiff("{output}", res=300, units="cm", height=7.75, width=18)
           grid.draw(p)
-          grid.text("b", x=0.05, y=0.96)
+          grid.text("B", x=0.05, y=0.96)
           dev.off()
 
           """)
@@ -78,10 +78,8 @@ rule curve_avg_pr_train_clinvar_test_panel:
     output: o = DATA + 'interim/train_clinvar_test_panel_single{single}/EVAL/pred_panel_curve/{features}'
     run:
         df = pd.read_csv(input.i, sep='\t')
-
         clinvar_names  = {'False': 'Total ClinVar',
                           'True': 'ClinVar w/ Evidence'}
-
 
         acc_ls = []
         with open(output.o, 'w') as fout:
@@ -110,7 +108,7 @@ rule plot_clinvar_pr_curve_train_clinvar_test_panel:
               xlab('Recall')
           tiff("{output}", res=300, units="cm", height=7.5, width=18)
           grid.draw(p)
-          grid.text("a", x=0.05, y=0.96)
+          grid.text("A", x=0.05, y=0.96)
           dev.off()
           """)
 

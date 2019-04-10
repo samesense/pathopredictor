@@ -46,7 +46,7 @@ rule plot_single_gene_roc_curve:
                  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1))
             tiff("{output}", res=300, units="cm", height=10, width=11)
             grid.draw(p)
-            grid.text("a", x=0.05, y=0.96)
+            grid.text("A", x=0.05, y=0.96)
             dev.off()
           """)
 
@@ -70,10 +70,10 @@ rule plot_single_gene_pr_curve:
              p = ggplot(data=d) + geom_line(aes(x=rec, y=pre, colour=gene)) +
                  facet_grid(dataset~.) + theme_bw(base_size=18) + labs(colour="") +
                  xlab('Recall') + ylab('Precision') +
-                 theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1))
+                 theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1), legend.text=element_text(face="italic"))
             tiff("{output}", res=300, units="cm", height=10, width=11)
             grid.draw(p)
-            grid.text("a", x=0.05, y=0.96)
+            grid.text("A", x=0.05, y=0.96)
             dev.off()
           """)
 

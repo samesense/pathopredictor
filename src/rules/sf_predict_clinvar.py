@@ -151,7 +151,7 @@ rule plot_clinvar_pr_curve:
               xlab('Recall')
           tiff("{output}", res=300, units="cm", height=7.5, width=18)
           grid.draw(p)
-          grid.text("a", x=0.05, y=0.96)
+          grid.text("A", x=0.05, y=0.96)
           dev.off()
           """)
 
@@ -185,7 +185,7 @@ rule plot_clinvar_eval_paper:
               coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=10))
           tiff("{output}", res=300, units="cm", height=7.75, width=18)
           grid.draw(p)
-          grid.text("b", x=0.05, y=0.96)
+          grid.text("B", x=0.05, y=0.96)
           dev.off()
           """)
         shell('rm {output}.tmp.clinvar.labels')

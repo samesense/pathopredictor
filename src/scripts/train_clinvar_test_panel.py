@@ -96,7 +96,7 @@ def eval_disease(disease, data, reg_cols, col_names, use_clinvar_single):
 def main(args):
     score_cols = args.score_cols.split("-")
     disease_to_gene = score_panel_global_model.load_disease_genes(args.eval_genes)
-    data_unstandardized = score_panel_global_model.load_data(args, disease_to_gene)
+    data_unstandardized = score_panel_global_model.load_data(args.panel, args.clinvar, disease_to_gene)
     data = score_panel_global_model.mk_standard(data_unstandardized, score_cols)
 
     eval_df_within_ls, eval_df_indep_ls = [], []

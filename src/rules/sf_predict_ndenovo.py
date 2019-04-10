@@ -30,7 +30,7 @@ rule plot_ndenovo_eval_paper:
               coord_flip() + theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1, size=12))
           tiff("{output}", res=300, units="cm", height=3.5, width=10)
           grid.draw(p)
-          grid.text("c", x=0.05, y=0.96)
+          grid.text("C", x=0.05, y=0.95)
           dev.off()
           """)
 
@@ -56,6 +56,6 @@ rule plot_ndenovo_pr_curve_paper:
               xlab('Recall')
           tiff("{output}", res=300, units="cm", height=3.5, width=10)
           grid.draw(p)
-          grid.text("b", x=0.05, y=0.96)
+          grid.text("B", x=0.05, y=0.95)
           dev.off()
           """)

@@ -56,7 +56,7 @@ rule plot_panel_eval:
               xlab('') + coord_flip()
           tiff("{output}", res=300, units="cm", height=4.5, width=16)
           grid.draw(p)
-          grid.text("b", x=0.05, y=0.96)
+          grid.text("B", x=0.05, y=0.96)
           dev.off()
           """)
         shell('rm {output}.tmp.panel.labels')
@@ -90,7 +90,7 @@ rule plot_panel_pr_curve:
               xlab('Recall')
           tiff("{output}", res=300, units="cm", height=4.5, width=16)
           grid.draw(p)
-          grid.text("a", x=0.05, y=0.96)
+          grid.text("A", x=0.05, y=0.96)
           dev.off()
           """)
 
