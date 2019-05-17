@@ -14,7 +14,7 @@ def eval_pr_curve_clinvar(df, disease, acc_ls, out, clinvar_type, use_revel=True
                          'Cardiomyopathy':1}
 
     diseases = {'genedx-epi-limitGene':'Epilepsy (dominant)',
-                    'Rasopathies':'Rasopathies',
+                    'Rasopathies':'RASopathies',
                     'EPI':'Epilepsy',
                     'Cardiomyopathy':'Cardiomyopathy'}
 
@@ -43,7 +43,7 @@ def eval_pr_curve(df, disease, acc_ls, out, use_revel=True):
                          'Cardiomyopathy':1}
 
     diseases = {'genedx-epi-limitGene':'Epilepsy (dominant)',
-                    'Rasopathies':'Rasopathies',
+                    'Rasopathies':'RASopathies',
                     'EPI':'Epilepsy',
                     'Cardiomyopathy':'Cardiomyopathy'}
 
@@ -101,7 +101,7 @@ rule eval_by_gene_clinvar:
                          'Cardiomyopathy':1}
 
         diseases = {'genedx-epi-limitGene':'Epilepsy (dominant)',
-                    'Rasopathies':'Rasopathies',
+                    'Rasopathies':'RASopathies',
                     'EPI':'Epilepsy',
                     'Cardiomyopathy':'Cardiomyopathy'}
         m.loc[:, 'disease_name'] = m.apply(lambda row: diseases[row['Disease']], axis=1)

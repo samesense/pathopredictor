@@ -49,7 +49,7 @@ rule combine_varimpact:
         o = DATA + 'interim/plot_data/importances'
     run:
         feats = {'fathmm':'FATHMM', 'ccr':'CCR', 'vest':'VEST', 'is_domain':'Domain', 'missense_badness':'Missense badness', 'missense_depletion': 'Missense depletion', 'mtr':'MTR'}
-        dis = {'Cardiomyopathy':'Cardiomyopathy', 'Rasopathies':'Rasopathies', 'EPI':'Epilepsy'}
+        dis = {'Cardiomyopathy':'Cardiomyopathy', 'Rasopathies':'RASopathies', 'EPI':'Epilepsy'}
 #str(row['Consistent'])=='TRUE'
         def read_varimpact(afile):
            df = pd.read_csv(afile, sep='\t', index_col=0).reset_index()

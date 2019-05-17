@@ -111,7 +111,7 @@ def mk_box(row):
 
 def load_improve_df(afile):
     diseases = {'genedx-epi-limitGene':'Epilepsy (dominant genes)',
-                    'Rasopathies':'Rasopathies',
+                    'Rasopathies':'RASopathies',
                     'genedx-epi':'Epilepsy',
                     'Cardiomyopathy':'Cardiomyopathy'}
     disease_order = {'genedx-epi-limitGene':3,

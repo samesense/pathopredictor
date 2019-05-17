@@ -6,7 +6,7 @@ rule count_plot_data:
     output: o = WORK + 'paper_plot_data/count_plot'
     run:
         diseases = {'genedx-epi-limitGene':'Epilepsy (dominant)',
-                    'Rasopathies':'Rasopathies',
+                    'Rasopathies':'RASopathies',
                     'EPI':'Epilepsy',
                     'Cardiomyopathy':'Cardiomyopathy'}
         clin_labels = {'single':'ClinVar w/ Evidence',

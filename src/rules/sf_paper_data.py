@@ -10,6 +10,6 @@ rule paper_training_data:
         df.to_csv(output.o, index=False, sep=',')
 
 rule upload_supp:
-    input:  DATA + 'processed/dryad/{table}.csv'
-    output: DBox.remote('ahmad_predictor/{table}.csv')
-    shell:  'cp {input} {output}'
+    input:  DATA + 'processed/dryad/{tableNum}_{table}_{ver}.csv'
+    output: DBox.remote('ahmad_predictor/{tableNum}_{table}_{ver}.csv')
+    shell:  'cat {CONFIG}{wildcards.tableNum}_comment {input} > {output}'

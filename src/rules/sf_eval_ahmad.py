@@ -20,7 +20,7 @@ rule mk_panel_eval_figure_data:
                          'Cardiomyopathy':1}
 
         diseases = {'genedx-epi-limitGene':'Epilepsy (dominant)',
-                    'Rasopathies':'Rasopathies',
+                    'Rasopathies':'RASopathies',
                     'EPI':'Epilepsy',
                     'Cardiomyopathy':'Cardiomyopathy'}
         m.loc[:, 'disease_name'] = m.apply(lambda row: diseases[row['Disease']], axis=1)

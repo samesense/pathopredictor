@@ -30,7 +30,7 @@ rule eval_avg_pr_train_clinvar_test_panel:
                          'Cardiomyopathy':1}
 
         diseases = {'genedx-epi-limitGene':'Epilepsy (dominant)',
-                    'Rasopathies':'Rasopathies',
+                    'Rasopathies':'RASopathies',
                     'EPI':'Epilepsy',
                     'Cardiomyopathy':'Cardiomyopathy'}
         m.loc[:, 'disease_name'] = m.apply(lambda row: diseases[row['Disease']], axis=1)

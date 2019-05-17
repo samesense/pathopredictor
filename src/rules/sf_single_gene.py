@@ -40,7 +40,7 @@ rule score_single_gene:
     output: o = DATA + 'interim/single_gene/{limit_type}/evals/{features}.single_{plow}_{phigh}.txt'
     run:
         diseases = {'genedx-epi-limitGene':'Epilepsy (dominant genes)',
-                    'Rasopathies':'Rasopathies',
+                    'Rasopathies':'RASopathies',
                     'EPI':'Epilepsy',
                     'Cardiomyopathy':'Cardiomyopathy'}
         feat_names = {'ccr-missense_badness-missense_depletion-is_domain':'Combination',
